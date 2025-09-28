@@ -60,6 +60,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const shortDesc = getShortDescription(post?.content || '');
 
   const metadata: Metadata = {
+    title: shortDesc,
     description: shortDesc,
     openGraph: {
       title: shortDesc,
