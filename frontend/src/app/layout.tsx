@@ -237,7 +237,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="w-full h-full flex-center">
         <LayoutWrapper jsonLdData={jsonLd}>
           <main className="w-[90vw] md:w-[92.5vw] lg:w-[95vw]">
-            <div className="mb-16"></div>
+            <div className="mb-12"></div>
             <Analytics />
             {children}
             <SpeedInsights />
