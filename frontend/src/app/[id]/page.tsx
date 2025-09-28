@@ -1,59 +1,45 @@
-'use client';
-
 import { notFound } from 'next/navigation';
-import { useEffect, useState, use } from 'react';
 import type { Post } from '@/types/general';
 import ReactMarkdown from 'react-markdown';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-const DynamicGroups = ({ params }: { params: Promise<{ id: string }> }) => {
-  const [data, setData] = useState<Post>();
-  const [loading, setLoading] = useState(true);
-  const { id } = use(params);
+export const revalidate = 3600;
+export const dynamic = 'force-static';
 
-  useEffect(() => {
-    if (!id) {
-      setLoading(false);
-      return;
+interface PageProps {
+  params: { id: string };
+}
+
+async function getPost(id: string): Promise<Post | null> {
+  try {
+    const res = await fetch(`${apiUrl}/${encodeURIComponent(id)}`);
+
+    if (!res.ok) {
+      return null;
     }
 
-    const fetchData = async () => {
-      try {
-        console.log('[DynamicGroups] Fetching:', `${apiUrl}/${encodeURIComponent(id)}`);
+    const json = await res.json();
+    return json.data as Post;
+  } catch (error) {
+    console.error('Error fetching blog post:', error);
+    return null;
+  }
+}
 
-        const res = await fetch(`${apiUrl}/v1/posts/${encodeURIComponent(id)}`, {
-          cache: 'no-store',
-        });
+export default async function PostPage({ params }: PageProps) {
+  const { id } = await params;
 
-        console.log('[DynamicGroups] Response status:', res.status, res.statusText);
-
-        if (!res.ok) {
-          return notFound();
-        }
-
-        const json = await res.json();
-        setData(json.data);
-      } catch (error) {
-        console.error('Error fetching blog post:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <main className="w-full flex flex-col gap-lg">
-        <div>Loading...</div>
-      </main>
-    );
+  if (!id) {
+    notFound();
+    return null;
   }
 
+  const data = await getPost(id);
+
   if (!data) {
-    return notFound();
+    notFound();
+    return null;
   }
 
   return (
@@ -65,6 +51,4 @@ const DynamicGroups = ({ params }: { params: Promise<{ id: string }> }) => {
       </main>
     </div>
   );
-};
-
-export default DynamicGroups;
+}

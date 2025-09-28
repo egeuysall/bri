@@ -95,12 +95,6 @@ const pngIcon = 'icon.png';
  */
 const appleTouchIcon = 'apple-touch-icon.png';
 
-/**
- * The path or URL to the web app manifest file.
- * @type {string}
- */
-const manifestFile = 'manifest.json';
-
 export async function generateMetadata(): Promise<Metadata> {
   // Fetch data needed for metadata
   const product = await getProduct();
@@ -145,7 +139,6 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: appleTouchIcon,
       shortcut: icoIcon,
     },
-    manifest: manifestFile,
     robots: {
       index: true,
       follow: true,
