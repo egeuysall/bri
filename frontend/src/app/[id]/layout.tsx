@@ -5,11 +5,11 @@ function getShortDescription(text: string, maxLength = 165): string {
   if (!text) return '';
 
   // Remove markdown characters
-  let cleaned = text
-    .replace(/[#*_~`>\[\]()]/g, '') // Remove common markdown chars
-    .replace(/!\[.*?\]\(.*?\)/g, '') // Remove images ![alt](url)
-    .replace(/\[.*?\]\(.*?\)/g, '') // Remove links [text](url)
-    .replace(/\s+/g, ' ') // Normalize whitespace
+  const cleaned = text
+    .replace(/[#*_~`>\[\]()]/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[.*?\]\(.*?\)/g, '')
+    .replace(/\s+/g, ' ')
     .trim();
 
   if (cleaned.length <= maxLength) return cleaned;
