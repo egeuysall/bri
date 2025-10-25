@@ -3,8 +3,17 @@ import React from 'react';
 
 function getShortDescription(text: string, maxLength = 165): string {
   if (!text) return '';
-  if (text.length <= maxLength) return text;
-  const trimmed = text.slice(0, maxLength);
+
+  // Remove markdown characters
+  let cleaned = text
+    .replace(/[#*_~`>\[\]()]/g, '') // Remove common markdown chars
+    .replace(/!\[.*?\]\(.*?\)/g, '') // Remove images ![alt](url)
+    .replace(/\[.*?\]\(.*?\)/g, '') // Remove links [text](url)
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+
+  if (cleaned.length <= maxLength) return cleaned;
+  const trimmed = cleaned.slice(0, maxLength);
   const lastSpace = trimmed.lastIndexOf(' ');
   return trimmed.slice(0, lastSpace > 0 ? lastSpace : maxLength) + '...';
 }
