@@ -135,7 +135,7 @@
 
   /* Responsive text */
   html {
-    @apply text-[100%] md:text-[112.5%] lg:text-[125%];
+    @apply text-[clamp(1rem,1.05vw,1.25rem)];
   }
 
   /* Body defaults */
@@ -211,10 +211,16 @@
     }
   }
 
+  /* List formatting */
   ul,
   ol {
+    @apply mb-xs;
     list-style-type: initial !important;
-    padding-left: 1.5rem;
+    padding-left: 1rem;
+  }
+
+  li {
+    @apply mb-2xs;
   }
 
   ul {
@@ -225,16 +231,7 @@
     list-style-type: decimal !important;
   }
 
-  /* List formatting */
-  ul,
-  ol {
-    @apply mb-xs;
-  }
-
-  li {
-    @apply mb-2xs;
-  }
-
+  /* Image Styling */
   img {
     @apply w-full h-64 object-cover rounded-md;
   }
