@@ -1,11 +1,39 @@
 import type { Metadata } from 'next';
 import React from 'react';
 
+function getTitle(text: string): string {
+  if (!text) return '';
+
+  // Extract the first # heading
+  const lines = text.split('\n');
+  for (const line of lines) {
+    const trimmedLine = line.trim();
+    if (trimmedLine.startsWith('#')) {
+      // Remove all # characters and trim
+      return trimmedLine.replace(/^#+\s*/, '').trim();
+    }
+  }
+
+  return '';
+}
+
 function getShortDescription(text: string, maxLength = 165): string {
   if (!text) return '';
 
+  // Remove the first # heading line
+  const lines = text.split('\n');
+  let contentWithoutTitle = text;
+  for (let i = 0; i < lines.length; i++) {
+    const trimmedLine = lines[i]?.trim() || '';
+    if (trimmedLine.startsWith('#')) {
+      // Remove this line and everything before it
+      contentWithoutTitle = lines.slice(i + 1).join('\n');
+      break;
+    }
+  }
+
   // Remove markdown characters
-  const cleaned = text
+  const cleaned = contentWithoutTitle
     .replace(/[#*_~`>\[\]()]/g, '')
     .replace(/!\[.*?\]\(.*?\)/g, '')
     .replace(/\[.*?\]\(.*?\)/g, '')
@@ -66,13 +94,14 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bridge.egeuysal.com';
   const canonical = `${siteUrl.replace(/\/$/, '')}/${id}`;
+  const title = getTitle(post?.content || '');
   const shortDesc = getShortDescription(post?.content || '');
 
   const metadata: Metadata = {
-    title: shortDesc,
+    title: title,
     description: shortDesc,
     openGraph: {
-      title: shortDesc,
+      title: title,
       description: shortDesc,
       url: canonical,
       type: 'article',
