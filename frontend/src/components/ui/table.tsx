@@ -9,7 +9,7 @@ function Table({ className, ...props }: React.ComponentProps<'table'>) {
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
-        className={cn('w-full caption-bottom text-small', className)}
+        className={cn('text-small w-full caption-bottom', className)}
         {...props}
       />
     </div>
@@ -28,7 +28,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
   return (
     <tfoot
       data-slot="table-footer"
-      className={cn('bg-neutral-300 dark:bg-neutral-700 border-t font-semibold', className)}
+      className={cn('border-t bg-neutral-300 font-semibold dark:bg-neutral-700', className)}
       {...props}
     />
   );
@@ -39,7 +39,7 @@ function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
     <tr
       data-slot="table-row"
       className={cn(
-        'hover:bg-neutral-300 hover:dark:bg-neutral-700 data-[state=selected]:bg-neutral-500 border-b transition-colors',
+        'border-b transition-colors hover:bg-neutral-300 data-[state=selected]:bg-neutral-500 hover:dark:bg-neutral-700',
         className
       )}
       {...props}
@@ -71,7 +71,7 @@ function TableCaption({ className, ...props }: React.ComponentProps<'caption'>) 
   return (
     <caption
       data-slot="table-caption"
-      className={cn('text-neutral-500 mt-4 text-small', className)}
+      className={cn('text-small mt-4 text-neutral-500', className)}
       {...props}
     />
   );

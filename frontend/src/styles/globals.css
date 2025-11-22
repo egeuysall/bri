@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 @theme {
   /* Color palette */
@@ -233,7 +234,7 @@
 
   /* Image Styling */
   img {
-    @apply w-full h-64 object-cover rounded-md;
+    @apply h-96 w-full rounded-md object-cover;
   }
 
   /* Code blocks */
@@ -287,7 +288,7 @@
     }
 
     &:disabled {
-      @apply bg-neutral-300 dark:bg-neutral-700 opacity-50;
+      @apply bg-neutral-300 opacity-50 dark:bg-neutral-700;
       @apply cursor-not-allowed;
     }
   }
@@ -357,7 +358,7 @@
   /* Accessibility */
   :focus-visible {
     @apply outline-none;
-    @apply ring-2 ring-primary-700;
+    @apply ring-primary-700 ring-2;
     @apply ring-offset-2;
   }
 
@@ -392,6 +393,68 @@
   }
 }
 
+/* GitHub Flavored Markdown - Task Lists */
+@layer components {
+  .prose ul:has(button[role='checkbox']) {
+    list-style-type: none !important;
+    padding-left: 0 !important;
+  }
+
+  .prose li:has(> button[role='checkbox']) {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-left: 0 !important;
+  }
+
+  /* Strikethrough for GFM */
+  .prose del {
+    @apply text-neutral-500 line-through;
+  }
+
+  /* Inline code - override prose defaults (no bold) */
+  .prose :where(code):not(:where([class~='not-prose'], [class~='not-prose'] *)) {
+    @apply font-normal;
+  }
+
+  .prose :where(code):not(:where([class~='not-prose'], [class~='not-prose'] *))::before,
+  .prose :where(code):not(:where([class~='not-prose'], [class~='not-prose'] *))::after {
+    content: none;
+  }
+
+  /* Code block container */
+  .code-block {
+    @apply my-6 overflow-hidden rounded-lg;
+  }
+
+  .code-block pre {
+    @apply m-0 overflow-x-auto p-4 text-base leading-relaxed;
+  }
+
+  .code-block code {
+    @apply text-base;
+  }
+
+  .code-block .fallback-pre {
+    @apply bg-neutral-200 dark:bg-neutral-800;
+  }
+
+  /* Shiki dual theme support - using media query for system preference */
+  .shiki-wrapper .shiki,
+  .shiki-wrapper .shiki span {
+    color: var(--shiki-light) !important;
+    background-color: var(--shiki-light-bg) !important;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .shiki-wrapper .shiki,
+    .shiki-wrapper .shiki span {
+      color: var(--shiki-dark) !important;
+      background-color: var(--shiki-dark-bg) !important;
+    }
+  }
+}
+
 @layer utilities {
   .flex-center {
     @apply flex items-center justify-center;
@@ -422,14 +485,14 @@
   }
 
   .truncate-text {
-    @apply whitespace-nowrap overflow-hidden text-ellipsis;
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
   }
 
   .line-clamp-2 {
-    @apply overflow-hidden line-clamp-2;
+    @apply line-clamp-2 overflow-hidden;
   }
 
   .line-clamp-3 {
-    @apply overflow-hidden line-clamp-3;
+    @apply line-clamp-3 overflow-hidden;
   }
 }
