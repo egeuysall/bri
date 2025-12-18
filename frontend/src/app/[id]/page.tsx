@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation';
 import type { Post } from '@/types/general';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import {
   CodeBlock,
   InlineCode,
@@ -17,8 +19,7 @@ import {
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-export const revalidate = 3600;
-export const dynamic = 'force-static';
+export const revalidate = 60; // 1 minute for new posts detection
 
 interface PageProps {
   params: { id: string };
@@ -26,7 +27,9 @@ interface PageProps {
 
 async function getPost(id: string): Promise<Post | null> {
   try {
-    const res = await fetch(`${apiUrl}/${encodeURIComponent(id)}`);
+    const res = await fetch(`${apiUrl}/${encodeURIComponent(id)}`, {
+      next: { revalidate: 60 }, // Check for new posts every minute
+    });
 
     if (!res.ok) {
       return null;
@@ -58,6 +61,10 @@ export default async function PostPage({ params }: PageProps) {
   return (
     <div className="flex w-full justify-center">
       <main className="flex w-full max-w-full flex-col md:max-w-3/4 lg:max-w-1/2">
+        <Link className="mb-8 flex items-center" href="/">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Home
+        </Link>
         <article className="prose prose-neutral dark:prose-invert max-w-none">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
@@ -66,10 +73,12 @@ export default async function PostPage({ params }: PageProps) {
               pre: ({ children }) => <>{children}</>,
               code: ({ className, children, ...props }) => {
                 const match = /language-(\w+)/.exec(className || '');
-                const isInline = !match && !className;
+                const isInline = !className;
 
                 if (isInline) {
-                  return <InlineCode {...props}>{children}</InlineCode>;
+                  // Remove backticks from inline code content
+                  const content = String(children).replace(/^`|`$/g, '');
+                  return <InlineCode {...props}>{content}</InlineCode>;
                 }
 
                 return (

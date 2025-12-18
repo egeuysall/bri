@@ -46,8 +46,7 @@ function getShortDescription(text: string, maxLength = 165): string {
   return trimmed.slice(0, lastSpace > 0 ? lastSpace : maxLength) + '...';
 }
 
-export const revalidate = 3600;
-export const dynamic = 'auto';
+export const revalidate = 60; // 1 minute cache
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const { id } = await params;
@@ -55,7 +54,9 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   let res;
   try {
-    res = await fetch(`${apiUrl}/${id}`);
+    res = await fetch(`${apiUrl}/${id}`, {
+      next: { revalidate: 60 }, // Cache for 1 minute
+    });
   } catch (error) {
     console.error('Error fetching post metadata:', error);
     return {

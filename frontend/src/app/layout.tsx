@@ -241,6 +241,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <Analytics />
             {children}
             <SpeedInsights />
+            <footer className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+              <p>&copy; {new Date().getFullYear()} Bridge. All rights reserved.</p>
+            </footer>
           </main>
         </LayoutWrapper>
       </body>

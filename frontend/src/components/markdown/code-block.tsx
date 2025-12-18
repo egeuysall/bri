@@ -33,9 +33,10 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
       } catch {
         // Fallback for unsupported languages
         const escaped = children.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const fallback = `<pre><code>${escaped}</code></pre>`;
-        setLightHtml(fallback);
-        setDarkHtml(fallback);
+        const lightFallback = `<pre style="background-color: rgb(214, 214, 214);"><code>${escaped}</code></pre>`;
+        const darkFallback = `<pre style="background-color: rgb(41, 41, 41);"><code>${escaped}</code></pre>`;
+        setLightHtml(lightFallback);
+        setDarkHtml(darkFallback);
       } finally {
         setIsLoading(false);
       }
@@ -47,7 +48,7 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
   if (isLoading) {
     return (
       <div className={cn('code-block my-4', className)}>
-        <pre className="overflow-x-auto rounded-lg bg-neutral-200 p-4 font-mono text-sm dark:bg-neutral-800">
+        <pre className="overflow-x-auto rounded-lg bg-neutral-200 p-4 font-mono text-sm dark:bg-neutral-700">
           <code>{children}</code>
         </pre>
       </div>
@@ -60,7 +61,7 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
       <div
         className={cn(
           'code-block my-4 block dark:hidden',
-          '[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:text-sm',
+          '[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-neutral-200 [&_pre]:p-4 [&_pre]:text-sm',
           className
         )}
         dangerouslySetInnerHTML={{ __html: lightHtml }}
@@ -69,7 +70,7 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
       <div
         className={cn(
           'code-block my-4 hidden dark:block',
-          '[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:!bg-neutral-800 [&_pre]:p-4 [&_pre]:text-sm',
+          '[&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:!bg-neutral-700 [&_pre]:p-4 [&_pre]:text-sm',
           className
         )}
         dangerouslySetInnerHTML={{ __html: darkHtml }}
@@ -87,7 +88,7 @@ export function InlineCode({ children, className }: InlineCodeProps) {
   return (
     <code
       className={cn(
-        'rounded-md bg-neutral-200 px-1.5 py-0.5 font-mono text-[0.9em] font-normal text-red-600 dark:bg-neutral-700   dark:text-red-400',
+        'rounded-md bg-neutral-200 px-1.5 py-0.5 font-mono text-[0.9em] font-normal text-red-600 dark:bg-neutral-700 dark:text-red-400',
         className
       )}
     >

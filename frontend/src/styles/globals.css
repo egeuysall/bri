@@ -419,7 +419,8 @@
 
   .prose :where(code):not(:where([class~='not-prose'], [class~='not-prose'] *))::before,
   .prose :where(code):not(:where([class~='not-prose'], [class~='not-prose'] *))::after {
-    content: none;
+    content: '' !important;
+    display: none !important;
   }
 
   /* Code block container */
