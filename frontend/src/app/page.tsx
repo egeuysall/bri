@@ -1,32 +1,71 @@
 import React from 'react';
+import Link from 'next/link';
 import { PostFinder } from '@/components/blocks/post-finder';
-import { FileText, Link2, Zap } from 'lucide-react';
+import { Iphone } from '@/components/ui/iphone';
+import { Safari } from '@/components/ui/safari';
+import { FileText, Share2, Bolt, Code2 } from 'lucide-react';
 
 const Landing: React.FC = () => {
   return (
-    <main className="flex md:items-center flex-col gap-md py-md">
-      <section className="flex items-center flex-col gap-sm text-center">
-        <div className="flex items-center justify-center gap-sm mb-sm">
-          <FileText className="h-8 w-8 text-primary-600" />
-          <h1 className="text-2xl font-bold">Bridge</h1>
-        </div>
-        <p className="text-base text-neutral-600 dark:text-neutral-400 max-w-sm">
-          Share Markdown instantly. No signup, no clutter—just clean, shareable links.
+    <main className="gap-lg py-md flex flex-col items-center px-4">
+      {/* Hero Section */}
+      <section className="gap-md flex flex-col items-center text-center">
+        <h3>Share Markdown Instantly</h3>
+
+        <p className="mb-lg text-base text-neutral-600 md:text-lg dark:text-neutral-400">
+          The simplest way to share Markdown content. No signup required, no clutter - just clean,
+          beautiful, shareable links in seconds.
         </p>
-      </section>
-      
-      <section className="flex flex-col gap-xs w-full md:items-center mb-md">
-        <PostFinder />
+
+        {/* Main CTA */}
+        <div className="flex w-full justify-center">
+          <PostFinder />
+        </div>
+
+        {/* Quick Info */}
+        <div className="gap-lg mt-xl flex flex-wrap justify-center text-center">
+          <div className="gap-2xs px-xs flex flex-col items-center">
+            <Bolt className="text-primary-600 h-6 w-6" />
+            <span className="text-sm font-medium">Instant Sharing</span>
+          </div>
+          <div className="gap-2xs px-xs flex flex-col items-center">
+            <Share2 className="text-primary-600 h-6 w-6" />
+            <span className="text-sm font-medium">Clean Links</span>
+          </div>
+          <div className="gap-2xs px-xs flex flex-col items-center">
+            <Code2 className="text-primary-600 h-6 w-6" />
+            <span className="text-sm font-medium">Markdown Support</span>
+          </div>
+        </div>
       </section>
 
-      <section className="flex justify-center gap-lg text-center">
-        <div className="flex flex-col items-center gap-2xs">
-          <Zap className="h-5 w-5 text-primary-600 mb-2xs" />
-          <span className="text-sm font-medium">Instant</span>
+      {/* Device Mockups Section */}
+      <section className="mt-lg w-full">
+        <div className="flex justify-center">
+          {/* Mobile iPhone Mockup - shown on small screens */}
+          <div className="px-sm w-full md:hidden">
+            <Iphone src="/user-mobile.png" className="mx-auto" />
+          </div>
+
+          {/* Desktop Safari Mockup - shown on medium+ screens */}
+          <div className="px-sm hidden w-full md:block">
+            <Safari imageSrc="/user-desktop.png" url="bridge.egeuysal.com" className="mx-auto" />
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-2xs">
-          <Link2 className="h-5 w-5 text-primary-600 mb-2xs" />
-          <span className="text-sm font-medium">Shareable</span>
+      </section>
+
+      {/* Final CTA */}
+      <section className="mt-lg w-full text-center">
+        <h6 className="mb-sm">Ready to Share Markdown Instantly?</h6>
+        <p className="mb-lg text-base text-neutral-600 dark:text-neutral-400">
+          Join others who use Bridge every day.
+        </p>
+
+        <div className="gap-sm flex flex-col items-center justify-center sm:flex-row">
+          <Link href="/new" className="gap-xs px-md py-sm flex items-center">
+            <FileText className="h-4 w-4" />
+            Create New Post
+          </Link>
         </div>
       </section>
     </main>
