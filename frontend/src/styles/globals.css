@@ -205,6 +205,8 @@
   a {
     @apply text-primary-700 dark:text-primary-500;
     @apply transition-colors duration-200 ease-in-out;
+    @apply overflow-x-hidden;
+    @apply wrap-break-word;
 
     &:hover {
       @apply text-primary-900 dark:text-primary-700;

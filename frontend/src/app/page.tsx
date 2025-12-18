@@ -13,8 +13,7 @@ const Landing: React.FC = () => {
         <h3>Share Markdown Instantly</h3>
 
         <p className="mb-lg text-base text-neutral-600 md:text-lg dark:text-neutral-400">
-          The simplest way to share Markdown content. No signup required, no clutter - just clean,
-          beautiful, shareable links in seconds.
+          Paste Markdown, get a beautiful shareable link. No signup, no hassle.
         </p>
 
         {/* Main CTA */}
@@ -56,15 +55,15 @@ const Landing: React.FC = () => {
 
       {/* Final CTA */}
       <section className="mt-lg w-full text-center">
-        <h6 className="mb-sm">Ready to Share Markdown Instantly?</h6>
+        <h6 className="mb-sm">Share Markdown Now</h6>
         <p className="mb-lg text-base text-neutral-600 dark:text-neutral-400">
-          Join others who use Bridge every day.
+          Simple, fast Markdown sharing for everyone.
         </p>
 
         <div className="gap-sm flex flex-col items-center justify-center sm:flex-row">
           <Link href="/new" className="gap-xs px-md py-sm flex items-center">
             <FileText className="h-4 w-4" />
-            Create New Post
+            Create Post
           </Link>
         </div>
       </section>
