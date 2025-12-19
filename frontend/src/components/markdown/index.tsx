@@ -9,3 +9,4 @@ export {
   MarkdownTableDataCell,
 } from './markdown-table';
 export { MarkdownCheckbox } from './markdown-checkbox';
+export { MarkdownContent } from './markdown-content';

@@ -23,18 +23,18 @@ export const PostFinder: React.FC = () => {
   };
 
   return (
-    <section className="flex items-center flex-col gap-lg w-full md:w-3/4 lg:w-1/2">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2xs w-full">
+    <section className="gap-lg flex w-full flex-col items-center md:w-3/4">
+      <form onSubmit={handleSubmit} className="gap-2xs flex w-full flex-col">
         <Label htmlFor="post-id">Post ID</Label>
         <Input
           id="post-id"
           ref={inputRef}
           value={post}
-          onChange={(e) => setPost(e.target.value)}
+          onChange={e => setPost(e.target.value)}
           placeholder="e.g. abc123"
           className="w-full"
         />
-        <Button type="submit" className="w-full mt-sm">
+        <Button type="submit" className="mt-sm w-full">
           Find Post
         </Button>
       </form>

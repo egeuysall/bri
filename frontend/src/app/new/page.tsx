@@ -109,8 +109,8 @@ export default function CreateNewPost() {
   return (
     <main className="gap-lg py-md flex flex-col items-center px-4">
       <div className="w-full">
-        <Link className="mb-8 flex items-center" href="/">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+        <Link className="mb-6 flex items-center text-sm" href="/">
+          <ArrowLeft className="mr-1 h-3 w-3" />
           Back to Home
         </Link>
 
@@ -131,8 +131,8 @@ export default function CreateNewPost() {
                   id="markdown-content"
                   value={markdownContent}
                   onChange={e => setMarkdownContent(e.target.value)}
-                  placeholder="# Hello World\n\nThis is **Markdown** content!\n\n- List item 1\n- List item 2\n\n```javascript\nconsole.log('Hello!');\n```"
-                  className="min-h-75 font-mono"
+                  placeholder="# Welcome to Bridge!"
+                  className="max-h-125 min-h-75 font-mono"
                   required
                 />
               </div>

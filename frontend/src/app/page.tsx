@@ -42,12 +42,12 @@ const Landing: React.FC = () => {
       <section className="mt-lg w-full">
         <div className="flex justify-center">
           {/* Mobile iPhone Mockup - shown on small screens */}
-          <div className="px-sm w-full md:hidden">
+          <div className="px-sm w-2/3 md:hidden">
             <Iphone src="/user-mobile.png" className="mx-auto" />
           </div>
 
           {/* Desktop Safari Mockup - shown on medium+ screens */}
-          <div className="px-sm hidden w-full md:block">
+          <div className="px-sm hidden md:block md:w-2/3 lg:w-1/2">
             <Safari imageSrc="/user-desktop.png" url="bridge.egeuysal.com" className="mx-auto" />
           </div>
         </div>

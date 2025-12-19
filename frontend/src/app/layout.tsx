@@ -234,10 +234,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="w-full h-full flex-center">
+      <body className="flex-center h-full w-full">
         <LayoutWrapper jsonLdData={jsonLd}>
           <main className="w-[90vw] md:w-[92.5vw] lg:w-[95vw]">
-            <div className="mb-12"></div>
+            <div className="mb-8" />
             <Analytics />
             {children}
             <SpeedInsights />
