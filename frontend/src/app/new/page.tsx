@@ -134,6 +134,7 @@ export default function CreateNewPost() {
                   placeholder="# Welcome to Bridge!"
                   className="max-h-125 min-h-75 font-mono"
                   required
+                  autoFocus
                 />
               </div>
 
