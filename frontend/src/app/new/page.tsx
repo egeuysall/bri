@@ -62,13 +62,19 @@ export default function CreateNewPost() {
         throw new Error(data.error);
       }
 
-      // Handle both response formats: {id: "uuid"} or {data: {id: "uuid"}}
+      // Handle both response formats: {slug: "slug"} or {data: {slug: "slug"}}
       let postId: string;
-      if (data && data.data && data.data.id) {
-        // CLI format: {data: {id: "uuid"}}
+      if (data && data.data && data.data.slug) {
+        // New format: {data: {slug: "slug"}}
+        postId = data.data.slug;
+      } else if (data && data.slug) {
+        // Old format: {slug: "slug"}
+        postId = data.slug;
+      } else if (data && data.data && data.data.id) {
+        // Legacy CLI format: {data: {id: "uuid"}}
         postId = data.data.id;
       } else if (data && data.id) {
-        // Direct format: {id: "uuid"}
+        // Legacy direct format: {id: "uuid"}
         postId = data.id;
       } else {
         throw new Error('Invalid post ID received from server');

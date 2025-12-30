@@ -10,6 +10,7 @@ import (
 
 type MarkdownPost struct {
 	ID        pgtype.UUID
+	Slug      pgtype.Text
 	Content   string
 	CreatedAt pgtype.Timestamptz
 }

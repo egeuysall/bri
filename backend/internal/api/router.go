@@ -34,7 +34,7 @@ func Router() *chi.Mux {
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Post("/posts", handlers.HandleCreatePost)
-		r.Get("/posts/{id}", handlers.HandleGetPost)
+		r.Get("/posts/{slug}", handlers.HandleGetPostBySlug)
 	})
 
 	return r

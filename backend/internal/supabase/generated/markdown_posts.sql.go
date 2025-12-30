@@ -12,20 +12,30 @@ import (
 )
 
 const createPost = `-- name: CreatePost :one
-INSERT INTO markdown_posts (content)
-VALUES ($1)
-    RETURNING id
+INSERT INTO markdown_posts (slug, content)
+VALUES ($1, $2)
+    RETURNING id, slug
 `
 
-func (q *Queries) CreatePost(ctx context.Context, content string) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, createPost, content)
-	var id pgtype.UUID
-	err := row.Scan(&id)
-	return id, err
+type CreatePostParams struct {
+	Slug    pgtype.Text
+	Content string
+}
+
+type CreatePostRow struct {
+	ID   pgtype.UUID
+	Slug pgtype.Text
+}
+
+func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (CreatePostRow, error) {
+	row := q.db.QueryRow(ctx, createPost, arg.Slug, arg.Content)
+	var i CreatePostRow
+	err := row.Scan(&i.ID, &i.Slug)
+	return i, err
 }
 
 const getPostByID = `-- name: GetPostByID :one
-SELECT id, content, created_at
+SELECT id, slug, content, created_at
 FROM markdown_posts
 WHERE id = $1
 `
@@ -33,6 +43,29 @@ WHERE id = $1
 func (q *Queries) GetPostByID(ctx context.Context, id pgtype.UUID) (MarkdownPost, error) {
 	row := q.db.QueryRow(ctx, getPostByID, id)
 	var i MarkdownPost
-	err := row.Scan(&i.ID, &i.Content, &i.CreatedAt)
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Content,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getPostBySlug = `-- name: GetPostBySlug :one
+SELECT id, slug, content, created_at
+FROM markdown_posts
+WHERE slug = $1
+`
+
+func (q *Queries) GetPostBySlug(ctx context.Context, slug pgtype.Text) (MarkdownPost, error) {
+	row := q.db.QueryRow(ctx, getPostBySlug, slug)
+	var i MarkdownPost
+	err := row.Scan(
+		&i.ID,
+		&i.Slug,
+		&i.Content,
+		&i.CreatedAt,
+	)
 	return i, err
 }
