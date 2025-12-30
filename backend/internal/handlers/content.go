@@ -73,10 +73,8 @@ func HandleCreatePost(w http.ResponseWriter, r *http.Request) {
 	existingPost, err := utils.Queries.GetPostBySlug(r.Context(), slugText)
 	if err == nil {
 		// Post already exists, return existing slug
-		resp := map[string]interface{}{
-			"data": map[string]string{
-				"slug": existingPost.Slug.String,
-			},
+		resp := map[string]string{
+			"slug": existingPost.Slug.String,
 		}
 		utils.SendJson(w, resp, http.StatusOK)
 		return
@@ -93,10 +91,8 @@ func HandleCreatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := map[string]interface{}{
-		"data": map[string]string{
-			"slug": newPost.Slug.String,
-		},
+	resp := map[string]string{
+		"slug": newPost.Slug.String,
 	}
 
 	utils.SendJson(w, resp, http.StatusCreated)
