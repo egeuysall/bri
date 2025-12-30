@@ -47,10 +47,10 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		"version": "1.2.2",
 		"status":  "Healthy",
 		"endpoints": map[string]string{
+		    "root":     "/",
 			"health":   "/health",
 			"create":   "/v1/posts",
-			"get_post": "/v1/posts/{id}",
-			"get_slug": "/v1/posts/slug/{slug}",
+			"get_slug": "/v1/posts/{slug}",
 		},
 		"documentation": "https://github.com/egeuysall/bridge",
 	}
