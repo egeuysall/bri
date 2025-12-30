@@ -31,7 +31,7 @@ export function CliSection() {
   const installCommand = 'go install github.com/egeuysall/bridge/backend/cmd/bridge@master';
 
   return (
-    <div className="mx-auto w-full max-w-2/3">
+    <div className="mx-auto w-full md:max-w-2/3 lg:max-w-2/4">
       <div className="relative">
         <CodeBlock language="bash">{installCommand}</CodeBlock>
         <CopyButton installCommand={installCommand} />
