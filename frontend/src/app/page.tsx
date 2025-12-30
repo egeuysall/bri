@@ -12,7 +12,7 @@ const Landing: React.FC = () => {
       {/* Hero Section */}
       <section className="gap-md flex flex-col items-center text-center">
         <h3>
-          Share Markdown <span className="text-primary-500">Instantly</span>
+          Share Markdown <span className="text-primary-700 dark:text-primary-500">Instantly</span>
         </h3>
 
         <p className="mb-lg text-base text-neutral-600 md:text-lg dark:text-neutral-400">
