@@ -18,7 +18,7 @@ function CopyButton({ installCommand }: { installCommand: string }) {
     <Button
       type="button"
       onClick={handleCopyCommand}
-      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-neutral-100 p-2 backdrop-blur-sm dark:bg-neutral-700"
+      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-neutral-100 p-2 backdrop-blur-sm dark:bg-neutral-900"
       variant="ghost"
       size="icon"
     >
