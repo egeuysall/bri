@@ -3,6 +3,8 @@
 Bridge is a minimalist tool to share your Markdown files instantly.  
 Convert any `.md` file into a clean, shareable link with zero hassle.
 
+![Usage Video](usage.gif)
+
 ## Features
 
 - Easy Markdown sharing
