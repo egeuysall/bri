@@ -44,6 +44,12 @@ EXAMPLES:
     bridge -p ./docs/tutorial.md --no-copy
 ```
 
+### Aliases
+
+```
+alias b='bridge -p'
+```
+
 ### Features
 
 - **Automatic slug generation**: Creates clean URLs based on filename and content
