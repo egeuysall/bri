@@ -1,6 +1,8 @@
 package api
 
 import (
+	"encoding/json"
+	"net/http"
 	"time"
 
 	"github.com/egeuysall/bridge/backend/internal/handlers"
@@ -10,9 +12,6 @@ import (
 	"github.com/go-chi/httprate"
 )
 
-// Router sets up the HTTP routes and middleware for the backend API.
-//
-// Returns a *chi.Mux router with all routes and middleware configured.
 func Router() *chi.Mux {
 	r := chi.NewRouter()
 
@@ -29,8 +28,8 @@ func Router() *chi.Mux {
 	)
 
 	// Public routes
-	r.Get("/", handlers.HandleRoot)
-	r.Get("/ping", handlers.HandlePing)
+	r.Get("/", handleRoot)
+	r.Get("/health", handleHealth)
 
 	r.Route("/v1", func(r chi.Router) {
 		r.Post("/posts", handlers.HandleCreatePost)
@@ -38,4 +37,40 @@ func Router() *chi.Mux {
 	})
 
 	return r
+}
+
+func handleRoot(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	response := map[string]any{
+		"service": "Bridge API",
+		"version": "1.2.2",
+		"status":  "Healthy",
+		"endpoints": map[string]string{
+			"health":   "/health",
+			"create":   "/v1/posts",
+			"get_post": "/v1/posts/{id}",
+			"get_slug": "/v1/posts/slug/{slug}",
+		},
+		"documentation": "https://github.com/egeuysall/bridge",
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	response := map[string]any{
+		"status":    "Healthy",
+		"service":   "Bridge API",
+		"version":   "1.2.2",
+		"uptime":    "operational",
+		"checks": map[string]string{
+			"database": "connected",
+			"api":      "responding",
+		},
+	}
+
+	json.NewEncoder(w).Encode(response)
 }

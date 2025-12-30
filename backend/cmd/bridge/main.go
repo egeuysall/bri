@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	version     = "1.0.0"
+	version     = "1.2.2"
 	userAgent   = "bridge-cli/" + version
 	apiEndpoint = "https://bridgeapi.egeuysal.com:9443/v1/posts"
 )
