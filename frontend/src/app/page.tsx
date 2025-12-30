@@ -3,14 +3,17 @@ import Link from 'next/link';
 import { PostFinder } from '@/components/blocks/post-finder';
 import { Iphone } from '@/components/ui/iphone';
 import { Safari } from '@/components/ui/safari';
+import { CliSection } from '@/components/blocks/cli-copy';
 import { FileText, Share2, Bolt, Code2 } from 'lucide-react';
 
 const Landing: React.FC = () => {
   return (
-    <main className="gap-lg py-md flex flex-col items-center px-4">
+    <main className="gap-2xl py-md flex flex-col items-center px-4">
       {/* Hero Section */}
       <section className="gap-md flex flex-col items-center text-center">
-        <h3>Share Markdown Instantly</h3>
+        <h3>
+          Share Markdown <span className="text-primary-500">Instantly</span>
+        </h3>
 
         <p className="mb-lg text-base text-neutral-600 md:text-lg dark:text-neutral-400">
           Paste Markdown, get a beautiful shareable link. No signup, no hassle.
@@ -38,6 +41,21 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
+      {/* Final CTA */}
+      <section className="mt-lg w-full text-center">
+        <h6 className="mb-sm">Share Markdown Now</h6>
+        <p className="text-base text-neutral-600 dark:text-neutral-400">
+          Simple, fast Markdown sharing for everyone.
+        </p>
+
+        <div className="gap-sm flex flex-col items-center justify-center sm:flex-row">
+          <Link href="/new" className="gap-xs px-md py-sm flex items-center">
+            <FileText className="h-4 w-4" />
+            Create Post
+          </Link>
+        </div>
+      </section>
+
       {/* Device Mockups Section */}
       <section className="mt-lg w-full">
         <div className="flex justify-center">
@@ -53,19 +71,16 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* Final CTA */}
       <section className="mt-lg w-full text-center">
-        <h6 className="mb-sm">Share Markdown Now</h6>
-        <p className="mb-lg text-base text-neutral-600 dark:text-neutral-400">
-          Simple, fast Markdown sharing for everyone.
-        </p>
-
-        <div className="gap-sm flex flex-col items-center justify-center sm:flex-row">
-          <Link href="/new" className="gap-xs px-md py-sm flex items-center">
-            <FileText className="h-4 w-4" />
-            Create Post
-          </Link>
+        <div className="gap-md mb-lg flex flex-col items-center">
+          <div className="gap-2xs flex flex-col items-center">
+            <h6>CLI Tool</h6>
+          </div>
+          <p className="text-base text-neutral-600 dark:text-neutral-400">
+            Want to use Bridge from your terminal? Install our CLI tool!
+          </p>
         </div>
+        <CliSection />
       </section>
     </main>
   );
