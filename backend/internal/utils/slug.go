@@ -26,9 +26,16 @@ func GenerateSlug(filename, content string) string {
 	name = strings.ReplaceAll(name, " ", "-")
 	name = re.ReplaceAllString(name, "")
 
-	// Limit filename part to max 12 characters
-	if len(name) > 12 {
-		name = name[:12]
+	// Split into words and limit to max 2-3 words
+	words := strings.Split(name, "-")
+	if len(words) > 3 {
+		words = words[:3]
+	}
+
+	// Rejoin and limit total length to reasonable size
+	name = strings.Join(words, "-")
+	if len(name) > 20 {
+		name = name[:20]
 	}
 
 	// Remove any trailing hyphens from the name
@@ -44,5 +51,5 @@ func GenerateSlug(filename, content string) string {
 		return shortHash
 	}
 
-	return fmt.Sprintf("%s-%s", name, shortHash)
+	return fmt.Sprintf("%s--%s", name, shortHash)
 }

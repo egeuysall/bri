@@ -117,7 +117,6 @@ func main() {
 
 	// Start timing
 	start := time.Now()
-	fmt.Printf("Uploading %s...\n", *filePath)
 
 	// Read the Markdown file
 	mdData, err := os.ReadFile(*filePath)
@@ -188,7 +187,7 @@ func main() {
 	url := fmt.Sprintf("https://bridge.egeuysal.com/%s", result.Data.Slug)
 
 	// Display success message
-	fmt.Printf("\u2713 Published in %dms\n%s\n", duration.Milliseconds(), url)
+	fmt.Printf("\u2713 Published in \x1b[31m%dms\x1b[0m\n\u2192 \x1b[34m%s\x1b[0m\n", duration.Milliseconds(), url)
 
 	// Copy to clipboard unless disabled
 	if !*noCopy {
