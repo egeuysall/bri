@@ -1,13 +1,14 @@
 package middleware
 
 import (
-	"github.com/go-chi/cors"
 	"net/http"
+
+	"github.com/go-chi/cors"
 )
 
 func Cors() func(next http.Handler) http.Handler {
 	return cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://www.bridge.egeuysal.com", "http://localhost:3000"},
+		AllowedOrigins:   []string{"https://bridge.egeuysal.com", "http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		AllowCredentials: true,
