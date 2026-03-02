@@ -28,7 +28,7 @@ function CopyButton({ installCommand }: { installCommand: string }) {
 }
 
 export function CliSection() {
-  const installCommand = 'go install github.com/egeuysall/bridge/backend/cmd/bridge@master';
+  const installCommand = 'pnpm --dir frontend dev';
 
   return (
     <div className="mx-auto w-full md:max-w-2/3 lg:max-w-2/4">

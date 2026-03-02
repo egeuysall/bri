@@ -1,64 +1,39 @@
 # Bridge
 
-Bridge is a minimalist tool to share your Markdown files instantly.  
-Convert any `.md` file into a clean, shareable link with zero hassle.
+Bridge is a minimalist Next.js app for sharing Markdown instantly.
 
-![Usage Video](usage.gif)
+## Stack
 
-## Features
+- Next.js 16
+- pnpm
+- Supabase (`@supabase/ssr`)
 
-- Easy Markdown sharing
-- Instant web previews
-- Simple, fast workflow
+## Local Development
 
-## Installation
-
-Install Bridge using Go:
+1. Copy the required variables into `frontend/.env`.
+2. Install dependencies:
 
 ```bash
-go install github.com/egeuysall/bridge/backend/cmd/bridge@master
+cd frontend
+pnpm install
 ```
 
-## Usage
-
-To share a Markdown file, simply run:
+3. Start the app:
 
 ```bash
-bridge -p filename.md
+pnpm dev
 ```
 
-This will automatically push your file to the internet and return a link that you can open or share.
+The app will be available at `http://localhost:3000`.
 
-### CLI Options
+## Required Environment Variables
 
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
-USAGE:
-    bridge [OPTIONS]
-
-OPTIONS:
-    -p <path>        Path to Markdown file (required)
-    -h, --help       Show this help message
-    --version        Show version information
-    --no-copy        Don't copy URL to clipboard
-
-EXAMPLES:
-    bridge -p post.md
-    bridge -p ./docs/tutorial.md --no-copy
-```
-
-### Aliases
-
-```
-alias b='bridge -p'
-```
-
-### Features
-
-- **Automatic slug generation**: Creates clean URLs based on filename and content
-- **Browser auto-open**: Automatically opens the published link in your browser
-- **Clipboard copy**: Copies the URL to your clipboard (can be disabled with `--no-copy`)
-- **Performance tracking**: Shows upload time in milliseconds
-- **Cross-platform**: Works on macOS, Linux, and Windows
 
 ## License
 

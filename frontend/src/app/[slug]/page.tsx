@@ -1,33 +1,13 @@
 import { notFound } from 'next/navigation';
-import type { Post } from '@/types/general';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { MarkdownContent } from '@/components/markdown';
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { getPost } from '@/lib/posts';
 
 export const revalidate = 60; // 1 minute for new posts detection
 
 interface PageProps {
-  params: { slug: string };
-}
-
-async function getPost(id: string): Promise<Post | null> {
-  try {
-    const res = await fetch(`${apiUrl}/${encodeURIComponent(id)}`, {
-      next: { revalidate: 60 }, // Check for new posts every minute
-    });
-
-    if (!res.ok) {
-      return null;
-    }
-
-    const json = await res.json();
-    return json.data as Post;
-  } catch (error) {
-    console.error('Error fetching blog post:', error);
-    return null;
-  }
+  params: Promise<{ slug: string }>;
 }
 
 export default async function PostPage({ params }: PageProps) {

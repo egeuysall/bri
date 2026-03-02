@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
+import { getPost } from '@/lib/posts';
 
 function getTitle(text: string): string {
   if (!text) return '';
@@ -48,43 +49,15 @@ function getShortDescription(text: string, maxLength = 165): string {
 
 export const revalidate = 60; // 1 minute cache
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  const post = await getPost(slug);
 
-  let res;
-  try {
-    res = await fetch(`${apiUrl}/${slug}`, {
-      next: { revalidate: 60 }, // Cache for 1 minute
-    });
-  } catch (error) {
-    console.error('Error fetching post metadata:', error);
-    return {
-      title: 'Post Not Found',
-      description: 'The requested post could not be found.',
-      openGraph: { type: 'article' },
-      twitter: { card: 'summary' },
-    };
-  }
-
-  if (!res.ok) {
-    return {
-      title: 'Post Not Found',
-      description: 'The requested post could not be found.',
-      openGraph: { type: 'article' },
-      twitter: { card: 'summary' },
-    };
-  }
-
-  let post;
-  try {
-    const json = await res.json();
-    post = json.data;
-    if (!post) {
-      throw new Error('Post data is missing');
-    }
-  } catch (error) {
-    console.error('Error parsing post data:', error);
+  if (!post) {
     return {
       title: 'Post Not Found',
       description: 'The requested post could not be found.',
@@ -95,8 +68,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.bridge.egeuysal.com';
   const canonical = `${siteUrl.replace(/\/$/, '')}/${slug}`;
-  const title = getTitle(post?.content || '');
-  const shortDesc = getShortDescription(post?.content || '');
+  const title = getTitle(post.content);
+  const shortDesc = getShortDescription(post.content);
 
   const metadata: Metadata = {
     title: title,
