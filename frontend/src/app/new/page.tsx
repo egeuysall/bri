@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const apiUrl = '/api/posts';
 
 export default function CreateNewPost() {
   const [markdownContent, setMarkdownContent] = useState<string>('');
@@ -49,7 +49,7 @@ export default function CreateNewPost() {
           if (errorData && errorData.error) {
             errorMessage = errorData.error;
           }
-        } catch (e) {
+        } catch {
           // If we can't parse the error response, use the default message
         }
         throw new Error(errorMessage);
