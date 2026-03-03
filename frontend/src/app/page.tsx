@@ -4,7 +4,7 @@ import { PostFinder } from '@/components/blocks/post-finder';
 import { Iphone } from '@/components/ui/iphone';
 import { Safari } from '@/components/ui/safari';
 import { CliSection } from '@/components/blocks/cli-copy';
-import { FileText, Share2, Bolt, Terminal } from 'lucide-react';
+import { FileText, Share2, Bolt, Code2 } from 'lucide-react';
 
 const Landing: React.FC = () => {
   return (
@@ -35,8 +35,8 @@ const Landing: React.FC = () => {
             <span className="text-sm font-medium">Clean Links</span>
           </div>
           <div className="gap-2xs px-xs flex flex-col items-center">
-            <Terminal className="text-primary-600 h-6 w-6" />
-            <span className="text-sm font-medium">Self-Host Ready</span>
+            <Code2 className="text-primary-600 h-6 w-6" />
+            <span className="text-sm font-medium">Markdown Support</span>
           </div>
         </div>
       </section>
@@ -74,10 +74,10 @@ const Landing: React.FC = () => {
       <section className="mt-lg w-full text-center">
         <div className="gap-md mb-lg flex flex-col items-center">
           <div className="gap-2xs flex flex-col items-center">
-            <h6>Run Locally</h6>
+            <h6>CLI Tool</h6>
           </div>
           <p className="text-base text-neutral-600 dark:text-neutral-400">
-            Start the Next.js app locally with pnpm.
+            Want to use Bridge from your terminal? Install our CLI tool!
           </p>
         </div>
         <CliSection />
