@@ -3,14 +3,17 @@ import '@/styles/globals.css';
 
 // External Libraries
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Fonts
-import { inter, dmSans, jetbrainsMono } from '@/lib/fonts';
+import { geistMono } from '@/lib/fonts';
 
 // Internal Components
 import { LayoutWrapper } from '@/components/seo/layout-wrapper';
+import { HeaderNav } from '@/components/blocks/header-nav';
+import { Toaster } from '@/components/ui/sonner';
 
 // SEO details
 import { getProduct } from '@/lib/site-details';
@@ -224,9 +227,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang="en"
-      dir="ltr"
       suppressHydrationWarning
-      className={`${inter.variable} ${dmSans.variable} ${jetbrainsMono.variable} pb-18`}
+      className={`${geistMono.variable} h-full bg-bg`}
     >
       <head>
         <script
@@ -234,17 +236,42 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
       </head>
-      <body className="flex-center h-full w-full">
+      <body className="min-h-full bg-bg font-mono text-fg antialiased">
         <LayoutWrapper jsonLdData={jsonLd}>
-          <main className="w-[90vw] md:w-[92.5vw] lg:w-[95vw]">
-            <div className="mb-8" />
-            <Analytics />
-            {children}
-            <SpeedInsights />
-            <footer className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
-              <p>&copy; {new Date().getFullYear()} Bridge. All rights reserved.</p>
+          <div className="mx-auto flex min-h-screen w-full max-w-155 flex-col px-6 py-8 sm:px-8 sm:py-10">
+            <header className="pb-8">
+              <div className="flex items-end justify-between gap-6">
+                <Link
+                  href="/"
+                  className="text-[15px] tracking-tight text-neutral-100 hover:text-neutral-300 focus-visible:text-neutral-300"
+                >
+                  Bridge
+                </Link>
+                <HeaderNav />
+              </div>
+            </header>
+
+            <main className="flex-1 pb-8">{children}</main>
+
+            <footer className="pt-8 text-xs text-neutral-400">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <a
+                    href="https://github.com/egeuysall/bridge"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-neutral-400 hover:text-neutral-100 focus-visible:text-neutral-100"
+                  >
+                    GitHub
+                  </a>
+                </div>
+                <p>&copy; {new Date().getFullYear()}</p>
+              </div>
             </footer>
-          </main>
+          </div>
+          <Toaster />
+          <Analytics />
+          <SpeedInsights />
         </LayoutWrapper>
       </body>
     </html>

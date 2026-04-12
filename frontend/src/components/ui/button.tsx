@@ -5,18 +5,18 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'transition-colors duration-200 ease-in-out disabled:bg-neutral-700 disabled:dark:bg-neutral-300 disabled:dark:text-neutral-900 font-semibold',
+  'inline-flex items-center justify-center border text-[11px] uppercase tracking-[0.16em] transition duration-150 disabled:cursor-not-allowed disabled:opacity-40',
   {
     variants: {
       variant: {
-        default: 'bg-primary-700 hover:bg-primary-900 text-neutral-100',
-        destructive: 'bg-error-700 hover:bg-error-900 text-neutral-100',
-        outline: 'border border-primary-700 hover:bg-primary-300 hover:dark:bg-primary-900',
-        ghost: 'hover:opacity-75 transition-opacity',
+        default: 'border-neutral-700 text-neutral-200 hover:border-neutral-500 hover:text-neutral-100',
+        destructive: 'border-red-700 text-red-300 hover:border-red-500',
+        outline: 'border-neutral-800 text-neutral-300 hover:border-neutral-600 hover:text-neutral-100',
+        ghost: 'border-transparent text-neutral-300 hover:text-neutral-100',
       },
       size: {
-        default: 'py-xs px-lg rounded-md',
-        icon: 'p-sm rounded-md',
+        default: 'h-9 px-3',
+        icon: 'h-8 w-8',
       },
     },
     defaultVariants: {

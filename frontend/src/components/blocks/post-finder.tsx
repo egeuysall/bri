@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Button } from '../ui/button';
 
 export const PostFinder: React.FC = () => {
   const [post, setPost] = useState<string>('');
@@ -17,27 +14,34 @@ export const PostFinder: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (post.trim()) {
-      router.push(`/${post.trim()}`);
+    const slug = post.trim();
+    if (slug) {
+      router.push(`/${slug}`);
     }
   };
 
   return (
-    <section className="gap-lg flex w-full flex-col items-center md:w-3/4">
-      <form onSubmit={handleSubmit} className="gap-2xs flex w-full flex-col">
-        <Label htmlFor="post-id">Post ID</Label>
-        <Input
+    <form onSubmit={handleSubmit} className="py-4">
+      <label htmlFor="post-id" className="mb-2 block text-[11px] uppercase tracking-[0.16em] text-neutral-400">
+        Post Slug
+      </label>
+      <div className="flex items-center gap-2">
+        <input
           id="post-id"
           ref={inputRef}
           value={post}
           onChange={e => setPost(e.target.value)}
-          placeholder="e.g. abc123"
-          className="w-full"
+          placeholder="e.g. context-research--2G8Y7A"
+          autoComplete="off"
+          className="h-9 w-full border border-neutral-800 bg-transparent px-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
         />
-        <Button type="submit" className="mt-sm w-full">
-          Find Post
-        </Button>
-      </form>
-    </section>
+        <button
+          type="submit"
+          className="h-9 shrink-0 border border-neutral-100 bg-neutral-100 px-3 text-[11px] uppercase tracking-[0.16em] text-neutral-950 hover:border-neutral-200 hover:bg-neutral-200 focus:outline-none focus-visible:border-neutral-200"
+        >
+          Open
+        </button>
+      </div>
+    </form>
   );
 };

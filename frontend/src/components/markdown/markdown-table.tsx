@@ -1,36 +1,33 @@
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table';
+import type { ReactNode } from 'react';
 
 interface MarkdownTableProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function MarkdownTable({ children }: MarkdownTableProps) {
-  return <Table>{children}</Table>;
+  return (
+    <div className="my-4 w-full overflow-x-auto">
+      <table className="w-full border-collapse text-sm">{children}</table>
+    </div>
+  );
 }
 
 export function MarkdownTableHead({ children }: MarkdownTableProps) {
-  return <TableHeader>{children}</TableHeader>;
+  return <thead className="border-b border-neutral-800">{children}</thead>;
 }
 
 export function MarkdownTableBody({ children }: MarkdownTableProps) {
-  return <TableBody>{children}</TableBody>;
+  return <tbody>{children}</tbody>;
 }
 
 export function MarkdownTableRow({ children }: MarkdownTableProps) {
-  return <TableRow>{children}</TableRow>;
+  return <tr className="border-b border-neutral-900">{children}</tr>;
 }
 
 export function MarkdownTableHeaderCell({ children }: MarkdownTableProps) {
-  return <TableHead>{children}</TableHead>;
+  return <th className="px-2 py-2 text-left text-xs font-semibold text-neutral-300">{children}</th>;
 }
 
 export function MarkdownTableDataCell({ children }: MarkdownTableProps) {
-  return <TableCell>{children}</TableCell>;
+  return <td className="px-2 py-2 text-xs text-neutral-300">{children}</td>;
 }

@@ -1,36 +1,32 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Toaster as Sonner } from 'sonner';
 import type { ToasterProps } from 'sonner';
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (event: MediaQueryListEvent) => {
-      setIsDark(event.matches);
-    };
-
-    setIsDark(mediaQuery.matches);
-    mediaQuery.addEventListener('change', handleChange);
-
-    return () => {
-      mediaQuery.removeEventListener('change', handleChange);
-    };
-  }, []);
-
   return (
     <Sonner
-      theme={isDark ? 'dark' : 'light'}
+      theme="dark"
       className="toaster group"
+      toastOptions={{
+        classNames: {
+          toast:
+            '!rounded-none !bg-black !border !border-neutral-800 !text-neutral-100',
+          title: '!text-neutral-100',
+          description: '!text-neutral-300',
+          actionButton:
+            '!rounded-none !border !border-neutral-700 !bg-black !text-neutral-100',
+          cancelButton:
+            '!rounded-none !border !border-neutral-700 !bg-black !text-neutral-300',
+        },
+      }}
       style={
         {
-          '--normal-bg': isDark ? 'var(--color-neutral-900)' : 'var(--color-neutral-100)',
-          '--normal-text': isDark ? 'var(--color-neutral-100)' : 'var(--color-neutral-900)',
-          '--normal-border': isDark ? 'var(--color-neutral-700)' : 'var(--color-neutral-300)',
-        } as React.CSSProperties
+          '--normal-bg': '#000000',
+          '--normal-text': 'var(--color-neutral-100)',
+          '--normal-border': 'var(--color-neutral-800)',
+        } as CSSProperties
       }
       {...props}
     />

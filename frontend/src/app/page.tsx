@@ -1,88 +1,44 @@
-import React from 'react';
 import Link from 'next/link';
+import type { CSSProperties } from 'react';
 import { PostFinder } from '@/components/blocks/post-finder';
-import { Iphone } from '@/components/ui/iphone';
-import { Safari } from '@/components/ui/safari';
 import { CliSection } from '@/components/blocks/cli-copy';
-import { FileText, Share2, Bolt, Code2 } from 'lucide-react';
 
-const Landing: React.FC = () => {
+const Landing = () => {
   return (
-    <main className="gap-2xl py-md flex flex-col items-center px-4">
-      {/* Hero Section */}
-      <section className="gap-md flex flex-col items-center text-center">
-        <h3>
-          Share Markdown <span className="text-primary-700 dark:text-primary-500">Instantly</span>
-        </h3>
+    <>
+      <section className="animate-enter" style={{ '--delay': '40ms' } as CSSProperties}>
+        <p className="text-[13px] leading-relaxed text-neutral-200">Minimal markdown sharing. Paste once, ship link.</p>
+        <p className="mt-2 text-xs text-neutral-400">No signup. Fast slug links. Clean rendering.</p>
+      </section>
 
-        <p className="mb-lg text-base text-neutral-600 md:text-lg dark:text-neutral-400">
-          Paste Markdown, get a beautiful shareable link. No signup, no hassle.
-        </p>
-
-        {/* Main CTA */}
-        <div className="flex w-full justify-center">
+      <section className="mt-12 animate-enter" style={{ '--delay': '120ms' } as CSSProperties}>
+        <h2 className="text-[11px] uppercase tracking-[0.16em] text-neutral-300">Find Existing Post</h2>
+        <div className="mt-4">
           <PostFinder />
         </div>
-
-        {/* Quick Info */}
-        <div className="gap-lg mt-xl flex flex-wrap justify-center text-center">
-          <div className="gap-2xs px-xs flex flex-col items-center">
-            <Bolt className="text-primary-600 h-6 w-6" />
-            <span className="text-sm font-medium">Instant Sharing</span>
-          </div>
-          <div className="gap-2xs px-xs flex flex-col items-center">
-            <Share2 className="text-primary-600 h-6 w-6" />
-            <span className="text-sm font-medium">Clean Links</span>
-          </div>
-          <div className="gap-2xs px-xs flex flex-col items-center">
-            <Code2 className="text-primary-600 h-6 w-6" />
-            <span className="text-sm font-medium">Markdown Support</span>
-          </div>
-        </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="mt-lg w-full text-center">
-        <h6 className="mb-sm">Share Markdown Now</h6>
-        <p className="text-base text-neutral-600 dark:text-neutral-400">
-          Simple, fast Markdown sharing for everyone.
-        </p>
-
-        <div className="gap-sm flex flex-col items-center justify-center sm:flex-row">
-          <Link href="/new" className="gap-xs px-md py-sm flex items-center">
-            <FileText className="h-4 w-4" />
-            Create Post
-          </Link>
+      <section className="mt-10 animate-enter" style={{ '--delay': '200ms' } as CSSProperties}>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[11px] uppercase tracking-[0.16em] text-neutral-300">Actions</h2>
         </div>
+        <ul>
+          <li className="row-border py-4">
+            <Link href="/new" className="block hover:text-neutral-100">
+              <div className="flex items-start justify-between gap-6">
+                <p className="text-sm text-neutral-100">Create New Post</p>
+                <p className="shrink-0 pt-0.5 text-[11px] text-neutral-400">Open</p>
+              </div>
+            </Link>
+          </li>
+        </ul>
       </section>
 
-      {/* Device Mockups Section */}
-      <section className="mt-lg w-full">
-        <div className="flex justify-center">
-          {/* Mobile iPhone Mockup - shown on small screens */}
-          <div className="px-sm w-2/3 md:hidden">
-            <Iphone src="/user-mobile.png" className="mx-auto" />
-          </div>
-
-          {/* Desktop Safari Mockup - shown on medium+ screens */}
-          <div className="px-sm hidden md:block md:w-2/3 lg:w-1/2">
-            <Safari imageSrc="/user-desktop.png" url="bridge.egeuysal.com" className="mx-auto" />
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-lg w-full text-center">
-        <div className="gap-md mb-lg flex flex-col items-center">
-          <div className="gap-2xs flex flex-col items-center">
-            <h6>CLI Tool</h6>
-          </div>
-          <p className="text-base text-neutral-600 dark:text-neutral-400">
-            Want to use Bridge from your terminal? Install our CLI tool!
-          </p>
-        </div>
+      <section className="mt-10 animate-enter" style={{ '--delay': '280ms' } as CSSProperties}>
+        <h2 className="mb-4 text-[11px] uppercase tracking-[0.16em] text-neutral-300">CLI</h2>
         <CliSection />
       </section>
-    </main>
+    </>
   );
 };
 
