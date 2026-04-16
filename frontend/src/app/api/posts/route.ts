@@ -31,7 +31,8 @@ export async function POST(request: Request) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create post';
-    const status = message === 'Content cannot be empty' ? 400 : 500;
+    const status =
+      message === 'Content cannot be empty' || message === 'Slug cannot end with .md' ? 400 : 500;
 
     return NextResponse.json(
       { error: status === 400 ? message : 'Failed to create post' },

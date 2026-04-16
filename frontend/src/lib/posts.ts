@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Post } from '@/types/general';
+import { isMarkdownAlias, stripMarkdownAlias } from '@/lib/post-slugs';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type MarkdownPostRow = {
@@ -70,6 +71,19 @@ export async function getPost(identifier: string): Promise<Post | null> {
     return postBySlug;
   }
 
+  if (isMarkdownAlias(normalizedIdentifier)) {
+    const aliasedSlug = stripMarkdownAlias(normalizedIdentifier).trim();
+
+    if (!aliasedSlug) {
+      return null;
+    }
+
+    const postByMarkdownAlias = await findPostBySlug(aliasedSlug);
+    if (postByMarkdownAlias) {
+      return postByMarkdownAlias;
+    }
+  }
+
   if (!UUID_PATTERN.test(normalizedIdentifier)) {
     return null;
   }
@@ -88,6 +102,11 @@ export async function createPost(input: {
   }
 
   const slug = input.slug?.trim() || generateSlug(content);
+
+  if (isMarkdownAlias(slug)) {
+    throw new Error('Slug cannot end with .md');
+  }
+
   const existingPost = await findPostBySlug(slug);
 
   if (existingPost) {

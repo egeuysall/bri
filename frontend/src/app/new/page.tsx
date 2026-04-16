@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CodeBlock } from '@/components/markdown/code-block';
+import { getMarkdownAlias } from '@/lib/post-slugs';
 
 const apiUrl = '/api/posts';
 
@@ -90,6 +91,10 @@ export default function CreateNewPost() {
     router.push(`/${postId}`);
   };
 
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  const postUrl = postId ? `${origin}/${postId}` : '';
+  const markdownUrl = postId ? `${origin}/${getMarkdownAlias(postId)}` : '';
+
   return (
     <section className="animate-enter" style={{ '--delay': '40ms' } as CSSProperties}>
       {!success ? (
@@ -128,7 +133,8 @@ export default function CreateNewPost() {
             <p className="mt-2 text-xs text-neutral-400">Click URL to copy:</p>
           </header>
 
-          <CodeBlock language="text">{`${window.location.origin}/${postId}`}</CodeBlock>
+          <CodeBlock language="text">{postUrl}</CodeBlock>
+          <CodeBlock language="text">{markdownUrl}</CodeBlock>
 
           <div className="flex gap-2">
             <Button
