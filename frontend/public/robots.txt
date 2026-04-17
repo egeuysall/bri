@@ -23,11 +23,19 @@ Disallow: /*.yml$
 Disallow: /*.config$
 Disallow: /*.env$
 Disallow: /*.log$
-Disallow: /*.md$  # Markdown files are often for documentation purposes
 
-# Block specific bot examples (optional based on your needs)
+# Allow compliant LLM agents to fetch public markdown pages while keeping private paths blocked.
 User-agent: GPTBot
-Disallow: /
+Allow: /
+Disallow: /admin/
+Disallow: /wp-admin/
+Disallow: /dashboard/
+Disallow: /cpanel/
+Disallow: /private/
+Disallow: /includes/
+Disallow: /cgi-bin/
+Disallow: /tmp/
+Disallow: /logs/
 
 User-agent: AdsBot-Google
 Allow: /
@@ -36,8 +44,8 @@ Allow: /
 User-agent: Slurp
 Crawl-delay: 5
 
-# Sitemap declarations (update if needed)
-Sitemap: https://www.blog.egeuysal.com/sitemap.xml
+# Sitemap declarations
+Sitemap: https://bridge.egeuysal.com/sitemap.xml
 
 # Host directive (unofficial but used by Yandex)
-Host: www.blog.egeuysal.com
+Host: bridge.egeuysal.com
