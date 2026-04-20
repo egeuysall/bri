@@ -5,23 +5,28 @@ Bridge is a minimalist Next.js app for sharing Markdown instantly.
 ## Stack
 
 - Next.js 16
-- pnpm
+- Bun
 - Supabase (`@supabase/ssr`)
 
 ## Local Development
 
-1. Copy the required variables into `frontend/.env`.
+1. Copy the required variables into `.env.local`.
 2. Install dependencies:
 
 ```bash
-cd frontend
-pnpm install
+bun i
 ```
 
 3. Start the app:
 
 ```bash
-pnpm dev
+bun dev
+```
+
+## CLI
+
+```bash
+curl -fsSL https://bridge.egeuysal.com/install.sh | bash
 ```
 
 The app will be available at `http://localhost:3000`.

@@ -79,15 +79,6 @@ lib-cov/
 .tern-port
 .vscode-test/
 
-# Go binaries and metadata
-*.exe
-*.dll
-*.so
-*.dylib
-*.test
-go.work
-go.work.sum
-
 # Env files
 .env
 .env.local
@@ -98,9 +89,8 @@ go.work.sum
 # IDE/editor folders
 .idea/
 .vscode/
+.DS_Store
 
-*storybook.log
-storybook-static
 main
 server
 tmp/
