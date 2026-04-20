@@ -1,7 +1,7 @@
 import { CodeBlock } from '@/components/markdown/code-block';
 
 export function CliSection() {
-  const installCommand = 'curl -fsSL https://bridge.egeuysal.com/install.sh | bash';
+  const installCommand = 'curl -fsSL https://bri.egeuysal.com/install.sh | bash';
 
   return (
     <div className="w-full">

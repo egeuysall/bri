@@ -1,12 +1,12 @@
-# Bridge
+# bri
 
-Bridge is a minimalist Next.js app for sharing Markdown instantly.
+bri is a minimalist Next.js app for sharing Markdown instantly.
 
 ## Stack
 
 - Next.js 16
 - Bun
-- Supabase (`@supabase/ssr`)
+- Convex
 
 ## Local Development
 
@@ -26,7 +26,7 @@ bun dev
 ## CLI
 
 ```bash
-curl -fsSL https://bridge.egeuysal.com/install.sh | bash
+curl -fsSL https://bri.egeuysal.com/install.sh | bash
 ```
 
 The app will be available at `http://localhost:3000`.
@@ -34,9 +34,9 @@ The app will be available at `http://localhost:3000`.
 ## Required Environment Variables
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+CONVEX_DEPLOYMENT=
+NEXT_PUBLIC_CONVEX_URL=
+NEXT_PUBLIC_CONVEX_SITE_URL=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 

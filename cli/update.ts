@@ -15,7 +15,7 @@ interface RemoteVersionInfo {
 const UPDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const CACHE_DIR = path.join(os.homedir(), '.cache', 'bri');
 const STATE_PATH = path.join(CACHE_DIR, 'update-state.json');
-const LEGACY_STATE_PATH = path.join(os.homedir(), '.cache', 'bridge', 'update-state.json');
+const LEGACY_STATE_PATH = path.join(os.homedir(), '.cache', 'bri', 'update-state.json');
 
 function parseSemver(input: string): [number, number, number] {
   const match = input.trim().match(/^(\d+)\.(\d+)\.(\d+)/);
@@ -27,11 +27,7 @@ function parseSemver(input: string): [number, number, number] {
   const minor = match[2] ?? '0';
   const patch = match[3] ?? '0';
 
-  return [
-    Number.parseInt(major, 10),
-    Number.parseInt(minor, 10),
-    Number.parseInt(patch, 10),
-  ];
+  return [Number.parseInt(major, 10), Number.parseInt(minor, 10), Number.parseInt(patch, 10)];
 }
 
 function isNewerVersion(remote: string, current: string): boolean {
@@ -70,7 +66,10 @@ async function saveState(state: UpdateState): Promise<void> {
   await fs.writeFile(STATE_PATH, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
 }
 
-async function fetchRemoteVersion(sourceUrl: string, timeoutMs: number): Promise<RemoteVersionInfo | null> {
+async function fetchRemoteVersion(
+  sourceUrl: string,
+  timeoutMs: number
+): Promise<RemoteVersionInfo | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 

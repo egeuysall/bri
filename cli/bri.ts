@@ -7,13 +7,20 @@ import process from 'node:process';
 import { safeJsonStringify } from '@vercel/flags';
 import { Command, type OptionValueSource } from 'commander';
 import { closeFlagsClient, initFlagsClient, resolveCliFlags } from './flags';
-import { type BriConfig, getConfigPath, loadConfig, saveConfig, unsetConfigKey, updateConfig } from './config';
+import {
+  type BriConfig,
+  getConfigPath,
+  loadConfig,
+  saveConfig,
+  unsetConfigKey,
+  updateConfig,
+} from './config';
 import { generateSlug } from './slug';
 import { checkForUpdates } from './update';
 
 const VERSION = '2.1.0';
 const IS_DEV = process.env.NODE_ENV === 'development';
-const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bridge.egeuysal.com';
+const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bri.egeuysal.com';
 const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/posts`;
 const UPDATE_SOURCE_URL = `${DEFAULT_SITE_URL}/bri-version.json`;
 const INSTALL_COMMAND = `curl -fsSL ${DEFAULT_SITE_URL}/install.sh | bash`;
@@ -81,7 +88,16 @@ type ConfigOptions = {
 
 type ConfigKey = keyof BriConfig;
 
-const CONFIG_KEYS: ConfigKey[] = ['endpoint', 'siteUrl', 'timeoutMs', 'maxBytes', 'retries', 'copy', 'open', 'color'];
+const CONFIG_KEYS: ConfigKey[] = [
+  'endpoint',
+  'siteUrl',
+  'timeoutMs',
+  'maxBytes',
+  'retries',
+  'copy',
+  'open',
+  'color',
+];
 
 function colorize(text: string, code: string, enabled: boolean): string {
   if (!enabled) {
@@ -143,7 +159,7 @@ function renderTopHelp(enableColor: boolean): void {
   console.log(`Usage: ${usage}`);
   console.log('');
   console.log('Commands:');
-  console.log('  publish   publish markdown to bridge');
+  console.log('  publish   publish markdown to bri');
   console.log('  slug      generate slug from markdown');
   console.log('  doctor    runtime and endpoint checks');
   console.log('  config    manage local defaults');
@@ -253,7 +269,10 @@ function validateCustomSlug(raw: string): string {
   return normalized;
 }
 
-async function readMarkdownFile(filePath: string, maxBytes: number): Promise<{ content: string; absolutePath: string }> {
+async function readMarkdownFile(
+  filePath: string,
+  maxBytes: number
+): Promise<{ content: string; absolutePath: string }> {
   const absolutePath = path.resolve(filePath);
   const stat = await fs.stat(absolutePath);
 
@@ -553,7 +572,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'endpoint',
     options.endpoint,
-    process.env.BRI_ENDPOINT ?? process.env.BRIDGE_ENDPOINT,
+    process.env.BRI_ENDPOINT ?? process.env.BRI_ENDPOINT,
     config.endpoint,
     DEFAULT_API_ENDPOINT
   );
@@ -562,7 +581,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'siteUrl',
     options.siteUrl,
-    process.env.BRI_SITE_URL ?? process.env.BRIDGE_SITE_URL,
+    process.env.BRI_SITE_URL ?? process.env.BRI_SITE_URL,
     config.siteUrl,
     DEFAULT_SITE_URL
   );
@@ -571,7 +590,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'timeout',
     options.timeout,
-    process.env.BRI_TIMEOUT_MS ?? process.env.BRIDGE_TIMEOUT_MS,
+    process.env.BRI_TIMEOUT_MS ?? process.env.BRI_TIMEOUT_MS,
     config.timeoutMs,
     flagValues.timeoutMs,
     DEFAULT_TIMEOUT_MS
@@ -581,7 +600,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'maxBytes',
     options.maxBytes,
-    process.env.BRI_MAX_BYTES ?? process.env.BRIDGE_MAX_BYTES,
+    process.env.BRI_MAX_BYTES ?? process.env.BRI_MAX_BYTES,
     config.maxBytes,
     DEFAULT_MAX_BYTES,
     DEFAULT_MAX_BYTES
@@ -591,7 +610,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'retries',
     options.retries,
-    process.env.BRI_RETRIES ?? process.env.BRIDGE_RETRIES,
+    process.env.BRI_RETRIES ?? process.env.BRI_RETRIES,
     config.retries,
     flagValues.retries,
     DEFAULT_RETRIES
@@ -601,7 +620,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'copy',
     options.copy,
-    process.env.BRI_COPY ?? process.env.BRIDGE_COPY,
+    process.env.BRI_COPY ?? process.env.BRI_COPY,
     config.copy,
     flagValues.autoCopy,
     true
@@ -611,7 +630,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'open',
     options.open,
-    process.env.BRI_OPEN ?? process.env.BRIDGE_OPEN,
+    process.env.BRI_OPEN ?? process.env.BRI_OPEN,
     config.open,
     flagValues.autoOpen,
     true
@@ -621,7 +640,7 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
     command,
     'color',
     options.color,
-    process.env.BRI_COLOR ?? process.env.BRIDGE_COLOR,
+    process.env.BRI_COLOR ?? process.env.BRI_COLOR,
     config.color,
     flagValues.useColor,
     process.stdout.isTTY
@@ -649,7 +668,9 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
       throw new Error('missing input. use --path <file> or --stdin');
     }
 
-    const computedSlug = options.slug ? validateCustomSlug(options.slug) : generateSlug(sourcePath, content);
+    const computedSlug = options.slug
+      ? validateCustomSlug(options.slug)
+      : generateSlug(sourcePath, content);
 
     if (options.dryRun) {
       const dryRunUrl = new URL(`/${computedSlug}`, siteUrl).toString();
@@ -736,7 +757,8 @@ async function runPublish(options: PublishOptions, command: Command): Promise<vo
 async function runSlug(options: SlugOptions, command: Command): Promise<void> {
   const maxBytes = optionProvidedByCli(command, 'maxBytes')
     ? parsePositiveInt(options.maxBytes, 'max-bytes')
-    : parseOptionalPositiveInt(process.env.BRI_MAX_BYTES ?? process.env.BRIDGE_MAX_BYTES) ?? DEFAULT_MAX_BYTES;
+    : (parseOptionalPositiveInt(process.env.BRI_MAX_BYTES ?? process.env.BRI_MAX_BYTES) ??
+      DEFAULT_MAX_BYTES);
 
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
   const printer = createPrinter(color, Boolean(options.json));
@@ -775,7 +797,7 @@ async function runDoctor(options: DoctorOptions, command: Command): Promise<void
   const endpointRaw =
     (optionProvidedByCli(command, 'endpoint') ? options.endpoint : undefined) ??
     process.env.BRI_ENDPOINT ??
-    process.env.BRIDGE_ENDPOINT ??
+    process.env.BRI_ENDPOINT ??
     DEFAULT_API_ENDPOINT;
 
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
@@ -792,7 +814,9 @@ async function runDoctor(options: DoctorOptions, command: Command): Promise<void
     detail: getConfigPath(),
   });
 
-  const flagsPresent = Boolean(process.env.FLAGS ?? process.env.FLAGS_SDK_KEY ?? process.env.VERCEL_FLAGS_SDK_KEY);
+  const flagsPresent = Boolean(
+    process.env.FLAGS ?? process.env.FLAGS_SDK_KEY ?? process.env.VERCEL_FLAGS_SDK_KEY
+  );
   checks.push({
     name: 'flags-sdk-key',
     ok: flagsPresent,
@@ -839,7 +863,11 @@ async function runDoctor(options: DoctorOptions, command: Command): Promise<void
   }
 
   const clipboardOk =
-    process.platform === 'darwin' ? hasBinary('pbcopy') : process.platform === 'linux' ? (hasBinary('wl-copy') || hasBinary('xclip') || hasBinary('xsel')) : true;
+    process.platform === 'darwin'
+      ? hasBinary('pbcopy')
+      : process.platform === 'linux'
+        ? hasBinary('wl-copy') || hasBinary('xclip') || hasBinary('xsel')
+        : true;
 
   checks.push({
     name: 'clipboard-tool',
@@ -853,7 +881,9 @@ async function runDoctor(options: DoctorOptions, command: Command): Promise<void
   }
 
   for (const item of checks) {
-    const prefix = item.ok ? colorize('[ok]', ansi.green, color) : colorize('[warn]', ansi.yellow, color);
+    const prefix = item.ok
+      ? colorize('[ok]', ansi.green, color)
+      : colorize('[warn]', ansi.yellow, color);
     printer.line(`${prefix} ${item.name}: ${item.detail}`);
   }
 }
@@ -941,7 +971,17 @@ function normalizeArgv(argv: string[]): string[] {
     return [bin, script, '--help'];
   }
 
-  const known = new Set(['publish', 'slug', 'doctor', 'config', 'help', '--help', '-h', '--version', '-V']);
+  const known = new Set([
+    'publish',
+    'slug',
+    'doctor',
+    'config',
+    'help',
+    '--help',
+    '-h',
+    '--version',
+    '-V',
+  ]);
 
   if (known.has(first)) {
     return passthrough;
@@ -966,14 +1006,11 @@ async function main(): Promise<void> {
 
   const program = new Command();
 
-  program
-    .name('bri')
-    .description('bri CLI: publish markdown to bridge')
-    .version(VERSION);
+  program.name('bri').description('bri CLI: publish markdown to bri').version(VERSION);
 
   program
     .command('publish')
-    .description('publish markdown to bridge')
+    .description('publish markdown to bri')
     .option('-p, --path <path>', 'path to markdown file')
     .option('--stdin', 'read markdown from stdin')
     .option('--slug <slug>', 'custom slug override')

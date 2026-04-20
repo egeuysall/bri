@@ -51,14 +51,18 @@ function parseInteger(raw: string | undefined): number | undefined {
   return value;
 }
 
-async function evaluateBooleanFlag(client: FlagsClient | null, key: string, fallback: boolean): Promise<boolean> {
+async function evaluateBooleanFlag(
+  client: FlagsClient | null,
+  key: string,
+  fallback: boolean
+): Promise<boolean> {
   if (!client) {
     return fallback;
   }
 
   try {
     const result = await client.evaluate<boolean>(key, fallback, {
-      app: 'bridge',
+      app: 'bri',
       runtime: 'bri',
       platform: process.platform,
     });
@@ -73,14 +77,18 @@ async function evaluateBooleanFlag(client: FlagsClient | null, key: string, fall
   return fallback;
 }
 
-async function evaluateNumberFlag(client: FlagsClient | null, key: string, fallback: number): Promise<number> {
+async function evaluateNumberFlag(
+  client: FlagsClient | null,
+  key: string,
+  fallback: number
+): Promise<number> {
   if (!client) {
     return fallback;
   }
 
   try {
     const result = await client.evaluate<number>(key, fallback, {
-      app: 'bridge',
+      app: 'bri',
       runtime: 'bri',
       platform: process.platform,
     });
@@ -127,12 +135,24 @@ export async function closeFlagsClient(client: FlagsClient | null): Promise<void
   }
 }
 
-export async function resolveCliFlags(client: FlagsClient | null, defaults: CliFeatureFlags): Promise<CliFeatureFlags> {
-  const autoOpenFallback = parseBoolean(process.env.BRI_FLAG_AUTO_OPEN ?? process.env.BRIDGE_FLAG_AUTO_OPEN) ?? defaults.autoOpen;
-  const autoCopyFallback = parseBoolean(process.env.BRI_FLAG_AUTO_COPY ?? process.env.BRIDGE_FLAG_AUTO_COPY) ?? defaults.autoCopy;
-  const useColorFallback = parseBoolean(process.env.BRI_FLAG_USE_COLOR ?? process.env.BRIDGE_FLAG_USE_COLOR) ?? defaults.useColor;
-  const retriesFallback = parseInteger(process.env.BRI_FLAG_RETRIES ?? process.env.BRIDGE_FLAG_RETRIES) ?? defaults.retries;
-  const timeoutFallback = parseInteger(process.env.BRI_FLAG_TIMEOUT_MS ?? process.env.BRIDGE_FLAG_TIMEOUT_MS) ?? defaults.timeoutMs;
+export async function resolveCliFlags(
+  client: FlagsClient | null,
+  defaults: CliFeatureFlags
+): Promise<CliFeatureFlags> {
+  const autoOpenFallback =
+    parseBoolean(process.env.BRI_FLAG_AUTO_OPEN ?? process.env.BRI_FLAG_AUTO_OPEN) ??
+    defaults.autoOpen;
+  const autoCopyFallback =
+    parseBoolean(process.env.BRI_FLAG_AUTO_COPY ?? process.env.BRI_FLAG_AUTO_COPY) ??
+    defaults.autoCopy;
+  const useColorFallback =
+    parseBoolean(process.env.BRI_FLAG_USE_COLOR ?? process.env.BRI_FLAG_USE_COLOR) ??
+    defaults.useColor;
+  const retriesFallback =
+    parseInteger(process.env.BRI_FLAG_RETRIES ?? process.env.BRI_FLAG_RETRIES) ?? defaults.retries;
+  const timeoutFallback =
+    parseInteger(process.env.BRI_FLAG_TIMEOUT_MS ?? process.env.BRI_FLAG_TIMEOUT_MS) ??
+    defaults.timeoutMs;
 
   const resolved: CliFeatureFlags = {
     autoOpen: await evaluateBooleanFlag(client, FLAG_KEYS.autoOpen, autoOpenFallback),

@@ -15,7 +15,7 @@ export interface BriConfig {
 
 const CONFIG_DIR = path.join(os.homedir(), '.config', 'bri');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
-const LEGACY_CONFIG_PATH = path.join(os.homedir(), '.config', 'bridge', 'config.json');
+const LEGACY_CONFIG_PATH = path.join(os.homedir(), '.config', 'bri', 'config.json');
 
 export function getConfigPath(): string {
   return CONFIG_PATH;

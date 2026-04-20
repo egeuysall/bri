@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
+import { fetchMutation, fetchQuery } from 'convex/nextjs';
+import { api } from '../../convex/_generated/api';
 import { isMarkdownAlias, stripMarkdownAlias } from '@/lib/post-slugs';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 interface Post {
   id: string;
@@ -9,23 +10,19 @@ interface Post {
   createdAt: string;
 }
 
-type MarkdownPostRow = {
+type MarkdownPost = {
   id: string;
   slug: string;
   content: string;
-  created_at: string;
+  createdAt: string;
 };
 
-const POST_COLUMNS = 'id, slug, content, created_at';
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function mapPost(row: MarkdownPostRow): Post {
+function mapPost(post: MarkdownPost): Post {
   return {
-    id: row.id,
-    slug: row.slug,
-    content: row.content,
-    createdAt: row.created_at,
+    id: post.id,
+    slug: post.slug,
+    content: post.content,
+    createdAt: post.createdAt,
   };
 }
 
@@ -34,35 +31,13 @@ function generateSlug(content: string): string {
 }
 
 async function findPostBySlug(slug: string): Promise<Post | null> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('markdown_posts')
-    .select(POST_COLUMNS)
-    .eq('slug', slug)
-    .maybeSingle<MarkdownPostRow>();
-
-  if (error) {
+  try {
+    const data = await fetchQuery(api.posts.getBySlug, { slug });
+    return data ? mapPost(data) : null;
+  } catch (error) {
     console.error('Failed to fetch post by slug:', error);
     return null;
   }
-
-  return data ? mapPost(data) : null;
-}
-
-async function findPostById(id: string): Promise<Post | null> {
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('markdown_posts')
-    .select(POST_COLUMNS)
-    .eq('id', id)
-    .maybeSingle<MarkdownPostRow>();
-
-  if (error) {
-    console.error('Failed to fetch post by id:', error);
-    return null;
-  }
-
-  return data ? mapPost(data) : null;
 }
 
 export async function getPost(identifier: string): Promise<Post | null> {
@@ -90,16 +65,13 @@ export async function getPost(identifier: string): Promise<Post | null> {
     }
   }
 
-  if (!UUID_PATTERN.test(normalizedIdentifier)) {
-    return null;
-  }
-
-  return findPostById(normalizedIdentifier);
+  return null;
 }
 
 export async function createPost(input: {
   content: string;
   slug?: string;
+  token: string;
 }): Promise<{ created: boolean; slug: string }> {
   const content = input.content.trim();
 
@@ -122,38 +94,19 @@ export async function createPost(input: {
     };
   }
 
-  const supabase = createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from('markdown_posts')
-    .insert({
-      slug,
-      content,
-    })
-    .select('slug')
-    .single<{ slug: string }>();
-
-  if (error) {
-    if (error.code === '23505') {
-      const duplicatePost = await findPostBySlug(slug);
-
-      if (duplicatePost) {
-        return {
-          created: false,
-          slug: duplicatePost.slug,
-        };
+  try {
+    return await fetchMutation(
+      api.posts.create,
+      {
+        slug,
+        content,
+      },
+      {
+        token: input.token,
       }
-    }
-
+    );
+  } catch (error) {
     console.error('Failed to create post:', error);
-    throw new Error('Failed to create post');
+    throw error instanceof Error ? error : new Error('Failed to create post');
   }
-
-  if (!data?.slug) {
-    throw new Error('Invalid post ID received from server');
-  }
-
-  return {
-    created: true,
-    slug: data.slug,
-  };
 }

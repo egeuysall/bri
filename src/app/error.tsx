@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export default function ErrorPage({
   error,
@@ -16,13 +17,14 @@ export default function ErrorPage({
         <h1 className="mt-2 text-xl text-neutral-100">Something went wrong</h1>
         <p className="mt-2 text-sm text-neutral-400">{error.message || 'Unexpected application error.'}</p>
         <div className="mt-6 flex items-center justify-center gap-3">
-          <button
+          <Button
             type="button"
             onClick={reset}
-            className="text-sm text-neutral-200 underline-offset-4 hover:text-neutral-100 hover:underline"
+            variant="ghost"
+            className="h-8 px-2 text-sm text-neutral-200 hover:underline"
           >
             Try again
-          </button>
+          </Button>
           <Link
             href="/"
             className="text-sm text-neutral-400 underline-offset-4 hover:text-neutral-200 hover:underline"

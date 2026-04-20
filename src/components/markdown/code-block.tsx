@@ -118,7 +118,7 @@ export function InlineCode({ children, className }: InlineCodeProps) {
   return (
     <code
       className={cn(
-        'rounded border border-neutral-700 bg-neutral-900 px-1.5 py-0.5 font-mono text-[0.9em] font-normal text-neutral-200',
+        'rounded border border-neutral-800 bg-[var(--bg)] px-1.5 py-0.5 font-mono text-[0.9em] font-normal text-neutral-200',
         className
       )}
     >

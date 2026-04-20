@@ -1,8 +1,7 @@
-import rehypePrettyCode from 'rehype-pretty-code';
 import { MarkdownAsync } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { cn } from '@/lib/utils';
 import {
+  CodeBlock,
   InlineCode,
   MarkdownImage,
   MarkdownTable,
@@ -13,7 +12,6 @@ import {
   MarkdownTableDataCell,
   MarkdownCheckbox,
 } from './index';
-import { prettyCodeOptions } from './pretty-code';
 
 interface MarkdownContentProps {
   postId: string;
@@ -24,31 +22,20 @@ export async function MarkdownContent({ postId, content }: MarkdownContentProps)
   return (
     <MarkdownAsync
       remarkPlugins={[remarkGfm]}
-      rehypePlugins={[[rehypePrettyCode, prettyCodeOptions]]}
       components={{
-        pre: ({ className, children, ...props }) => (
-          <pre
-            {...props}
-            className={cn(
-              'overflow-x-auto border border-neutral-800 px-2.5 py-2 text-xs leading-5',
-              className
-            )}
-          >
-            {children}
-          </pre>
-        ),
+        pre: ({ children }) => <>{children}</>,
         code: ({ className, children, ...props }) => {
-          const isInline = !className?.includes('language-');
+          const normalizedContent = String(children);
+          const isBlock = className?.includes('language-') || normalizedContent.includes('\n');
+          const isInline = !isBlock;
 
           if (isInline) {
             return <InlineCode {...props}>{children}</InlineCode>;
           }
 
-          return (
-            <code className={className} {...props}>
-              {children}
-            </code>
-          );
+          const language = className?.replace(/^language-/, '') || 'text';
+
+          return <CodeBlock language={language}>{normalizedContent.replace(/\n$/, '')}</CodeBlock>;
         },
         // Tables using shadcn components
         table: ({ children }) => <MarkdownTable>{children}</MarkdownTable>,

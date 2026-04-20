@@ -13,7 +13,11 @@ const variantClassMap = {
 
 const sizeClassMap = {
   default: 'h-9 px-3',
+  sm: 'h-8 px-2.5 text-xs',
+  lg: 'h-10 px-4',
   icon: 'h-8 w-8',
+  'icon-sm': 'h-7 w-7',
+  'icon-lg': 'h-9 w-9',
 } as const;
 
 type ButtonVariant = keyof typeof variantClassMap;

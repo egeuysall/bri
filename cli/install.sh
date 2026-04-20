@@ -14,7 +14,7 @@ mkdir -p "${BIN_DIR}"
 cat > "${TARGET}" <<'WRAPPER'
 #!/usr/bin/env bash
 set -euo pipefail
-exec env NODE_ENV=production bunx --bun github:egeuysall/bridge#master "$@"
+exec env NODE_ENV=production bunx --bun github:egeuysall/bri#master "$@"
 WRAPPER
 
 chmod +x "${TARGET}"

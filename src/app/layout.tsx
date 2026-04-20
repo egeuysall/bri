@@ -3,7 +3,7 @@ import '@/styles/globals.css';
 
 // External Libraries
 import type { Metadata } from 'next';
-import Link from 'next/link';
+import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -11,8 +11,10 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { geistMono } from '@/lib/fonts';
 
 // Internal Components
-import { HeaderNav } from '@/components/blocks/header-nav';
+import { SiteShell } from '@/components/layout/site-shell';
+import { ConvexClerkProvider } from '@/components/providers/convex-clerk-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // SEO details
 import { getProduct } from '@/lib/site-details';
@@ -23,7 +25,7 @@ import { getProduct } from '@/lib/site-details';
  */
 
 // TODO: Fill these
-export const name = 'Bridge: Share your Markdown files quickly and easily.';
+export const name = 'bri: Share your Markdown files quickly and easily.';
 
 /**
  * The main image URL for the site or application.
@@ -41,7 +43,7 @@ export const description = 'Share your Markdown files quickly and easily.';
  * The template string for dynamic page titles or metadata.
  * @type {string}
  */
-const template = 'Bridge';
+const template = 'bri';
 
 /**
  * The base URL of the site.
@@ -49,9 +51,7 @@ const template = 'Bridge';
  */
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV === 'development'
-    ? 'http://localhost:3000'
-    : 'https://bridge.egeuysal.com');
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://bri.egeuysal.com');
 
 /**
  * The name of the site's author.
@@ -63,13 +63,13 @@ const authorName = 'Ege Uysal';
  * An array of keywords relevant to the site for SEO purposes.
  * @type {string[]}
  */
-const keywords: string[] = ['markdown', 'share', 'link', 'bridge', 'egeuysal'];
+const keywords: string[] = ['markdown', 'share', 'link', 'bri', 'egeuysal'];
 
 /**
  * A description of the main image for accessibility and SEO.
  * @type {string}
  */
-const imageDescription = 'Bridge Logo';
+const imageDescription = 'bri Logo';
 
 /**
  * The Twitter handle of the author (e.g., '@username').
@@ -228,11 +228,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   };
 
   return (
-    <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${geistMono.variable} h-full bg-bg`}
-    >
+    <html lang="en" suppressHydrationWarning className={`${geistMono.variable} h-full bg-bg`}>
       <head>
         <script
           type="application/ld+json"
@@ -240,40 +236,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="min-h-full bg-bg font-mono text-fg antialiased">
-        <div className="mx-auto flex min-h-screen w-full max-w-155 flex-col px-6 py-8 sm:px-8 sm:py-10">
-          <header className="pb-8">
-            <div className="flex items-end justify-between gap-6">
-              <Link
-                href="/"
-                className="text-[15px] text-neutral-100 hover:text-neutral-300 focus-visible:text-neutral-300"
-              >
-                Bridge
-              </Link>
-              <HeaderNav />
-            </div>
-          </header>
-
-          <main className="flex-1 pb-8">{children}</main>
-
-          <footer className="pt-8 text-xs text-neutral-400">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <a
-                  href="https://github.com/egeuysall/bridge"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-neutral-400 hover:text-neutral-100 focus-visible:text-neutral-100"
-                >
-                  GitHub
-                </a>
-              </div>
-              <p>&copy; {new Date().getFullYear()}</p>
-            </div>
-          </footer>
-        </div>
-        <Toaster />
-        <Analytics />
-        <SpeedInsights />
+        <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
+          <ConvexClerkProvider>
+            <TooltipProvider>
+              <SiteShell>{children}</SiteShell>
+            </TooltipProvider>
+            <Toaster />
+            <Analytics />
+            <SpeedInsights />
+          </ConvexClerkProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

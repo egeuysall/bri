@@ -1,8 +1,29 @@
 import type { CSSProperties } from 'react';
+import { redirect } from 'next/navigation';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { PostFinder } from '@/components/blocks/post-finder';
 import { CliSection } from '@/components/blocks/cli-copy';
+import { resolveUserHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
 
-const Landing = () => {
+const Landing = async () => {
+  const { userId, sessionClaims } = await auth();
+
+  if (userId) {
+    const handleFromClaims = resolveUserHandle(
+      sessionClaims as Record<string, unknown> | null | undefined
+    );
+    let handle = handleFromClaims;
+
+    if (!handle) {
+      const user = await currentUser();
+      handle = resolveUserHandleFromUser(user);
+    }
+
+    if (handle) {
+      redirect(`/${handle}`);
+    }
+  }
+
   return (
     <>
       <section className="animate-enter" style={{ '--delay': '40ms' } as CSSProperties}>

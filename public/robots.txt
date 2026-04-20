@@ -45,7 +45,7 @@ User-agent: Slurp
 Crawl-delay: 5
 
 # Sitemap declarations
-Sitemap: https://bridge.egeuysal.com/sitemap.xml
+Sitemap: https://bri.egeuysal.com/sitemap.xml
 
 # Host directive (unofficial but used by Yandex)
-Host: bridge.egeuysal.com
+Host: bri.egeuysal.com

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export const PostFinder: React.FC = () => {
   const [post, setPost] = useState<string>('');
@@ -35,12 +36,12 @@ export const PostFinder: React.FC = () => {
           autoComplete="off"
           className="h-9 w-full rounded-md border border-neutral-800 bg-transparent px-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
         />
-        <button
+        <Button
           type="submit"
-          className="h-9 shrink-0 rounded-md border border-neutral-100 bg-neutral-100 px-3 text-sm text-neutral-950 hover:border-neutral-200 hover:bg-neutral-200 focus:outline-none focus-visible:border-neutral-200"
+          className="h-9 shrink-0 border-neutral-100 bg-neutral-100 text-neutral-950 hover:border-neutral-200 hover:bg-neutral-200"
         >
           Open
-        </button>
+        </Button>
       </div>
     </form>
   );

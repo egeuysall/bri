@@ -1,3 +1,4 @@
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createPost } from '@/lib/posts';
 
@@ -7,6 +8,16 @@ type CreatePostPayload = {
 };
 
 export async function POST(request: Request) {
+  const { userId, getToken } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
+  const token = (await getToken({ template: 'convex' })) ?? (await getToken());
+  if (!token) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
   let payload: CreatePostPayload;
 
   try {
@@ -23,7 +34,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await createPost({ content, slug });
+    const result = await createPost({ content, slug, token });
 
     return NextResponse.json(
       { data: { slug: result.slug } },
@@ -32,7 +43,11 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to create post';
     const status =
-      message === 'Content cannot be empty' || message === 'Slug cannot end with .md' ? 400 : 500;
+      message === 'Content cannot be empty' || message === 'Slug cannot end with .md'
+        ? 400
+        : message === 'Not authenticated'
+          ? 401
+          : 500;
 
     return NextResponse.json(
       { error: status === 400 ? message : 'Failed to create post' },
