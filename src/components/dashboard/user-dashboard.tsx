@@ -1084,7 +1084,7 @@ export function UserDashboard() {
                         }
                       }}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <p className="text-sm text-neutral-100">{note.title}</p>
                           <p className="mt-1 text-[11px] text-neutral-500">
@@ -1093,11 +1093,11 @@ export function UserDashboard() {
                             &middot; views {viewsBySlug[note.slug] ?? 0}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               startEditNote(note);
@@ -1108,7 +1108,7 @@ export function UserDashboard() {
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               openInviteDialog('note', note.id);
@@ -1119,7 +1119,7 @@ export function UserDashboard() {
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               void togglePin('note', note.id).catch((err) =>
@@ -1134,7 +1134,7 @@ export function UserDashboard() {
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               void patchNote(note.id, 'softDelete').catch((err) =>
@@ -1428,7 +1428,7 @@ export function UserDashboard() {
                         }
                       }}
                     >
-                      <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
                           <p className="truncate text-sm text-neutral-100">
                             /{link.username}/{link.key} {'>'} {link.targetUrl}
@@ -1438,11 +1438,11 @@ export function UserDashboard() {
                             {link.lastClickedAt ? ` · last ${formatDate(link.lastClickedAt)}` : ''}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               startEditQuickLink(link);
@@ -1453,7 +1453,7 @@ export function UserDashboard() {
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               openInviteDialog('link', link.id);
@@ -1464,7 +1464,7 @@ export function UserDashboard() {
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               void togglePin('link', link.id).catch((err) =>
@@ -1479,7 +1479,7 @@ export function UserDashboard() {
                           <Button
                             type="button"
                             variant="default"
-                            className="h-8 text-xs"
+                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
                               void removeQuickLinkHandler(link.id).catch((err) =>
@@ -1761,7 +1761,7 @@ export function UserDashboard() {
                     key={note.id}
                     className="group rounded-sm border border-neutral-900 px-3 py-3"
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <p className="text-sm text-neutral-200">
                           {note.title}
@@ -1771,11 +1771,11 @@ export function UserDashboard() {
                           {formatDate(note.purgeAt)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <Button
                           type="button"
                           variant="ghost"
-                          className="h-8 border border-neutral-800 text-xs"
+                          className="h-7 border border-neutral-800 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                           onClick={() => {
                             void patchNote(note.id, 'restore').catch((err) =>
                               toast.error(err instanceof Error ? err.message : 'Failed to restore note')
@@ -1787,7 +1787,7 @@ export function UserDashboard() {
                         <Button
                           type="button"
                           variant="default"
-                          className="h-8 text-xs"
+                          className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
                           onClick={() => {
                             void patchNote(note.id, 'permanentDelete').catch((err) =>
                               toast.error(
