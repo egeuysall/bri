@@ -200,50 +200,48 @@ export function CliMotionPreview() {
           ))}
         </nav>
 
-        <div className="rounded-sm border border-neutral-900 bg-neutral-950 p-3">
-          <div className="text-[11px] text-neutral-300">path</div>
+        <p className="mt-2 rounded-sm border border-neutral-900 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-300">
+          {activePanel.path}
+        </p>
 
-          <p className="mt-2 rounded-sm border border-neutral-900 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-300">
-            {activePanel.path}
-          </p>
+        <p className="mt-2 text-xs text-neutral-500">{activePanel.caption}</p>
 
-          <p className="mt-2 text-xs text-neutral-500">{activePanel.caption}</p>
+        <div className="mt-2 grid gap-2">
+          {visibleRows.map((row, index) => {
+            const isActive = activeRowIndex === index;
 
-          <div className="mt-2 grid gap-2">
-            {visibleRows.map((row, index) => {
-              const isActive = activeRowIndex === index;
-
-              return (
-                <button
-                  key={row.id}
-                  type="button"
-                  onClick={() => setActiveRowIndex(index)}
-                  className={cn(
-                    'flex w-full items-start justify-between gap-3 rounded-sm border px-3 py-1.5 text-left transition-all',
-                    isActive
-                      ? 'border-neutral-600 bg-neutral-900 text-neutral-100'
-                      : 'border-neutral-900 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
-                  )}
+            return (
+              <button
+                key={row.id}
+                type="button"
+                onClick={() => setActiveRowIndex(index)}
+                className={cn(
+                  'flex w-full items-start justify-between gap-3 rounded-sm border px-3 py-1.5 text-left transition-all',
+                  isActive
+                    ? 'border-neutral-600 bg-neutral-900 text-neutral-100'
+                    : 'border-neutral-900 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+                )}
+              >
+                <span>
+                  <span className="block text-sm">{row.title}</span>
+                  <span className="mt-0.5 block text-[11px] text-neutral-500">{row.meta}</span>
+                </span>
+                <span
+                  className={cn('text-[11px]', isActive ? 'text-neutral-400' : 'text-neutral-500')}
                 >
-                  <span>
-                    <span className="block text-sm">{row.title}</span>
-                    <span className="mt-0.5 block text-[11px] text-neutral-500">{row.meta}</span>
-                  </span>
-                  <span className={cn('text-[11px]', isActive ? 'text-neutral-400' : 'text-neutral-500')}>
-                    {row.detail}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+                  {row.detail}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="mt-3 rounded-sm border border-neutral-900 bg-black/40 p-2.5 font-mono text-[11px] leading-5 text-neutral-300">
-            <p className="text-neutral-500">$ bri cli monitor --live</p>
-            <div className="mt-1.5 space-y-0.5">
-              {activePanel.terminal.slice(0, 2).map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </div>
+        <div className="mt-3 rounded-sm border border-neutral-900 bg-black/40 p-2.5 font-mono text-[11px] leading-5 text-neutral-300">
+          <p className="text-neutral-500">$ bri cli monitor --live</p>
+          <div className="mt-1.5 space-y-0.5">
+            {activePanel.terminal.slice(0, 2).map((line) => (
+              <p key={line}>{line}</p>
+            ))}
           </div>
         </div>
       </div>
