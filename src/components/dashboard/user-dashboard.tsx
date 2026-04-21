@@ -31,7 +31,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 
 type NoteRecord = {
   id: string;
@@ -159,6 +159,21 @@ function expirationValueFromExpiresAt<T extends string>(
     }
   }
   return selected?.value ?? fallback;
+}
+
+function MobileSidebarTrigger() {
+  const { toggleSidebar } = useSidebar();
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={toggleSidebar}
+      className="h-8 w-8 justify-start px-1 text-xs tracking-wide"
+    >
+      ///
+    </Button>
+  );
 }
 
 export function UserDashboard() {
@@ -728,6 +743,9 @@ export function UserDashboard() {
     <SidebarProvider defaultOpen>
       <AppSidebar panel={panel} pinnedItems={pinnedSidebarItems} onPanelChange={setPanel} />
       <SidebarInset className="min-h-screen bg-bg">
+        <header className="flex h-14 items-center gap-2 border-b border-neutral-900 px-4 md:hidden">
+          <MobileSidebarTrigger />
+        </header>
         <section className="w-full px-4 py-5 md:px-8">
           <div className="mx-auto w-full max-w-none space-y-5">
             {isInitializing ? (
