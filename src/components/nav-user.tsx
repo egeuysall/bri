@@ -10,13 +10,23 @@ import {
 
 export function NavUser() {
   const { state } = useSidebar()
-  const { user } = useUser()
+  const { isLoaded, user } = useUser()
   const isCollapsed = state === "collapsed"
   const username =
     user?.username ||
     user?.primaryEmailAddress?.emailAddress?.split("@")[0] ||
-    "user"
+    ""
   const email = user?.primaryEmailAddress?.emailAddress || ""
+
+  if (!isLoaded) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <div className={isCollapsed ? "h-6 w-6 rounded-full border border-neutral-800" : "h-8 w-full rounded-sm border border-neutral-800"} />
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
 
   return (
     <SidebarMenu>
@@ -31,7 +41,7 @@ export function NavUser() {
           />
           {!isCollapsed ? (
             <div className="grid min-w-0 text-left text-sm leading-tight">
-              <span className="truncate text-neutral-200">@{username}</span>
+              <span className="truncate text-neutral-200">{username}</span>
               <span className="truncate text-xs text-neutral-500">{email}</span>
             </div>
           ) : null}

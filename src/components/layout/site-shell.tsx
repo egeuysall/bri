@@ -5,33 +5,27 @@ import Link from 'next/link';
 import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { normalizePathHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
+import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? '/';
   const router = useRouter();
-  const { isSignedIn, user } = useUser();
-  const isAuthRoute = pathname.startsWith('/sign-in') || pathname.startsWith('/sign-up');
-  const segments = pathname.split('/').filter(Boolean);
+  const { isLoaded, isSignedIn, user } = useUser();
+  const isLandingRoute = pathname === '/';
   const ownHandle = resolveUserHandleFromUser(user) ?? '';
-  const shouldRedirectHomeToDashboard = isSignedIn && pathname === '/' && ownHandle.length > 0;
-  const isOwnDashboardPath =
-    isSignedIn &&
-    segments.length === 1 &&
-    ownHandle.length > 0 &&
-    normalizePathHandle(segments[0] || '') === ownHandle;
+  const shouldRedirectHomeToDashboard = isSignedIn && isLandingRoute && ownHandle.length > 0;
 
   useEffect(() => {
-    if (!shouldRedirectHomeToDashboard) return;
+    if (!isLoaded || !shouldRedirectHomeToDashboard) return;
     router.replace(`/${ownHandle}`);
-  }, [ownHandle, router, shouldRedirectHomeToDashboard]);
+  }, [isLoaded, ownHandle, router, shouldRedirectHomeToDashboard]);
+
+  if (!isLandingRoute) {
+    return <div className="min-h-screen bg-bg">{children}</div>;
+  }
 
   if (shouldRedirectHomeToDashboard) {
     return <div className="min-h-screen bg-bg" />;
-  }
-
-  if (isAuthRoute || isOwnDashboardPath) {
-    return <div className="min-h-screen bg-bg">{children}</div>;
   }
 
   return (
@@ -45,18 +39,22 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             bri
           </Link>
 
-          <div className="flex items-center">
-            <SignInButton mode="redirect">
-              <Button type="button" variant="ghost" className="h-8 text-xs">
-                Sign in
-              </Button>
-            </SignInButton>
-            <SignUpButton mode="redirect">
-              <Button type="button" variant="ghost" className="h-8 border text-xs">
-                Sign up
-              </Button>
-            </SignUpButton>
-          </div>
+          {isLoaded && !isSignedIn ? (
+            <div className="flex items-center">
+              <SignInButton mode="redirect">
+                <Button type="button" variant="ghost" className="h-8 text-xs">
+                  Sign in
+                </Button>
+              </SignInButton>
+              <SignUpButton mode="redirect">
+                <Button type="button" variant="ghost" className="h-8 border text-xs">
+                  Sign up
+                </Button>
+              </SignUpButton>
+            </div>
+          ) : (
+            <div className="h-8 w-[132px]" aria-hidden />
+          )}
         </div>
       </header>
 
