@@ -51,6 +51,24 @@ export type PinnedRecord = {
   createdAt: number;
 };
 
+export type UserProfilePublicRecord = {
+  username: string;
+  displayName: string | null;
+  email: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type NotificationRecord = {
+  id: string;
+  kind: 'invitation' | 'achievement' | 'notice';
+  title: string;
+  message: string;
+  noteId: string | null;
+  linkId: string | null;
+  createdAt: number;
+};
+
 export async function getNoteByUsernameAndSlug(input: {
   username: string;
   slug: string;
@@ -74,6 +92,14 @@ export async function listMyNotes(input: {
   token: string;
 }): Promise<NoteRecord[]> {
   return await fetchQuery(api.notes.listMine, { state: input.state }, { token: input.token });
+}
+
+export async function listPublicNotesByUsername(input: {
+  username: string;
+}): Promise<NoteRecord[]> {
+  return await fetchQuery(api.notes.listPublicByUsername, {
+    username: input.username,
+  });
 }
 
 export async function listNotesWithApiKey(input: {
@@ -267,6 +293,12 @@ export async function listQuickLinks(input: { token: string }): Promise<QuickLin
   return await fetchQuery(api.quickLinks.listMine, {}, { token: input.token });
 }
 
+export async function listQuickLinksByUsername(input: {
+  username: string;
+}): Promise<QuickLinkRecord[]> {
+  return await fetchQuery(api.quickLinks.listByUsername, { username: input.username });
+}
+
 export async function listQuickLinksWithApiKey(input: {
   apiKey: string;
 }): Promise<QuickLinkRecord[]> {
@@ -369,6 +401,139 @@ export async function getQuickLinkByUsernameAndKey(input: {
 
 export async function trackQuickLinkClick(input: { linkId: string }) {
   return await fetchMutation(api.quickLinks.trackClick, { linkId: input.linkId as never });
+}
+
+export async function inviteUserToNote(input: {
+  token: string;
+  noteId: string;
+  inviteeUsername: string;
+}) {
+  return await fetchMutation(
+    api.notes.inviteUser,
+    {
+      noteId: input.noteId as never,
+      inviteeUsername: input.inviteeUsername,
+    },
+    { token: input.token }
+  );
+}
+
+export async function inviteUserToNoteWithApiKey(input: {
+  apiKey: string;
+  noteId: string;
+  inviteeUsername: string;
+}) {
+  return await fetchMutation(api.notes.inviteUserWithApiKey, {
+    apiKey: input.apiKey,
+    noteId: input.noteId as never,
+    inviteeUsername: input.inviteeUsername,
+  });
+}
+
+export async function inviteUserToQuickLink(input: {
+  token: string;
+  linkId: string;
+  inviteeUsername: string;
+}) {
+  return await fetchMutation(
+    api.quickLinks.inviteUser,
+    {
+      linkId: input.linkId as never,
+      inviteeUsername: input.inviteeUsername,
+    },
+    { token: input.token }
+  );
+}
+
+export async function inviteUserToQuickLinkWithApiKey(input: {
+  apiKey: string;
+  linkId: string;
+  inviteeUsername: string;
+}) {
+  return await fetchMutation(api.quickLinks.inviteUserWithApiKey, {
+    apiKey: input.apiKey,
+    linkId: input.linkId as never,
+    inviteeUsername: input.inviteeUsername,
+  });
+}
+
+export async function listMyNotifications(input: { token: string }): Promise<{
+  username: string | null;
+  items: NotificationRecord[];
+}> {
+  return await fetchQuery(api.notifications.listMine, {}, { token: input.token });
+}
+
+export async function listNotificationsWithApiKey(input: { apiKey: string }): Promise<{
+  username: string | null;
+  items: NotificationRecord[];
+}> {
+  return await fetchQuery(api.notifications.listByApiKey, { apiKey: input.apiKey });
+}
+
+export async function dismissMyNotification(input: { token: string; notificationId: string }) {
+  return await fetchMutation(
+    api.notifications.dismiss,
+    { notificationId: input.notificationId as never },
+    { token: input.token }
+  );
+}
+
+export async function dismissNotificationWithApiKey(input: {
+  apiKey: string;
+  notificationId: string;
+}) {
+  return await fetchMutation(api.notifications.dismissByApiKey, {
+    apiKey: input.apiKey,
+    notificationId: input.notificationId as never,
+  });
+}
+
+export async function resolveMyNotificationTarget(input: {
+  token: string;
+  notificationId: string;
+}): Promise<{ href: string | null }> {
+  return await fetchQuery(
+    api.notifications.resolveTarget,
+    { notificationId: input.notificationId as never },
+    { token: input.token }
+  );
+}
+
+export async function resolveNotificationTargetWithApiKey(input: {
+  apiKey: string;
+  notificationId: string;
+}): Promise<{ href: string | null }> {
+  return await fetchQuery(api.notifications.resolveTargetByApiKey, {
+    apiKey: input.apiKey,
+    notificationId: input.notificationId as never,
+  });
+}
+
+export async function syncMyUserProfile(input: {
+  token: string;
+  username: string;
+  displayName: string | null;
+  email: string | null;
+}) {
+  return await fetchMutation(
+    api.userProfiles.syncMine,
+    {
+      username: input.username,
+      displayName: input.displayName,
+      email: input.email,
+    },
+    { token: input.token }
+  );
+}
+
+export async function getPublicUserProfileByUsername(input: {
+  username: string;
+}): Promise<UserProfilePublicRecord | null> {
+  const data = await fetchQuery(api.userProfiles.getPublicByUsername, {
+    username: input.username,
+  });
+  return data ?? null;
 }
 
 export async function listPins(input: { token: string }): Promise<PinnedRecord[]> {

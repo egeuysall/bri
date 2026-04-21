@@ -31,7 +31,7 @@ export const name = 'bri: Share your Markdown files quickly and easily.';
  * The main image URL for the site or application.
  * @type {string}
  */
-export const image = 'logo.png';
+export const image = '/logo.png';
 
 /**
  * A brief description of the site or application.
@@ -87,19 +87,19 @@ const authorLinkedin = 'egeuysall';
  * The path or URL to the ICO favicon.
  * @type {string}
  */
-const icoIcon = 'logo.svg';
+const icoIcon = '/logo.svg';
 
 /**
  * The path or URL to the PNG favicon.
  * @type {string}
  */
-const pngIcon = 'logo.png';
+const pngIcon = '/logo.png';
 
 /**
  * The path or URL to the Apple touch icon.
  * @type {string}
  */
-const appleTouchIcon = 'logo.png';
+const appleTouchIcon = '/logo.png';
 
 export async function generateMetadata(): Promise<Metadata> {
   // Fetch data needed for metadata
@@ -145,6 +145,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: appleTouchIcon,
       shortcut: icoIcon,
     },
+    manifest: '/manifest.webmanifest',
     robots: {
       index: true,
       follow: true,
@@ -179,7 +180,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: `${siteUrl}/${product.image}`,
+    image: new URL(product.image, siteUrl).toString(),
     description: product.description,
     url: siteUrl,
     dateModified: currentDate,

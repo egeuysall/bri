@@ -1,7 +1,6 @@
 "use client"
 
-import { UserButton } from "@clerk/nextjs"
-import { useUser } from "@clerk/nextjs"
+import { UserButton, useUser } from "@clerk/nextjs"
 import {
   SidebarMenu,
   SidebarMenuItem,

@@ -7,25 +7,24 @@ import type { ToasterProps } from 'sonner';
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
-      theme="dark"
+      theme="system"
       className="toaster group"
       toastOptions={{
         classNames: {
-          toast:
-            '!rounded-md !bg-black !border !border-neutral-800 !text-neutral-100',
-          title: '!text-neutral-100',
-          description: '!text-neutral-300',
+          toast: '!rounded-md !bg-card !border !border-border !text-foreground',
+          title: '!text-foreground',
+          description: '!text-muted-foreground',
           actionButton:
-            '!rounded-md !border !border-neutral-700 !bg-black !text-neutral-100',
+            '!rounded-md !border !border-border !bg-background !text-foreground',
           cancelButton:
-            '!rounded-md !border !border-neutral-700 !bg-black !text-neutral-300',
+            '!rounded-md !border !border-border !bg-background !text-muted-foreground',
         },
       }}
       style={
         {
-          '--normal-bg': '#000000',
-          '--normal-text': 'var(--color-neutral-100)',
-          '--normal-border': 'var(--color-neutral-800)',
+          '--normal-bg': 'var(--card)',
+          '--normal-text': 'var(--foreground)',
+          '--normal-border': 'var(--border)',
         } as CSSProperties
       }
       {...props}

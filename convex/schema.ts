@@ -6,6 +6,16 @@ export default defineSchema({
     slug: v.string(),
     content: v.string(),
   }).index("by_slug", ["slug"]),
+  userProfiles: defineTable({
+    ownerTokenIdentifier: v.string(),
+    username: v.string(),
+    displayName: v.union(v.string(), v.null()),
+    email: v.union(v.string(), v.null()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_ownerTokenIdentifier", ["ownerTokenIdentifier"])
+    .index("by_username", ["username"]),
   notes: defineTable({
     ownerTokenIdentifier: v.string(),
     username: v.string(),
@@ -55,6 +65,38 @@ export default defineSchema({
     .index("by_ownerTokenIdentifier_and_createdAt", ["ownerTokenIdentifier", "createdAt"])
     .index("by_ownerTokenIdentifier_and_key", ["ownerTokenIdentifier", "key"])
     .index("by_username_and_key", ["username", "key"]),
+  noteInvites: defineTable({
+    ownerTokenIdentifier: v.string(),
+    noteId: v.id("notes"),
+    inviteeUsername: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_noteId_and_inviteeUsername", ["noteId", "inviteeUsername"])
+    .index("by_inviteeUsername_and_createdAt", ["inviteeUsername", "createdAt"]),
+  quickLinkInvites: defineTable({
+    ownerTokenIdentifier: v.string(),
+    linkId: v.id("quickLinks"),
+    inviteeUsername: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_linkId_and_inviteeUsername", ["linkId", "inviteeUsername"])
+    .index("by_inviteeUsername_and_createdAt", ["inviteeUsername", "createdAt"]),
+  userNotifications: defineTable({
+    recipientUsername: v.string(),
+    kind: v.union(v.literal("invitation"), v.literal("achievement"), v.literal("notice")),
+    title: v.string(),
+    message: v.string(),
+    noteId: v.union(v.id("notes"), v.null()),
+    linkId: v.union(v.id("quickLinks"), v.null()),
+    createdAt: v.number(),
+    dismissedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_recipientUsername_and_dismissedAt_and_createdAt", [
+      "recipientUsername",
+      "dismissedAt",
+      "createdAt",
+    ])
+    .index("by_recipientUsername_and_createdAt", ["recipientUsername", "createdAt"]),
   pins: defineTable({
     ownerTokenIdentifier: v.string(),
     kind: v.union(v.literal("note"), v.literal("link")),

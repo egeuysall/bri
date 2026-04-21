@@ -21,6 +21,42 @@ function sanitizeTitle(value: string): string {
     .slice(0, 120);
 }
 
+function readIdentityString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function usernameFromEmail(email: string | null): string | null {
+  if (!email) return null;
+  const [localPart] = email.split("@");
+  if (!localPart) return null;
+  const cleaned = sanitizeUsername(localPart);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function resolveUsernameFromIdentity(identity: Record<string, unknown>): string | null {
+  const raw =
+    readIdentityString(identity.username) ??
+    readIdentityString(identity.preferred_username) ??
+    readIdentityString(identity.nickname) ??
+    usernameFromEmail(readIdentityString(identity.email));
+  if (!raw) return null;
+  const cleaned = sanitizeUsername(raw);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function cleanDisplayName(value: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.trim().replace(/\s+/g, " ").slice(0, 120);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function cleanEmail(value: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.trim().toLowerCase().slice(0, 200);
+  if (!cleaned.includes("@")) return null;
+  return cleaned;
+}
+
 function slugify(value: string): string {
   const normalized = value
     .trim()
@@ -118,6 +154,57 @@ async function resolveUniqueSlug(
   }
 }
 
+async function upsertUserProfile(
+  ctx: MutationCtx,
+  identity: { tokenIdentifier: string } & Record<string, unknown>,
+  username: string
+) {
+  const displayName = cleanDisplayName(readIdentityString(identity.name));
+  const email = cleanEmail(readIdentityString(identity.email));
+  const now = Date.now();
+
+  const existing = await ctx.db
+    .query("userProfiles")
+    .withIndex("by_ownerTokenIdentifier", (q) =>
+      q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
+    )
+    .unique();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      username,
+      displayName,
+      email,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  await ctx.db.insert("userProfiles", {
+    ownerTokenIdentifier: identity.tokenIdentifier,
+    username,
+    displayName,
+    email,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+async function resolveViewerUsername(
+  ctx: ConvexCtx,
+  identity: { tokenIdentifier: string } & Record<string, unknown>
+) {
+  const profile = await ctx.db
+    .query("userProfiles")
+    .withIndex("by_ownerTokenIdentifier", (q) =>
+      q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
+    )
+    .unique();
+
+  if (profile?.username) return profile.username;
+  return resolveUsernameFromIdentity(identity);
+}
+
 function mapNote(note: Doc<"notes">) {
   return {
     id: note._id,
@@ -186,6 +273,27 @@ export const listMine = query({
   },
 });
 
+export const listPublicByUsername = query({
+  args: {
+    username: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const username = sanitizeUsername(args.username);
+    if (!username) return [];
+
+    const rows = await ctx.db
+      .query("notes")
+      .withIndex("by_username_and_slug", (q) => q.eq("username", username))
+      .order("desc")
+      .take(500);
+
+    return rows
+      .filter((row) => row.state === "active" && row.visibility === "public")
+      .slice(0, 100)
+      .map(mapNote);
+  },
+});
+
 export const listByApiKey = query({
   args: {
     apiKey: v.string(),
@@ -246,8 +354,26 @@ export const getByUsernameAndSlug = query({
     if (note.visibility === "public") return mapNote(note);
 
     const identity = await ctx.auth.getUserIdentity();
-    if (identity && identity.tokenIdentifier === note.ownerTokenIdentifier) {
-      return mapNote(note);
+    if (identity) {
+      if (identity.tokenIdentifier === note.ownerTokenIdentifier) {
+        return mapNote(note);
+      }
+
+      const viewerUsername = await resolveViewerUsername(
+        ctx,
+        identity as { tokenIdentifier: string } & Record<string, unknown>
+      );
+      if (viewerUsername) {
+        const invite = await ctx.db
+          .query("noteInvites")
+          .withIndex("by_noteId_and_inviteeUsername", (q) =>
+            q.eq("noteId", note._id).eq("inviteeUsername", viewerUsername)
+          )
+          .unique();
+        if (invite) {
+          return mapNote(note);
+        }
+      }
     }
 
     if (!args.apiKey) return null;
@@ -274,6 +400,11 @@ export const create = mutation({
 
     const ownerTokenIdentifier = identity.tokenIdentifier;
     const { username, title, content } = validateNoteInput(args);
+    await upsertUserProfile(
+      ctx,
+      identity as { tokenIdentifier: string } & Record<string, unknown>,
+      username
+    );
     const baseSlug = slugify(title);
     const uniqueSlug = await resolveUniqueSlug(ctx, ownerTokenIdentifier, baseSlug);
     const now = Date.now();
@@ -312,6 +443,109 @@ export const create = mutation({
       slug: uniqueSlug,
       title,
     };
+  },
+});
+
+export const inviteUser = mutation({
+  args: {
+    noteId: v.id("notes"),
+    inviteeUsername: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const note = await ctx.db.get(args.noteId);
+    if (!note) throw new Error("Note not found");
+    if (note.ownerTokenIdentifier !== identity.tokenIdentifier) throw new Error("Forbidden");
+    if (note.state !== "active") throw new Error("Cannot invite to deleted note");
+
+    const inviteeUsername = sanitizeUsername(args.inviteeUsername);
+    if (!inviteeUsername) throw new Error("Invitee username is required");
+    if (inviteeUsername === note.username) throw new Error("Cannot invite yourself");
+
+    const existingInvite = await ctx.db
+      .query("noteInvites")
+      .withIndex("by_noteId_and_inviteeUsername", (q) =>
+        q.eq("noteId", note._id).eq("inviteeUsername", inviteeUsername)
+      )
+      .unique();
+    if (existingInvite) return { invited: true, alreadyInvited: true };
+
+    const now = Date.now();
+    await ctx.db.insert("noteInvites", {
+      ownerTokenIdentifier: identity.tokenIdentifier,
+      noteId: note._id,
+      inviteeUsername,
+      createdAt: now,
+    });
+
+    await ctx.db.insert("userNotifications", {
+      recipientUsername: inviteeUsername,
+      kind: "invitation",
+      title: "Note invitation",
+      message: `@${note.username} shared private note "${note.title}"`,
+      noteId: note._id,
+      linkId: null,
+      createdAt: now,
+      dismissedAt: null,
+    });
+
+    return { invited: true, alreadyInvited: false };
+  },
+});
+
+export const inviteUserWithApiKey = mutation({
+  args: {
+    apiKey: v.string(),
+    noteId: v.id("notes"),
+    inviteeUsername: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const keyRecord = await resolveApiKey(ctx, args.apiKey);
+    if (!keyRecord) throw new Error("Invalid API key");
+    if (!hasPermission(keyRecord.permissions, "write")) {
+      throw new Error("API key lacks write permission");
+    }
+
+    const note = await ctx.db.get(args.noteId);
+    if (!note) throw new Error("Note not found");
+    if (note.ownerTokenIdentifier !== keyRecord.ownerTokenIdentifier) throw new Error("Forbidden");
+    if (note.state !== "active") throw new Error("Cannot invite to deleted note");
+
+    const inviteeUsername = sanitizeUsername(args.inviteeUsername);
+    if (!inviteeUsername) throw new Error("Invitee username is required");
+    if (inviteeUsername === note.username) throw new Error("Cannot invite yourself");
+
+    const existingInvite = await ctx.db
+      .query("noteInvites")
+      .withIndex("by_noteId_and_inviteeUsername", (q) =>
+        q.eq("noteId", note._id).eq("inviteeUsername", inviteeUsername)
+      )
+      .unique();
+    if (existingInvite) return { invited: true, alreadyInvited: true };
+
+    const now = Date.now();
+    await ctx.db.insert("noteInvites", {
+      ownerTokenIdentifier: keyRecord.ownerTokenIdentifier,
+      noteId: note._id,
+      inviteeUsername,
+      createdAt: now,
+    });
+
+    await ctx.db.insert("userNotifications", {
+      recipientUsername: inviteeUsername,
+      kind: "invitation",
+      title: "Note invitation",
+      message: `@${note.username} shared private note "${note.title}"`,
+      noteId: note._id,
+      linkId: null,
+      createdAt: now,
+      dismissedAt: null,
+    });
+
+    await ctx.db.patch(keyRecord._id, { lastUsedAt: now });
+    return { invited: true, alreadyInvited: false };
   },
 });
 

@@ -16,6 +16,7 @@
         "clsx": "^2.1.1",
         "commander": "^14.0.1",
         "convex": "^1.35.1",
+        "facehash": "^0.1.0",
         "lucide-react": "^1.8.0",
         "next": "16.1.6",
         "react": "19.2.4",
@@ -1285,6 +1286,8 @@
     "extend": ["extend@3.0.2", "", {}, "sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g=="],
 
     "eyes": ["eyes@0.1.8", "", {}, "sha512-GipyPsXO1anza0AOZdy69Im7hGFCNB7Y/NGjDlZGJ3GJJLtwNSb2vrzYrTYJRrRloVx7pl+bhUaTB8yiccPvFQ=="],
+
+    "facehash": ["facehash@0.1.0", "", { "peerDependencies": { "@types/react": "", "next": ">=15", "react": ">=18 <20", "react-dom": ">=18 <20" }, "optionalPeers": ["@types/react", "next"] }, "sha512-tv/QVZjLvEXHssqBaJECq+kRLFwwhd017PKk8ucT7aLingL2OZ5zEqKwPMHmT9+YQO92MVFWGZQP6vxV+P5vrQ=="],
 
     "fast-deep-equal": ["fast-deep-equal@3.1.3", "", {}, "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q=="],
 

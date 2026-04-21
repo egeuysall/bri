@@ -21,7 +21,7 @@ type SidebarPinnedItem = {
   count?: number;
 };
 
-export type DashboardPanel = 'notes' | 'new' | 'links' | 'settings' | 'deleted';
+export type DashboardPanel = 'notes' | 'new' | 'links' | 'profile' | 'settings' | 'deleted';
 
 function SidebarSlashToggle() {
   const { state, toggleSidebar } = useSidebar();
@@ -47,6 +47,7 @@ const panelItems: Array<{ id: DashboardPanel; label: string }> = [
   { id: 'notes', label: 'notes' },
   { id: 'new', label: 'new note' },
   { id: 'links', label: 'links' },
+  { id: 'profile', label: 'profile' },
   { id: 'settings', label: 'settings' },
   { id: 'deleted', label: 'deleted' },
 ];
@@ -67,6 +68,7 @@ export function AppSidebar({
     notes: '[',
     new: '<',
     links: '>',
+    profile: '@',
     settings: '{',
     deleted: ']',
   };

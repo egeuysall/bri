@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { getPublicUserProfileByUsername } from '@/lib/notes';
 import { normalizePathHandle, resolveUserHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
 
 export async function generateMetadata({
@@ -23,9 +24,22 @@ export async function generateMetadata({
     };
   }
 
+  const normalized = normalizePathHandle(username);
+  if (normalized) {
+    const profile = await getPublicUserProfileByUsername({ username: normalized });
+    if (profile) {
+      return {
+        title: `${profile.displayName ? `${profile.displayName} ` : ''}@${profile.username}`,
+        description: profile.email
+          ? `Published notes and links for @${profile.username} (${profile.email}).`
+          : `Published notes and links for @${profile.username}.`,
+      };
+    }
+  }
+
   return {
-    title: 'Not Found',
-    description: 'The requested page could not be found.',
+    title: `@${username}`,
+    description: `Published notes and links for @${username}.`,
   };
 }
 

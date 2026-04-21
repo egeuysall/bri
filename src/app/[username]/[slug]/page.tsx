@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { MarkdownContent } from '@/components/markdown';
@@ -9,10 +10,25 @@ import {
   trackQuickLinkClick,
 } from '@/lib/notes';
 
-function stripLeadingHeading(content: string): string {
+function normalizeHeading(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim();
+}
+
+function stripLeadingHeading(content: string, title: string): string {
   const lines = content.split('\n');
   const firstLine = lines[0]?.trim() ?? '';
-  if (!firstLine.startsWith('#')) {
+  // Remove only duplicated first-level heading that matches note title.
+  if (!firstLine.startsWith('# ')) {
+    return content;
+  }
+
+  const headingText = firstLine.replace(/^#\s+/, '');
+  if (normalizeHeading(headingText) !== normalizeHeading(title)) {
     return content;
   }
   return lines.slice(1).join('\n').trimStart();
@@ -59,7 +75,7 @@ export default async function NotePage({
     path: `/${note.username}/${note.slug}`,
   });
 
-  const contentWithoutHeading = stripLeadingHeading(note.content);
+  const contentWithoutHeading = stripLeadingHeading(note.content, note.title);
 
   return (
     <section
@@ -69,7 +85,10 @@ export default async function NotePage({
       <article className="mx-auto w-full max-w-155">
         <h1 className="text-base font-semibold text-neutral-100">{note.title}</h1>
         <p className="mt-2 text-xs text-neutral-400">
-          @{note.username} &middot; {formatDate(note.createdAt)}
+          <Link href={`/${note.username}`} className="transition-colors hover:text-neutral-100">
+            @{note.username}
+          </Link>{' '}
+          &middot; {formatDate(note.createdAt)}
         </p>
 
         <div className="px-0 py-6 md:py-7">

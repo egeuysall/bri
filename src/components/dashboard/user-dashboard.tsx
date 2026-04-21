@@ -24,6 +24,14 @@ import {
   ComboboxList,
 } from '@/components/ui/combobox';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -87,6 +95,16 @@ type AnalyticsRecord = {
   viewsBySlug: Record<string, number>;
   topPages: Array<{ slug: string; views: number }>;
   daily: Array<{ date: string; views: number; pageViews?: number; linkClicks?: number }>;
+};
+
+type NotificationRecord = {
+  id: string;
+  kind: 'invitation' | 'achievement' | 'notice';
+  title: string;
+  message: string;
+  noteId: string | null;
+  linkId: string | null;
+  createdAt: number;
 };
 
 function formatDate(value: number | null): string {
@@ -185,6 +203,7 @@ export function UserDashboard() {
     tabFromQuery === 'notes' ||
     tabFromQuery === 'new' ||
     tabFromQuery === 'links' ||
+    tabFromQuery === 'profile' ||
     tabFromQuery === 'settings' ||
     tabFromQuery === 'deleted'
       ? tabFromQuery
@@ -218,6 +237,7 @@ export function UserDashboard() {
   const [quickLinks, setQuickLinks] = useState<QuickLinkRecord[]>([]);
   const [pins, setPins] = useState<PinnedRecord[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsRecord | null>(null);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [generatedApiKey, setGeneratedApiKey] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
@@ -244,6 +264,14 @@ export function UserDashboard() {
   const [editingLinkKey, setEditingLinkKey] = useState<string>('');
   const [editingLinkUrl, setEditingLinkUrl] = useState<string>('');
   const [editingLinkLabel, setEditingLinkLabel] = useState<string>('');
+  const [inviteDialogOpen, setInviteDialogOpen] = useState<boolean>(false);
+  const [inviteTargetKind, setInviteTargetKind] = useState<'note' | 'link' | null>(null);
+  const [inviteTargetId, setInviteTargetId] = useState<string | null>(null);
+  const [inviteeUsername, setInviteeUsername] = useState<string>('');
+  const [isSubmittingInvite, setIsSubmittingInvite] = useState<boolean>(false);
+  const [notificationsPanelOpen, setNotificationsPanelOpen] = useState<boolean>(false);
+  const [dismissedAchievementIds, setDismissedAchievementIds] = useState<string[]>([]);
+  const [dismissedNoticeIds, setDismissedNoticeIds] = useState<string[]>([]);
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
@@ -253,6 +281,17 @@ export function UserDashboard() {
     }
     return 'curl -fsSL https://bri.egeuysal.com/install.sh | bash';
   }, []);
+  const profileHandle = useMemo(() => {
+    const segments = pathname.split('/').filter(Boolean);
+    return segments[0] ?? '';
+  }, [pathname]);
+  const publicProfileUrl = useMemo(() => {
+    if (!profileHandle) return '';
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/${profileHandle}?public=1`;
+    }
+    return `/${profileHandle}?public=1`;
+  }, [profileHandle]);
 
   const notePages = Math.max(1, Math.ceil(notes.length / PAGE_SIZE));
   const linksPages = Math.max(1, Math.ceil(quickLinks.length / PAGE_SIZE));
@@ -335,6 +374,64 @@ export function UserDashboard() {
       linkClicks: row.linkClicks ?? 0,
     }));
   }, [analytics]);
+  const invitationNotifications = useMemo(
+    () => notifications.filter((row) => row.kind === 'invitation').slice(0, 12),
+    [notifications]
+  );
+  const achievementItems = useMemo(() => {
+    const items: Array<{ id: string; message: string }> = [];
+    const seen = new Set<string>();
+    const add = (id: string, message: string) => {
+      if (!message || seen.has(id)) return;
+      seen.add(id);
+      items.push({ id, message });
+    };
+
+    for (const row of notifications) {
+      if (row.kind === 'achievement') add(row.id, row.message || row.title);
+    }
+
+    const totalViews = analytics?.totalViews ?? 0;
+    const topDailyViews = (analytics?.daily ?? []).reduce(
+      (max, row) => Math.max(max, row.views ?? 0),
+      0
+    );
+
+    if (notes.length >= 1) add('local:achievement:first-note', 'first note published');
+    if (quickLinks.length >= 1) add('local:achievement:first-link', 'first quick link created');
+    if (notes.length >= 10) add('local:achievement:ten-notes', '10 notes published');
+    if (topDailyViews >= 500) add('local:achievement:500-daily', '500 views in 1 day');
+    if (totalViews >= 500) add('local:achievement:500-total', '500 views milestone');
+    if (totalViews >= 1000) add('local:achievement:1000-total', '1k views milestone');
+
+    return items.filter((row) => !dismissedAchievementIds.includes(row.id));
+  }, [analytics?.daily, analytics?.totalViews, dismissedAchievementIds, notes.length, notifications, quickLinks.length]);
+  const noticeItems = useMemo(() => {
+    const items: Array<{ id: string; message: string }> = [];
+    const seen = new Set<string>();
+    const add = (id: string, message: string) => {
+      if (!message || seen.has(id)) return;
+      seen.add(id);
+      items.push({ id, message });
+    };
+
+    for (const row of notifications) {
+      if (row.kind === 'notice') add(row.id, row.message || row.title);
+    }
+
+    const now = Date.now();
+    const soonThreshold = now + 3 * 24 * 60 * 60 * 1000;
+    for (const note of notes) {
+      if (note.expiresAt !== null && note.expiresAt <= soonThreshold) {
+        add(
+          `local:notice:expiry:${note.id}`,
+          `note "${note.title}" expires ${formatExpiresIn(note.expiresAt)}`
+        );
+      }
+    }
+
+    return items.filter((row) => !dismissedNoticeIds.includes(row.id));
+  }, [dismissedNoticeIds, notes, notifications]);
 
   async function fetchNotes(state: 'active' | 'deleted') {
     const response = await fetch(`/api/notes?state=${state}`);
@@ -398,6 +495,21 @@ export function UserDashboard() {
     setAnalytics(json.data ?? null);
   }
 
+  async function refreshNotifications() {
+    const response = await fetch('/api/notifications');
+    if (response.status === 401) {
+      setNotifications([]);
+      return;
+    }
+    if (!response.ok) throw new Error('Failed to fetch notifications');
+    const json = (await response.json()) as { data?: { items?: NotificationRecord[] } };
+    setNotifications(json.data?.items ?? []);
+  }
+
+  async function syncProfile() {
+    await fetch('/api/profile/sync', { method: 'POST' });
+  }
+
   useEffect(() => {
     const currentTab = searchParams.get('tab');
     if (currentTab === panel) return;
@@ -412,10 +524,12 @@ export function UserDashboard() {
     async function bootstrap() {
       try {
         await Promise.all([
+          syncProfile().catch(() => undefined),
           refreshData(),
           refreshQuickLinks(),
           refreshPins(),
           refreshAnalytics().catch(() => undefined),
+          refreshNotifications().catch(() => undefined),
         ]);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to initialize dashboard');
@@ -432,7 +546,12 @@ export function UserDashboard() {
 
   useEffect(() => {
     if (panel === 'settings') {
-      void Promise.all([refreshApiKeys(), refreshQuickLinks(), refreshAnalytics()]).catch(() => {
+      void Promise.all([
+        refreshApiKeys(),
+        refreshQuickLinks(),
+        refreshAnalytics(),
+        refreshNotifications(),
+      ]).catch(() => {
         toast.error('Failed to load settings data');
       });
       return;
@@ -739,6 +858,86 @@ export function UserDashboard() {
     toast.success(json.data?.pinned ? 'Pinned' : 'Unpinned');
   }
 
+  function openInviteDialog(kind: 'note' | 'link', id: string) {
+    setInviteTargetKind(kind);
+    setInviteTargetId(id);
+    setInviteeUsername('');
+    setInviteDialogOpen(true);
+  }
+
+  async function submitInvite() {
+    if (!inviteTargetKind || !inviteTargetId) return;
+    const normalizedInvitee = inviteeUsername.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!normalizedInvitee) {
+      toast.error('Invitee username is required');
+      return;
+    }
+    setIsSubmittingInvite(true);
+    const response = await fetch('/api/invitations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: inviteTargetKind,
+        id: inviteTargetId,
+        inviteeUsername: normalizedInvitee,
+      }),
+    });
+    const json = (await response.json()) as { error?: string };
+    setIsSubmittingInvite(false);
+    if (!response.ok) {
+      throw new Error(json.error || 'Failed to invite user');
+    }
+
+    setInviteDialogOpen(false);
+    setInviteTargetKind(null);
+    setInviteTargetId(null);
+    setInviteeUsername('');
+    toast.success(`Invited @${normalizedInvitee}`);
+  }
+
+  async function dismissNotification(notificationId: string) {
+    const response = await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'dismiss', notificationId }),
+    });
+    const json = (await response.json()) as { error?: string };
+    if (!response.ok) {
+      throw new Error(json.error || 'Failed to dismiss notification');
+    }
+
+    setNotifications((prev) => prev.filter((row) => row.id !== notificationId));
+  }
+
+  async function openNotification(notificationId: string) {
+    const response = await fetch('/api/notifications', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'open', notificationId }),
+    });
+    const json = (await response.json()) as { error?: string; data?: { href?: string | null } };
+    if (!response.ok) {
+      throw new Error(json.error || 'Failed to open notification');
+    }
+
+    const href = json.data?.href ?? null;
+    if (!href) {
+      toast.error('Shared item is unavailable');
+      return;
+    }
+
+    setNotificationsPanelOpen(false);
+    router.push(href);
+  }
+
+  function dismissAchievement(id: string) {
+    setDismissedAchievementIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }
+
+  function dismissNotice(id: string) {
+    setDismissedNoticeIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }
+
   return (
     <SidebarProvider defaultOpen>
       <AppSidebar panel={panel} pinnedItems={pinnedSidebarItems} onPanelChange={setPanel} />
@@ -768,7 +967,7 @@ export function UserDashboard() {
             {!isInitializing && loading ? <p className="text-xs text-neutral-500">Refreshing…</p> : null}
 
             {!isInitializing && panel === 'notes' ? (
-              <div className="space-y-2">
+              <div className="w-full space-y-3">
                 <h1 className="text-sm text-neutral-200">Your notes</h1>
                 {notes.length === 0 ? <p className="text-xs text-neutral-500">No notes yet.</p> : null}
                 {visibleNotes.map((note) => {
@@ -777,7 +976,7 @@ export function UserDashboard() {
                     return (
                       <article
                         key={note.id}
-                        className="row-border -mx-4 space-y-3 px-4 py-3 md:-mx-8 md:px-8"
+                        className="space-y-3 rounded-sm border border-neutral-900 p-3"
                       >
                         <div className="grid gap-2 md:grid-cols-2">
                           <input
@@ -872,7 +1071,7 @@ export function UserDashboard() {
                   return (
                     <article
                       key={note.id}
-                      className="row-border group -mx-4 cursor-pointer px-4 py-3 md:-mx-8 md:px-8"
+                      className="group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40"
                       role="link"
                       tabIndex={0}
                       onClick={() => {
@@ -912,8 +1111,21 @@ export function UserDashboard() {
                             className="h-8 text-xs"
                             onClick={(event) => {
                               event.stopPropagation();
+                              openInviteDialog('note', note.id);
+                            }}
+                          >
+                            Share
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="default"
+                            className="h-8 text-xs"
+                            onClick={(event) => {
+                              event.stopPropagation();
                               void togglePin('note', note.id).catch((err) =>
-                                toast.error(err instanceof Error ? err.message : 'Failed to toggle pin')
+                                toast.error(
+                                  err instanceof Error ? err.message : 'Failed to toggle pin'
+                                )
                               );
                             }}
                           >
@@ -926,7 +1138,9 @@ export function UserDashboard() {
                             onClick={(event) => {
                               event.stopPropagation();
                               void patchNote(note.id, 'softDelete').catch((err) =>
-                                toast.error(err instanceof Error ? err.message : 'Failed to delete note')
+                                toast.error(
+                                  err instanceof Error ? err.message : 'Failed to delete note'
+                                )
                               );
                             }}
                           >
@@ -1098,7 +1312,7 @@ export function UserDashboard() {
             ) : null}
 
             {!isInitializing && panel === 'links' ? (
-              <div className="space-y-4">
+              <div className="w-full space-y-4">
                 <h1 className="text-sm text-neutral-200">Quick links</h1>
 
                 <div className="rounded-sm border border-neutral-900 p-3">
@@ -1148,7 +1362,7 @@ export function UserDashboard() {
                     return (
                       <article
                         key={link.id}
-                        className="row-border -mx-4 space-y-2 px-4 py-3 md:-mx-8 md:px-8"
+                        className="space-y-2 rounded-sm border border-neutral-900 p-3"
                       >
                         <div className="grid gap-2 md:grid-cols-4">
                           <input
@@ -1201,7 +1415,7 @@ export function UserDashboard() {
                   return (
                     <article
                       key={link.id}
-                      className="row-border group -mx-4 cursor-pointer px-4 py-3 md:-mx-8 md:px-8"
+                      className="group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40"
                       role="link"
                       tabIndex={0}
                       onClick={() => {
@@ -1235,6 +1449,17 @@ export function UserDashboard() {
                             }}
                           >
                             Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="default"
+                            className="h-8 text-xs"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openInviteDialog('link', link.id);
+                            }}
+                          >
+                            Share
                           </Button>
                           <Button
                             type="button"
@@ -1294,6 +1519,54 @@ export function UserDashboard() {
                     </PaginationContent>
                   </Pagination>
                 ) : null}
+              </div>
+            ) : null}
+
+            {!isInitializing && panel === 'profile' ? (
+              <div className="space-y-4">
+                <h1 className="text-sm text-neutral-200">Profile</h1>
+                <div className="rounded-sm border border-neutral-900 p-3">
+                  <p className="text-xs text-neutral-500">Public profile URL</p>
+                  <CodeBlock className="mt-2" language="text">
+                    {publicProfileUrl || 'Unavailable'}
+                  </CodeBlock>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      className="h-8 text-xs"
+                      disabled={!publicProfileUrl}
+                      onClick={() => {
+                        if (!publicProfileUrl) return;
+                        window.open(publicProfileUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      Open public profile
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-8 border border-neutral-800 text-xs"
+                      disabled={!publicProfileUrl}
+                      onClick={() => {
+                        if (!publicProfileUrl) return;
+                        void navigator.clipboard.writeText(publicProfileUrl);
+                        toast.success('Profile URL copied');
+                      }}
+                    >
+                      Copy URL
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="rounded-sm border border-neutral-900 p-3">
+                  <p className="text-xs text-neutral-500">Profile summary</p>
+                  <p className="mt-2 text-xs text-neutral-300">
+                    @{profileHandle || 'unknown'} &middot; {notes.length} notes &middot; {quickLinks.length} links
+                  </p>
+                  <p className="mt-1 text-[11px] text-neutral-500">
+                    Signed-in view stays dashboard. Public view forced via <code>?public=1</code>.
+                  </p>
+                </div>
               </div>
             ) : null}
 
@@ -1419,8 +1692,8 @@ export function UserDashboard() {
                     <CardContent className="px-2 py-3 sm:p-4">
                       <ChartContainer
                         config={chartConfig}
-                        className="h-[280px] min-h-[280px] w-full !aspect-auto"
-                        style={{ height: 280, maxHeight: 280 }}
+                        className="h-[240px] min-h-[240px] w-full !aspect-auto"
+                        style={{ height: 240, maxHeight: 240 }}
                       >
                         <BarChart
                           accessibilityLayer
@@ -1436,7 +1709,7 @@ export function UserDashboard() {
                             tickLine={false}
                             axisLine={false}
                             tickMargin={8}
-                            minTickGap={24}
+                            minTickGap={36}
                             tickFormatter={formatChartDate}
                           />
                           <ChartTooltip
@@ -1478,7 +1751,7 @@ export function UserDashboard() {
             ) : null}
 
             {!isInitializing && panel === 'deleted' ? (
-              <div className="space-y-3">
+              <div className="w-full space-y-3">
                 <h1 className="text-sm text-neutral-200">Recently deleted</h1>
                 {deletedNotes.length === 0 ? (
                   <p className="text-xs text-neutral-500">No recently deleted notes.</p>
@@ -1486,7 +1759,7 @@ export function UserDashboard() {
                 {visibleDeletedNotes.map((note) => (
                   <article
                     key={note.id}
-                    className="row-border group -mx-4 px-4 py-3 md:-mx-8 md:px-8"
+                    className="group rounded-sm border border-neutral-900 px-3 py-3"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
@@ -1558,6 +1831,171 @@ export function UserDashboard() {
             ) : null}
           </div>
         </section>
+        <Dialog
+          open={inviteDialogOpen}
+          onOpenChange={(open) => {
+            setInviteDialogOpen(open);
+            if (!open) {
+              setInviteTargetKind(null);
+              setInviteTargetId(null);
+              setInviteeUsername('');
+              setIsSubmittingInvite(false);
+            }
+          }}
+        >
+          <DialogContent className="max-w-md border border-neutral-900 bg-bg text-neutral-100 ring-0">
+            <DialogHeader>
+              <DialogTitle className="text-sm text-neutral-100">Share with user</DialogTitle>
+              <DialogDescription className="text-xs text-neutral-400">
+                Invite by username. Access granted even when note stays private.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <label className="text-xs text-neutral-400">Username</label>
+              <input
+                value={inviteeUsername}
+                onChange={(event) => setInviteeUsername(event.target.value)}
+                placeholder="e.g. egeuysall"
+                className="h-9 w-full rounded-sm border border-neutral-700 bg-transparent px-2 text-sm text-neutral-100 placeholder:text-neutral-500"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="-mx-0 -mb-0 rounded-none border-0 bg-transparent p-0 pt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-8 border border-neutral-800 text-xs text-neutral-200 hover:bg-neutral-900"
+                onClick={() => {
+                  setInviteDialogOpen(false);
+                  setInviteTargetKind(null);
+                  setInviteTargetId(null);
+                  setInviteeUsername('');
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="h-8 border border-neutral-700 bg-neutral-100 text-xs text-neutral-950 hover:bg-neutral-200"
+                disabled={isSubmittingInvite}
+                onClick={() => {
+                  void submitInvite().catch((err) =>
+                    toast.error(err instanceof Error ? err.message : 'Failed to invite user')
+                  );
+                }}
+              >
+                {isSubmittingInvite ? 'Sharing...' : 'Share'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <div className="fixed right-6 top-4 z-30 hidden xl:block">
+          <div
+            className="relative pb-1"
+            onMouseEnter={() => setNotificationsPanelOpen(true)}
+            onMouseLeave={() => setNotificationsPanelOpen(false)}
+          >
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-8 px-2 font-mono text-xs"
+              aria-expanded={notificationsPanelOpen}
+              aria-label="Open notifications"
+              onClick={() => setNotificationsPanelOpen((prev) => !prev)}
+            >
+              ...
+            </Button>
+            {notificationsPanelOpen ? (
+              <aside className="absolute right-0 top-full w-80 rounded-sm border border-neutral-900 bg-bg p-3 shadow-lg">
+                <div className="space-y-4">
+                  <section className="space-y-1">
+                    <h2 className="text-xs text-neutral-400">invitations</h2>
+                    {invitationNotifications.length === 0 ? (
+                      <p className="text-[11px] text-neutral-500">none</p>
+                    ) : (
+                      invitationNotifications.map((row) => (
+                        <div key={row.id} className="flex items-start gap-2">
+                          <button
+                            type="button"
+                            className="flex-1 text-left text-[11px] text-neutral-300 transition-colors hover:text-neutral-100"
+                            onClick={() => {
+                              void openNotification(row.id).catch((err) =>
+                                toast.error(
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'Failed to open notification'
+                                )
+                              );
+                            }}
+                          >
+                            {row.message}
+                          </button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-5 min-w-5 px-1 text-[11px]"
+                            onClick={() => {
+                              void dismissNotification(row.id).catch((err) =>
+                                toast.error(
+                                  err instanceof Error
+                                    ? err.message
+                                    : 'Failed to dismiss notification'
+                                )
+                              );
+                            }}
+                          >
+                            -
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </section>
+                  <section className="space-y-1">
+                    <h2 className="text-xs text-neutral-400">achievements</h2>
+                    {achievementItems.length === 0 ? (
+                      <p className="text-[11px] text-neutral-500">none yet</p>
+                    ) : (
+                      achievementItems.map((row) => (
+                        <div key={row.id} className="flex items-start gap-2">
+                          <p className="flex-1 text-[11px] text-neutral-300">{row.message}</p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-5 min-w-5 px-1 text-[11px]"
+                            onClick={() => dismissAchievement(row.id)}
+                          >
+                            -
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </section>
+                  <section className="space-y-1">
+                    <h2 className="text-xs text-neutral-400">notices</h2>
+                    {noticeItems.length === 0 ? (
+                      <p className="text-[11px] text-neutral-500">none</p>
+                    ) : (
+                      noticeItems.map((row) => (
+                        <div key={row.id} className="flex items-start gap-2">
+                          <p className="flex-1 text-[11px] text-neutral-300">{row.message}</p>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-5 min-w-5 px-1 text-[11px]"
+                            onClick={() => dismissNotice(row.id)}
+                          >
+                            -
+                          </Button>
+                        </div>
+                      ))
+                    )}
+                  </section>
+                </div>
+              </aside>
+            ) : null}
+          </div>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

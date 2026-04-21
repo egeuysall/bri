@@ -11,6 +11,23 @@ function sanitizeUsername(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
 }
 
+function readIdentityString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+function cleanDisplayName(value: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.trim().replace(/\s+/g, " ").slice(0, 120);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+function cleanEmail(value: string | null): string | null {
+  if (!value) return null;
+  const cleaned = value.trim().toLowerCase().slice(0, 200);
+  if (!cleaned.includes("@")) return null;
+  return cleaned;
+}
+
 function sanitizeKey(value: string): string {
   return value
     .trim()
@@ -105,6 +122,42 @@ async function resolveApiKey(ctx: ConvexCtx, rawApiKey: string) {
   return keyRecord as Doc<"apiKeys">;
 }
 
+async function upsertUserProfile(
+  ctx: MutationCtx,
+  identity: { tokenIdentifier: string } & Record<string, unknown>,
+  username: string
+) {
+  const displayName = cleanDisplayName(readIdentityString(identity.name));
+  const email = cleanEmail(readIdentityString(identity.email));
+  const now = Date.now();
+
+  const existing = await ctx.db
+    .query("userProfiles")
+    .withIndex("by_ownerTokenIdentifier", (q) =>
+      q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
+    )
+    .unique();
+
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      username,
+      displayName,
+      email,
+      updatedAt: now,
+    });
+    return;
+  }
+
+  await ctx.db.insert("userProfiles", {
+    ownerTokenIdentifier: identity.tokenIdentifier,
+    username,
+    displayName,
+    email,
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
 function mapLink(link: {
   _id: string;
   username: string;
@@ -140,6 +193,24 @@ export const listMine = query({
       .withIndex("by_ownerTokenIdentifier_and_createdAt", (q) =>
         q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
       )
+      .order("desc")
+      .take(200);
+
+    return rows.map(mapLink);
+  },
+});
+
+export const listByUsername = query({
+  args: {
+    username: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const username = sanitizeUsername(args.username);
+    if (!username) return [];
+
+    const rows = await ctx.db
+      .query("quickLinks")
+      .withIndex("by_username_and_key", (q) => q.eq("username", username))
       .order("desc")
       .take(200);
 
@@ -207,6 +278,11 @@ export const create = mutation({
 
     if (!username) throw new Error("Username is required");
     if (!key) throw new Error("Quick link key is required");
+    await upsertUserProfile(
+      ctx,
+      identity as { tokenIdentifier: string } & Record<string, unknown>,
+      username
+    );
 
     const existing = await ctx.db
       .query("quickLinks")
@@ -231,6 +307,107 @@ export const create = mutation({
     });
 
     return { id, key };
+  },
+});
+
+export const inviteUser = mutation({
+  args: {
+    linkId: v.id("quickLinks"),
+    inviteeUsername: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const link = await ctx.db.get(args.linkId);
+    if (!link) throw new Error("Quick link not found");
+    if (link.ownerTokenIdentifier !== identity.tokenIdentifier) throw new Error("Forbidden");
+
+    const inviteeUsername = sanitizeUsername(args.inviteeUsername);
+    if (!inviteeUsername) throw new Error("Invitee username is required");
+    if (inviteeUsername === link.username) throw new Error("Cannot invite yourself");
+
+    const existingInvite = await ctx.db
+      .query("quickLinkInvites")
+      .withIndex("by_linkId_and_inviteeUsername", (q) =>
+        q.eq("linkId", link._id).eq("inviteeUsername", inviteeUsername)
+      )
+      .unique();
+    if (existingInvite) return { invited: true, alreadyInvited: true };
+
+    const now = Date.now();
+    await ctx.db.insert("quickLinkInvites", {
+      ownerTokenIdentifier: identity.tokenIdentifier,
+      linkId: link._id,
+      inviteeUsername,
+      createdAt: now,
+    });
+
+    await ctx.db.insert("userNotifications", {
+      recipientUsername: inviteeUsername,
+      kind: "invitation",
+      title: "Link invitation",
+      message: `@${link.username} shared link /${link.username}/${link.key}`,
+      noteId: null,
+      linkId: link._id,
+      createdAt: now,
+      dismissedAt: null,
+    });
+
+    return { invited: true, alreadyInvited: false };
+  },
+});
+
+export const inviteUserWithApiKey = mutation({
+  args: {
+    apiKey: v.string(),
+    linkId: v.id("quickLinks"),
+    inviteeUsername: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const keyRecord = await resolveApiKey(ctx, args.apiKey);
+    if (!keyRecord) throw new Error("Invalid API key");
+    if (!hasPermission(keyRecord.permissions, "write")) {
+      throw new Error("API key lacks write permission");
+    }
+
+    const link = await ctx.db.get(args.linkId);
+    if (!link) throw new Error("Quick link not found");
+    if (link.ownerTokenIdentifier !== keyRecord.ownerTokenIdentifier) throw new Error("Forbidden");
+
+    const inviteeUsername = sanitizeUsername(args.inviteeUsername);
+    if (!inviteeUsername) throw new Error("Invitee username is required");
+    if (inviteeUsername === link.username) throw new Error("Cannot invite yourself");
+
+    const existingInvite = await ctx.db
+      .query("quickLinkInvites")
+      .withIndex("by_linkId_and_inviteeUsername", (q) =>
+        q.eq("linkId", link._id).eq("inviteeUsername", inviteeUsername)
+      )
+      .unique();
+    if (existingInvite) return { invited: true, alreadyInvited: true };
+
+    const now = Date.now();
+    await ctx.db.insert("quickLinkInvites", {
+      ownerTokenIdentifier: keyRecord.ownerTokenIdentifier,
+      linkId: link._id,
+      inviteeUsername,
+      createdAt: now,
+    });
+
+    await ctx.db.insert("userNotifications", {
+      recipientUsername: inviteeUsername,
+      kind: "invitation",
+      title: "Link invitation",
+      message: `@${link.username} shared link /${link.username}/${link.key}`,
+      noteId: null,
+      linkId: link._id,
+      createdAt: now,
+      dismissedAt: null,
+    });
+
+    await ctx.db.patch(keyRecord._id, { lastUsedAt: now });
+    return { invited: true, alreadyInvited: false };
   },
 });
 

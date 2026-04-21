@@ -10,9 +10,11 @@
 
 import type * as apiKeys from "../apiKeys.js";
 import type * as notes from "../notes.js";
+import type * as notifications from "../notifications.js";
 import type * as pins from "../pins.js";
 import type * as posts from "../posts.js";
 import type * as quickLinks from "../quickLinks.js";
+import type * as userProfiles from "../userProfiles.js";
 
 import type {
   ApiFromModules,
@@ -23,9 +25,11 @@ import type {
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
   notes: typeof notes;
+  notifications: typeof notifications;
   pins: typeof pins;
   posts: typeof posts;
   quickLinks: typeof quickLinks;
+  userProfiles: typeof userProfiles;
 }>;
 
 /**
