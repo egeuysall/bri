@@ -402,6 +402,8 @@ export function UserDashboard() {
           refreshPins(),
           refreshAnalytics().catch(() => undefined),
         ]);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Failed to initialize dashboard');
       } finally {
         if (isMounted) setIsInitializing(false);
       }

@@ -42,7 +42,7 @@ export async function GET(request: Request) {
 
   const { userId, getToken } = await auth();
   if (userId) {
-    const token = (await getToken({ template: 'convex' })) ?? (await getToken());
+    const token = await getToken({ template: 'convex' });
     if (!token) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }

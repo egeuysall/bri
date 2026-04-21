@@ -17,7 +17,7 @@ function statusFromErrorMessage(message: string): number {
 async function requireToken() {
   const { userId, getToken } = await auth();
   if (!userId) return null;
-  const token = (await getToken({ template: 'convex' })) ?? (await getToken());
+  const token = await getToken({ template: 'convex' });
   return token ?? null;
 }
 

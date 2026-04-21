@@ -12,10 +12,5 @@ export default {
       domain: getRequiredEnv('CLERK_JWT_ISSUER_DOMAIN'),
       applicationID: 'convex',
     },
-    {
-      // Accept Clerk session tokens as a fallback when the convex JWT template
-      // is unavailable or not selected by the client.
-      domain: getRequiredEnv('CLERK_JWT_ISSUER_DOMAIN'),
-    },
   ],
 };
