@@ -3,6 +3,17 @@ import { NextResponse } from 'next/server';
 import { listPins, togglePinnedLink, togglePinnedNote } from '@/lib/notes';
 import { normalizeResourceId, rejectCrossOriginMutation } from '@/lib/request-security';
 
+function statusFromErrorMessage(message: string): number {
+  if (
+    message.includes('No auth provider found') ||
+    message.includes('Invalid token') ||
+    message.includes('Not authenticated')
+  ) {
+    return 401;
+  }
+  return 500;
+}
+
 async function requireToken() {
   const { userId, getToken } = await auth();
   if (!userId) return null;
@@ -17,8 +28,9 @@ export async function GET() {
   try {
     const data = await listPins({ token });
     return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch pins' }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch pins';
+    return NextResponse.json({ error: message }, { status: statusFromErrorMessage(message) });
   }
 }
 

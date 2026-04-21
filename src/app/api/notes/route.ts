@@ -10,6 +10,17 @@ import {
 import { readBridgeApiKeyFromRequest, rejectCrossOriginMutation } from '@/lib/request-security';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
+function statusFromErrorMessage(message: string): number {
+  if (
+    message.includes('No auth provider found') ||
+    message.includes('Invalid token') ||
+    message.includes('Not authenticated')
+  ) {
+    return 401;
+  }
+  return 500;
+}
+
 function normalizeVisibility(value: unknown): NoteVisibility {
   return value === 'private' ? 'private' : 'public';
 }
@@ -39,8 +50,9 @@ export async function GET(request: Request) {
     try {
       const notes = await listMyNotes({ state, token });
       return NextResponse.json({ data: notes });
-    } catch {
-      return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to fetch notes';
+      return NextResponse.json({ error: message }, { status: statusFromErrorMessage(message) });
     }
   }
 

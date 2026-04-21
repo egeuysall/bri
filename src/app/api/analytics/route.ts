@@ -3,6 +3,17 @@ import { NextResponse } from 'next/server';
 import { getMyAnalytics } from '@/lib/notes';
 import { clampAnalyticsDays } from '@/lib/request-security';
 
+function statusFromErrorMessage(message: string): number {
+  if (
+    message.includes('No auth provider found') ||
+    message.includes('Invalid token') ||
+    message.includes('Not authenticated')
+  ) {
+    return 401;
+  }
+  return 500;
+}
+
 async function requireToken() {
   const { userId, getToken } = await auth();
   if (!userId) return null;
@@ -20,7 +31,8 @@ export async function GET(request: Request) {
   try {
     const data = await getMyAnalytics({ token, days });
     return NextResponse.json({ data });
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch analytics' }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch analytics';
+    return NextResponse.json({ error: message }, { status: statusFromErrorMessage(message) });
   }
 }

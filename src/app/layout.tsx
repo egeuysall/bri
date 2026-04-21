@@ -165,6 +165,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const product = await getProduct();
+  const enableVercelTelemetry = process.env.NEXT_PUBLIC_ENABLE_VERCEL_TELEMETRY === '1';
 
   // Define date for product schema
   const priceValidUntilDate = new Date();
@@ -242,8 +243,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <SiteShell>{children}</SiteShell>
             </TooltipProvider>
             <Toaster />
-            <Analytics />
-            <SpeedInsights />
+            {enableVercelTelemetry ? <Analytics /> : null}
+            {enableVercelTelemetry ? <SpeedInsights /> : null}
           </ConvexClerkProvider>
         </ClerkProvider>
       </body>
