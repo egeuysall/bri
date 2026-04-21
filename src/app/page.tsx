@@ -1,7 +1,6 @@
 import type { CSSProperties } from 'react';
 import { redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { PostFinder } from '@/components/blocks/post-finder';
 import { CliSection } from '@/components/blocks/cli-copy';
 import { resolveUserHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
 
@@ -27,19 +26,18 @@ const Landing = async () => {
   return (
     <>
       <section className="animate-enter" style={{ '--delay': '40ms' } as CSSProperties}>
-        <p className="text-[13px] leading-relaxed text-neutral-200">Minimal markdown sharing. Paste once, ship link.</p>
-        <p className="mt-2 text-xs text-neutral-400">No signup. Fast slug links. Clean rendering.</p>
+        <p className="text-[13px] leading-relaxed text-neutral-200">
+          Open-source publishing platform for notes and links.
+        </p>
+        <p className="mt-2 text-xs text-neutral-400">
+          Authenticated dashboard, API-first CLI, private or public notes, built for fast sharing.
+        </p>
       </section>
 
-      <section className="mt-12 animate-enter" style={{ '--delay': '120ms' } as CSSProperties}>
-        <h2 className="text-sm text-neutral-300">Find Existing Post</h2>
-        <div className="mt-4">
-          <PostFinder />
-        </div>
-      </section>
-
-      <section className="mt-10 animate-enter" style={{ '--delay': '200ms' } as CSSProperties}>
-        <h2 className="mb-4 text-sm text-neutral-300">CLI</h2>
+      <section
+        className="mt-10 animate-enter pb-8"
+        style={{ '--delay': '120ms' } as CSSProperties}
+      >
         <CliSection />
       </section>
     </>

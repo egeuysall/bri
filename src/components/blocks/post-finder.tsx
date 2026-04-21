@@ -15,16 +15,17 @@ export const PostFinder: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const slug = post.trim();
-    if (slug) {
-      router.push(`/${slug}`);
+    const value = post.trim();
+    if (value) {
+      const normalized = value.replace(/^\/+/, '');
+      router.push(`/${normalized}`);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="py-4">
       <label htmlFor="post-id" className="mb-2 block text-sm text-neutral-400">
-        Post Slug
+        Path
       </label>
       <div className="flex items-center gap-2">
         <input
@@ -32,7 +33,7 @@ export const PostFinder: React.FC = () => {
           ref={inputRef}
           value={post}
           onChange={e => setPost(e.target.value)}
-          placeholder="e.g. agents--4nSt0w or context-research--2G8Y7A"
+          placeholder="e.g. egeuysall/hello or egeuysall/youtube"
           autoComplete="off"
           className="h-9 w-full rounded-md border border-neutral-800 bg-transparent px-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
         />

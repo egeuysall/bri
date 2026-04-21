@@ -1,14 +1,8 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { getNoteByUsernameAndSlug } from '@/lib/notes';
 import { getMarkdownAlias } from '@/lib/post-slugs';
-
-function readApiKeyFromRequest(request: Request): string | null {
-  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-  if (!authHeader) return null;
-  const [scheme, token] = authHeader.split(' ');
-  if (!scheme || !token || scheme.toLowerCase() !== 'bearer') return null;
-  return token.trim() || null;
-}
+import { readBridgeApiKeyFromRequest } from '@/lib/request-security';
 
 function getFilename(username: string, slug: string): string {
   const safe = `${username}-${getMarkdownAlias(slug)}`.replace(/[^a-zA-Z0-9._-]/g, '-');
@@ -20,12 +14,15 @@ export async function GET(
   { params }: { params: Promise<{ username: string; slug: string }> }
 ) {
   const { username, slug } = await params;
-  const apiKey = readApiKeyFromRequest(request);
+  const apiKey = readBridgeApiKeyFromRequest(request);
+  const { getToken } = await auth();
+  const token = (await getToken({ template: 'convex' })) ?? (await getToken()) ?? null;
 
   const note = await getNoteByUsernameAndSlug({
     username,
     slug,
     apiKey,
+    token,
   });
 
   if (!note) {
@@ -38,6 +35,7 @@ export async function GET(
       'Content-Type': 'text/markdown; charset=utf-8',
       'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600',
       'Content-Disposition': `inline; filename="${getFilename(note.username, note.slug)}"`,
+      'X-Content-Type-Options': 'nosniff',
     },
   });
 }

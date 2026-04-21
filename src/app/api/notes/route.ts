@@ -4,51 +4,69 @@ import {
   createNoteWithApiKey,
   createNoteWithAuth,
   listMyNotes,
+  listNotesWithApiKey,
   type NoteVisibility,
 } from '@/lib/notes';
-
-function readApiKeyFromRequest(request: Request): string | null {
-  const authHeader = request.headers.get('authorization') || request.headers.get('Authorization');
-  if (!authHeader) return null;
-  const [scheme, token] = authHeader.split(' ');
-  if (!scheme || !token || scheme.toLowerCase() !== 'bearer') return null;
-  return token.trim() || null;
-}
+import { readBridgeApiKeyFromRequest, rejectCrossOriginMutation } from '@/lib/request-security';
+import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
 function normalizeVisibility(value: unknown): NoteVisibility {
   return value === 'private' ? 'private' : 'public';
 }
 
 function normalizeExpiresInDays(value: unknown): number | null {
-  if (typeof value !== 'number') return null;
-  if (!Number.isFinite(value) || value <= 0) return null;
+  if (typeof value !== 'number') return 30;
+  if (!Number.isFinite(value) || value <= 0) return 30;
   return Math.min(30, value);
 }
 
+function normalizeTitle(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, ' ').slice(0, 120);
+}
+
 export async function GET(request: Request) {
-  const { userId, getToken } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-
-  const token = (await getToken({ template: 'convex' })) ?? (await getToken());
-  if (!token) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-
   const url = new URL(request.url);
   const state = url.searchParams.get('state') === 'deleted' ? 'deleted' : 'active';
 
+  const { userId, getToken } = await auth();
+  if (userId) {
+    const token = (await getToken({ template: 'convex' })) ?? (await getToken());
+    if (!token) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    try {
+      const notes = await listMyNotes({ state, token });
+      return NextResponse.json({ data: notes });
+    } catch {
+      return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
+    }
+  }
+
+  const apiKey = readBridgeApiKeyFromRequest(request);
+  if (!apiKey) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
+
   try {
-    const notes = await listMyNotes({ state, token });
+    const notes = await listNotesWithApiKey({ state, apiKey });
     return NextResponse.json({ data: notes });
-  } catch {
-    return NextResponse.json({ error: 'Failed to fetch notes' }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to fetch notes';
+    const status =
+      message === 'Invalid API key'
+        ? 401
+        : message === 'API key lacks read permission'
+          ? 403
+          : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function POST(request: Request) {
   let payload: {
+    title?: unknown;
     content?: unknown;
     visibility?: unknown;
     expiresInDays?: unknown;
@@ -60,7 +78,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
+  const title = normalizeTitle(payload.title);
   const content = typeof payload.content === 'string' ? payload.content : '';
+  if (!title) {
+    return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+  }
   if (!content.trim()) {
     return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 });
   }
@@ -70,13 +92,16 @@ export async function POST(request: Request) {
 
   const { userId, getToken } = await auth();
   if (userId) {
+    const blocked = rejectCrossOriginMutation(request);
+    if (blocked) return blocked;
+
     const token = (await getToken({ template: 'convex' })) ?? (await getToken());
     if (!token) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
 
     const user = await currentUser();
-    const username = (user?.username || '').trim().toLowerCase();
+    const username = resolveUserHandleFromUser(user);
     if (!username) {
       return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
@@ -85,6 +110,7 @@ export async function POST(request: Request) {
       const result = await createNoteWithAuth({
         token,
         username,
+        title,
         content,
         visibility,
         expiresInDays,
@@ -95,14 +121,16 @@ export async function POST(request: Request) {
       const status =
         message === 'Not authenticated'
           ? 401
-          : message === 'Username is required' || message === 'Content cannot be empty'
+          : message === 'Username is required' ||
+              message === 'Title is required' ||
+              message === 'Content cannot be empty'
             ? 400
             : 500;
       return NextResponse.json({ error: message }, { status });
     }
   }
 
-  const apiKey = readApiKeyFromRequest(request);
+  const apiKey = readBridgeApiKeyFromRequest(request);
   if (!apiKey) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
@@ -110,6 +138,7 @@ export async function POST(request: Request) {
   try {
     const result = await createNoteWithApiKey({
       apiKey,
+      title,
       content,
       visibility,
       expiresInDays,
@@ -122,7 +151,7 @@ export async function POST(request: Request) {
         ? 401
         : message === 'API key lacks write permission'
           ? 403
-          : message === 'Content cannot be empty'
+          : message === 'Title is required' || message === 'Content cannot be empty'
             ? 400
             : 500;
     return NextResponse.json({ error: message }, { status });

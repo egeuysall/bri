@@ -22,7 +22,13 @@ export function NavUser() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <div className={isCollapsed ? "h-6 w-6 rounded-full border border-neutral-800" : "h-8 w-full rounded-sm border border-neutral-800"} />
+          <div
+            className={
+              isCollapsed
+                ? "h-6 w-6 animate-pulse rounded-full bg-neutral-900"
+                : "h-8 w-full animate-pulse rounded-sm bg-neutral-900"
+            }
+          />
         </SidebarMenuItem>
       </SidebarMenu>
     )

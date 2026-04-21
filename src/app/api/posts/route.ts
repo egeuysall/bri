@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { createPost } from '@/lib/posts';
+import { rejectCrossOriginMutation } from '@/lib/request-security';
 
 type CreatePostPayload = {
   content?: unknown;
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
+
+  const blocked = rejectCrossOriginMutation(request);
+  if (blocked) return blocked;
 
   const token = (await getToken({ template: 'convex' })) ?? (await getToken());
   if (!token) {

@@ -27,6 +27,7 @@ export async function generateMetadata({
     username,
     slug,
     apiKey: token,
+    token,
   });
 
   if (!note) {

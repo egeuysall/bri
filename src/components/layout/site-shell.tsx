@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? '/';
+  const pathname = usePathname();
   const router = useRouter();
   const { isLoaded, isSignedIn, user } = useUser();
   const isLandingRoute = pathname === '/';

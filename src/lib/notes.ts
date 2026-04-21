@@ -29,16 +29,43 @@ export type ApiKeyRecord = {
   revokedAt: number | null;
 };
 
+export type QuickLinkRecord = {
+  id: string;
+  username: string;
+  key: string;
+  targetUrl: string;
+  label: string | null;
+  clicks: number;
+  createdAt: number;
+  updatedAt: number;
+  lastClickedAt: number | null;
+};
+
+export type PinnedRecord = {
+  id: string;
+  kind: 'note' | 'link';
+  noteId: string | null;
+  linkId: string | null;
+  title: string;
+  href: string;
+  createdAt: number;
+};
+
 export async function getNoteByUsernameAndSlug(input: {
   username: string;
   slug: string;
   apiKey?: string | null;
+  token?: string | null;
 }): Promise<NoteRecord | null> {
-  const data = await fetchQuery(api.notes.getByUsernameAndSlug, {
-    username: input.username,
-    slug: input.slug,
-    apiKey: input.apiKey ?? null,
-  });
+  const data = await fetchQuery(
+    api.notes.getByUsernameAndSlug,
+    {
+      username: input.username,
+      slug: input.slug,
+      apiKey: input.apiKey ?? null,
+    },
+    input.token ? { token: input.token } : undefined
+  );
   return data ?? null;
 }
 
@@ -46,16 +73,23 @@ export async function listMyNotes(input: {
   state: NoteState;
   token: string;
 }): Promise<NoteRecord[]> {
-  return await fetchQuery(
-    api.notes.listMine,
-    { state: input.state },
-    { token: input.token }
-  );
+  return await fetchQuery(api.notes.listMine, { state: input.state }, { token: input.token });
+}
+
+export async function listNotesWithApiKey(input: {
+  apiKey: string;
+  state: NoteState;
+}): Promise<NoteRecord[]> {
+  return await fetchQuery(api.notes.listByApiKey, {
+    apiKey: input.apiKey,
+    state: input.state,
+  });
 }
 
 export async function createNoteWithAuth(input: {
   token: string;
   username: string;
+  title: string;
   content: string;
   visibility: NoteVisibility;
   expiresInDays: number | null;
@@ -64,6 +98,7 @@ export async function createNoteWithAuth(input: {
     api.notes.create,
     {
       username: input.username,
+      title: input.title,
       content: input.content,
       visibility: input.visibility,
       expiresInDays: input.expiresInDays,
@@ -74,12 +109,14 @@ export async function createNoteWithAuth(input: {
 
 export async function createNoteWithApiKey(input: {
   apiKey: string;
+  title: string;
   content: string;
   visibility: NoteVisibility;
   expiresInDays: number | null;
 }) {
   return await fetchMutation(api.notes.createWithApiKey, {
     apiKey: input.apiKey,
+    title: input.title,
     content: input.content,
     visibility: input.visibility,
     expiresInDays: input.expiresInDays,
@@ -89,6 +126,7 @@ export async function createNoteWithApiKey(input: {
 export async function updateNote(input: {
   token: string;
   noteId: string;
+  title: string;
   content: string;
   visibility: NoteVisibility;
   expiresInDays: number | null;
@@ -96,7 +134,8 @@ export async function updateNote(input: {
   return await fetchMutation(
     api.notes.update,
     {
-      noteId: input.noteId as any,
+      noteId: input.noteId as never,
+      title: input.title,
       content: input.content,
       visibility: input.visibility,
       expiresInDays: input.expiresInDays,
@@ -105,28 +144,94 @@ export async function updateNote(input: {
   );
 }
 
+export async function updateNoteWithApiKey(input: {
+  apiKey: string;
+  noteId: string;
+  title: string;
+  content: string;
+  visibility: NoteVisibility;
+  expiresInDays: number | null;
+}) {
+  return await fetchMutation(api.notes.updateWithApiKey, {
+    apiKey: input.apiKey,
+    noteId: input.noteId as never,
+    title: input.title,
+    content: input.content,
+    visibility: input.visibility,
+    expiresInDays: input.expiresInDays,
+  });
+}
+
 export async function softDeleteNote(input: { token: string; noteId: string }) {
-  return await fetchMutation(
-    api.notes.softDelete,
-    { noteId: input.noteId as any },
-    { token: input.token }
-  );
+  return await fetchMutation(api.notes.softDelete, { noteId: input.noteId as never }, { token: input.token });
+}
+
+export async function softDeleteNoteWithApiKey(input: { apiKey: string; noteId: string }) {
+  return await fetchMutation(api.notes.softDeleteWithApiKey, {
+    apiKey: input.apiKey,
+    noteId: input.noteId as never,
+  });
 }
 
 export async function restoreNote(input: { token: string; noteId: string }) {
-  return await fetchMutation(
-    api.notes.restore,
-    { noteId: input.noteId as any },
-    { token: input.token }
-  );
+  return await fetchMutation(api.notes.restore, { noteId: input.noteId as never }, { token: input.token });
 }
 
 export async function permanentlyDeleteNote(input: { token: string; noteId: string }) {
   return await fetchMutation(
     api.notes.permanentlyDelete,
-    { noteId: input.noteId as any },
+    { noteId: input.noteId as never },
     { token: input.token }
   );
+}
+
+export async function permanentlyDeleteNoteWithApiKey(input: {
+  apiKey: string;
+  noteId: string;
+}) {
+  return await fetchMutation(api.notes.permanentlyDeleteWithApiKey, {
+    apiKey: input.apiKey,
+    noteId: input.noteId as never,
+  });
+}
+
+export async function adminUpdateNote(input: {
+  token: string;
+  noteId: string;
+  adminSecret: string;
+  title: string;
+  content: string;
+  visibility: NoteVisibility;
+  expiresInDays: number | null;
+}) {
+  return await fetchMutation(
+    api.notes.adminUpdate,
+    {
+      adminSecret: input.adminSecret,
+      noteId: input.noteId as never,
+      title: input.title,
+      content: input.content,
+      visibility: input.visibility,
+      expiresInDays: input.expiresInDays,
+    },
+    { token: input.token }
+  );
+}
+
+export async function trackNotePageView(input: {
+  username: string;
+  slug: string;
+  path: string;
+}) {
+  return await fetchMutation(api.notes.trackPageView, {
+    username: input.username,
+    slug: input.slug,
+    path: input.path,
+  });
+}
+
+export async function getMyAnalytics(input: { token: string; days: number }) {
+  return await fetchQuery(api.notes.analyticsMine, { days: input.days }, { token: input.token });
 }
 
 export async function listMyApiKeys(input: { token: string }): Promise<ApiKeyRecord[]> {
@@ -155,9 +260,133 @@ export async function createApiKeyHashed(input: {
 }
 
 export async function revokeApiKey(input: { token: string; keyId: string }) {
+  return await fetchMutation(api.apiKeys.revokeMine, { keyId: input.keyId as never }, { token: input.token });
+}
+
+export async function listQuickLinks(input: { token: string }): Promise<QuickLinkRecord[]> {
+  return await fetchQuery(api.quickLinks.listMine, {}, { token: input.token });
+}
+
+export async function listQuickLinksWithApiKey(input: {
+  apiKey: string;
+}): Promise<QuickLinkRecord[]> {
+  return await fetchQuery(api.quickLinks.listByApiKey, { apiKey: input.apiKey });
+}
+
+export async function createQuickLink(input: {
+  token: string;
+  username: string;
+  key: string;
+  targetUrl: string;
+  label: string | null;
+}) {
   return await fetchMutation(
-    api.apiKeys.revokeMine,
-    { keyId: input.keyId as any },
+    api.quickLinks.create,
+    {
+      username: input.username,
+      key: input.key,
+      targetUrl: input.targetUrl,
+      label: input.label,
+    },
+    { token: input.token }
+  );
+}
+
+export async function createQuickLinkWithApiKey(input: {
+  apiKey: string;
+  key: string;
+  targetUrl: string;
+  label: string | null;
+}) {
+  return await fetchMutation(api.quickLinks.createWithApiKey, {
+    apiKey: input.apiKey,
+    key: input.key,
+    targetUrl: input.targetUrl,
+    label: input.label,
+  });
+}
+
+export async function updateQuickLink(input: {
+  token: string;
+  linkId: string;
+  key: string;
+  targetUrl: string;
+  label: string | null;
+}) {
+  return await fetchMutation(
+    api.quickLinks.update,
+    {
+      linkId: input.linkId as never,
+      key: input.key,
+      targetUrl: input.targetUrl,
+      label: input.label,
+    },
+    { token: input.token }
+  );
+}
+
+export async function updateQuickLinkWithApiKey(input: {
+  apiKey: string;
+  linkId: string;
+  key: string;
+  targetUrl: string;
+  label: string | null;
+}) {
+  return await fetchMutation(api.quickLinks.updateWithApiKey, {
+    apiKey: input.apiKey,
+    linkId: input.linkId as never,
+    key: input.key,
+    targetUrl: input.targetUrl,
+    label: input.label,
+  });
+}
+
+export async function removeQuickLink(input: { token: string; linkId: string }) {
+  return await fetchMutation(
+    api.quickLinks.remove,
+    { linkId: input.linkId as never },
+    { token: input.token }
+  );
+}
+
+export async function removeQuickLinkWithApiKey(input: { apiKey: string; linkId: string }) {
+  return await fetchMutation(api.quickLinks.removeWithApiKey, {
+    apiKey: input.apiKey,
+    linkId: input.linkId as never,
+  });
+}
+
+export async function getQuickLinkByUsernameAndKey(input: {
+  username: string;
+  key: string;
+}): Promise<QuickLinkRecord | null> {
+  const data = await fetchQuery(api.quickLinks.getByUsernameAndKey, {
+    username: input.username,
+    key: input.key,
+  });
+  return data ?? null;
+}
+
+export async function trackQuickLinkClick(input: { linkId: string }) {
+  return await fetchMutation(api.quickLinks.trackClick, { linkId: input.linkId as never });
+}
+
+export async function listPins(input: { token: string }): Promise<PinnedRecord[]> {
+  return await fetchQuery(api.pins.listMine, {}, { token: input.token });
+}
+
+export async function togglePinnedNote(input: { token: string; noteId: string }) {
+  return await fetchMutation(
+    api.pins.toggleNote,
+    { noteId: input.noteId as never },
+    { token: input.token }
+  );
+}
+
+export async function togglePinnedLink(input: { token: string; linkId: string }) {
+  return await fetchMutation(
+    api.pins.toggleLink,
+    { linkId: input.linkId as never },
     { token: input.token }
   );
 }

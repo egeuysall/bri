@@ -41,4 +41,53 @@ export default defineSchema({
   })
     .index("by_prefix", ["prefix"])
     .index("by_ownerTokenIdentifier_and_createdAt", ["ownerTokenIdentifier", "createdAt"]),
+  quickLinks: defineTable({
+    ownerTokenIdentifier: v.string(),
+    username: v.string(),
+    key: v.string(),
+    targetUrl: v.string(),
+    label: v.union(v.string(), v.null()),
+    clicks: v.number(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+    lastClickedAt: v.union(v.number(), v.null()),
+  })
+    .index("by_ownerTokenIdentifier_and_createdAt", ["ownerTokenIdentifier", "createdAt"])
+    .index("by_ownerTokenIdentifier_and_key", ["ownerTokenIdentifier", "key"])
+    .index("by_username_and_key", ["username", "key"]),
+  pins: defineTable({
+    ownerTokenIdentifier: v.string(),
+    kind: v.union(v.literal("note"), v.literal("link")),
+    noteId: v.union(v.id("notes"), v.null()),
+    linkId: v.union(v.id("quickLinks"), v.null()),
+    title: v.string(),
+    href: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_ownerTokenIdentifier_and_createdAt", ["ownerTokenIdentifier", "createdAt"])
+    .index("by_ownerTokenIdentifier_and_kind_and_noteId", [
+      "ownerTokenIdentifier",
+      "kind",
+      "noteId",
+    ])
+    .index("by_ownerTokenIdentifier_and_kind_and_linkId", [
+      "ownerTokenIdentifier",
+      "kind",
+      "linkId",
+    ]),
+  pageMetrics: defineTable({
+    ownerTokenIdentifier: v.string(),
+    username: v.string(),
+    slug: v.string(),
+    path: v.string(),
+    dayKey: v.string(),
+    views: v.number(),
+    lastViewedAt: v.number(),
+  })
+    .index("by_ownerTokenIdentifier_and_dayKey", ["ownerTokenIdentifier", "dayKey"])
+    .index("by_ownerTokenIdentifier_and_slug_and_dayKey", [
+      "ownerTokenIdentifier",
+      "slug",
+      "dayKey",
+    ]),
 });

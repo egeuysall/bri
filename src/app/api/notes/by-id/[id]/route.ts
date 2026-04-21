@@ -2,20 +2,33 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import {
   permanentlyDeleteNote,
+  permanentlyDeleteNoteWithApiKey,
   restoreNote,
   softDeleteNote,
+  softDeleteNoteWithApiKey,
   updateNote,
+  updateNoteWithApiKey,
   type NoteVisibility,
 } from '@/lib/notes';
+import {
+  normalizeResourceId,
+  readBridgeApiKeyFromRequest,
+  rejectCrossOriginMutation,
+} from '@/lib/request-security';
 
 function normalizeVisibility(value: unknown): NoteVisibility {
   return value === 'private' ? 'private' : 'public';
 }
 
 function normalizeExpiresInDays(value: unknown): number | null {
-  if (typeof value !== 'number') return null;
-  if (!Number.isFinite(value) || value <= 0) return null;
-  return Math.floor(value);
+  if (typeof value !== 'number') return 30;
+  if (!Number.isFinite(value) || value <= 0) return 30;
+  return Math.min(30, value);
+}
+
+function normalizeTitle(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  return value.trim().replace(/\s+/g, ' ').slice(0, 120);
 }
 
 async function requireConvexToken() {
@@ -29,12 +42,14 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const token = await requireConvexToken();
-  if (!token) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-
-  const { id } = await params;
+  const { id: rawId } = await params;
+  const id = normalizeResourceId(rawId);
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid note id' }, { status: 400 });
+  }
   let payload: {
     action?: unknown;
+    title?: unknown;
     content?: unknown;
     visibility?: unknown;
     expiresInDays?: unknown;
@@ -47,24 +62,46 @@ export async function PATCH(
   }
 
   const action = typeof payload.action === 'string' ? payload.action : 'update';
+  const token = await requireConvexToken();
+  if (token) {
+    const blocked = rejectCrossOriginMutation(request);
+    if (blocked) return blocked;
+  }
+
+  const apiKey = token ? null : readBridgeApiKeyFromRequest(request);
+
+  if (!token && !apiKey) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+  }
 
   try {
     if (action === 'softDelete') {
-      const data = await softDeleteNote({ token, noteId: id });
+      const data = token
+        ? await softDeleteNote({ token, noteId: id })
+        : await softDeleteNoteWithApiKey({ apiKey: apiKey as string, noteId: id });
       return NextResponse.json({ data });
     }
 
     if (action === 'restore') {
+      if (!token) {
+        return NextResponse.json({ error: 'Restore requires user session' }, { status: 403 });
+      }
       const data = await restoreNote({ token, noteId: id });
       return NextResponse.json({ data });
     }
 
     if (action === 'permanentDelete') {
-      const data = await permanentlyDeleteNote({ token, noteId: id });
+      const data = token
+        ? await permanentlyDeleteNote({ token, noteId: id })
+        : await permanentlyDeleteNoteWithApiKey({ apiKey: apiKey as string, noteId: id });
       return NextResponse.json({ data });
     }
 
+    const title = normalizeTitle(payload.title);
     const content = typeof payload.content === 'string' ? payload.content : '';
+    if (!title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
     if (!content.trim()) {
       return NextResponse.json({ error: 'Content cannot be empty' }, { status: 400 });
     }
@@ -72,17 +109,35 @@ export async function PATCH(
     const visibility = normalizeVisibility(payload.visibility);
     const expiresInDays = normalizeExpiresInDays(payload.expiresInDays);
 
-    const data = await updateNote({
-      token,
-      noteId: id,
-      content,
-      visibility,
-      expiresInDays,
-    });
+    const data = token
+      ? await updateNote({
+          token,
+          noteId: id,
+          title,
+          content,
+          visibility,
+          expiresInDays,
+        })
+      : await updateNoteWithApiKey({
+          apiKey: apiKey as string,
+          noteId: id,
+          title,
+          content,
+          visibility,
+          expiresInDays,
+        });
+
     return NextResponse.json({ data });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to update note';
-    const status = message === 'Not authenticated' ? 401 : message === 'Forbidden' ? 403 : 500;
+    const status =
+      message === 'Not authenticated' || message === 'Invalid API key'
+        ? 401
+        : message.includes('permission') || message === 'Forbidden'
+          ? 403
+          : message === 'Title is required' || message === 'Content cannot be empty'
+            ? 400
+            : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

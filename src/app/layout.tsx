@@ -31,7 +31,7 @@ export const name = 'bri: Share your Markdown files quickly and easily.';
  * The main image URL for the site or application.
  * @type {string}
  */
-export const image = 'desktop.png';
+export const image = 'logo.png';
 
 /**
  * A brief description of the site or application.
@@ -87,19 +87,19 @@ const authorLinkedin = 'egeuysall';
  * The path or URL to the ICO favicon.
  * @type {string}
  */
-const icoIcon = 'icon.ico';
+const icoIcon = 'logo.svg';
 
 /**
  * The path or URL to the PNG favicon.
  * @type {string}
  */
-const pngIcon = 'icon.png';
+const pngIcon = 'logo.png';
 
 /**
  * The path or URL to the Apple touch icon.
  * @type {string}
  */
-const appleTouchIcon = 'apple-touch-icon.png';
+const appleTouchIcon = 'logo.png';
 
 export async function generateMetadata(): Promise<Metadata> {
   // Fetch data needed for metadata

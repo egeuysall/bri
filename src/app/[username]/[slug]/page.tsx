@@ -1,8 +1,13 @@
 import type { CSSProperties } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { MarkdownContent } from '@/components/markdown';
-import { getNoteByUsernameAndSlug } from '@/lib/notes';
+import {
+  getNoteByUsernameAndSlug,
+  getQuickLinkByUsernameAndKey,
+  trackNotePageView,
+  trackQuickLinkClick,
+} from '@/lib/notes';
 
 function stripLeadingHeading(content: string): string {
   const lines = content.split('\n');
@@ -36,25 +41,42 @@ export default async function NotePage({
     username,
     slug,
     apiKey: token,
+    token,
   });
 
   if (!note) {
-    notFound();
+    const quickLink = await getQuickLinkByUsernameAndKey({ username, key: slug });
+    if (!quickLink) {
+      notFound();
+    }
+    await trackQuickLinkClick({ linkId: quickLink.id });
+    redirect(quickLink.targetUrl);
   }
+
+  await trackNotePageView({
+    username: note.username,
+    slug: note.slug,
+    path: `/${note.username}/${note.slug}`,
+  });
 
   const contentWithoutHeading = stripLeadingHeading(note.content);
 
   return (
-    <section className="animate-enter mt-0!" style={{ '--delay': '40ms' } as CSSProperties}>
-      <article className="prose prose-neutral prose-invert max-w-none prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[1rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.95rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.88rem]! prose-h3:leading-6! prose-h3:font-medium! prose-h4:text-[0.82rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-900 prose-pre:border prose-pre:border-neutral-800">
-        <header className="mb-6 border-b border-neutral-900 pb-5">
-          <h1 className="!mt-0 !mb-0 text-base font-semibold text-neutral-100">{note.title}</h1>
-          <p className="mt-2 text-xs text-neutral-400">
-            @{note.username} &middot; {formatDate(note.createdAt)}
-          </p>
-        </header>
+    <section
+      className="w-full animate-enter px-4 py-5 md:px-8 md:py-8"
+      style={{ '--delay': '40ms' } as CSSProperties}
+    >
+      <article className="mx-auto w-full max-w-155">
+        <h1 className="text-base font-semibold text-neutral-100">{note.title}</h1>
+        <p className="mt-2 text-xs text-neutral-400">
+          @{note.username} &middot; {formatDate(note.createdAt)}
+        </p>
 
-        <MarkdownContent postId={note.id} content={contentWithoutHeading} />
+        <div className="px-0 py-6 md:py-7">
+          <div className="prose prose-neutral prose-invert max-w-none prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[1rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.95rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.88rem]! prose-h3:leading-6! prose-h3:font-medium! prose-h4:text-[0.82rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-900 prose-pre:border prose-pre:border-neutral-800">
+            <MarkdownContent postId={note.id} content={contentWithoutHeading} />
+          </div>
+        </div>
       </article>
     </section>
   );

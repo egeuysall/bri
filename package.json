@@ -15,7 +15,7 @@
     "cli": "NODE_ENV=development bun run ./cli/bri.ts"
   },
   "dependencies": {
-    "@base-ui/react": "^1.4.0",
+    "@base-ui/react": "^1.4.1",
     "@clerk/nextjs": "^7.2.3",
     "@clerk/ui": "^1.6.3",
     "@vercel/analytics": "^1.6.1",
@@ -31,6 +31,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-markdown": "^10.1.0",
+    "recharts": "3.8.0",
     "rehype-pretty-code": "^0.14.3",
     "remark-gfm": "^4.0.1",
     "shadcn": "^4.3.0",
@@ -44,6 +45,7 @@
     "@next/bundle-analyzer": "^16.1.6",
     "@sentry/nextjs": "^10.41.0",
     "@tailwindcss/postcss": "^4.2.1",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^25.3.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

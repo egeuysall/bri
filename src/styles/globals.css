@@ -13,6 +13,11 @@
   --inline-code-border: #2f2f35;
   --code-block-bg: #171717;
   --code-block-border: #34343a;
+  --chart-1: oklch(0.696 0.17 162.48);
+  --chart-2: oklch(0.769 0.188 70.08);
+  --chart-3: oklch(0.627 0.265 303.9);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.645 0.246 16.439);
 
   --color-neutral-50: #fafafa;
   --color-neutral-100: #f5f5f5;
@@ -43,7 +48,7 @@
   --destructive: #ef4444;
   --border: #262626;
   --input: #404040;
-  --ring: #737373;
+  --ring: #f5f5f5;
   --sidebar: 0 0% 2%;
   --sidebar-foreground: 0 0% 96%;
   --sidebar-primary: 0 0% 96%;
@@ -69,6 +74,11 @@
     --inline-code-border: #a1a1aa;
     --code-block-bg: #ededf0;
     --code-block-border: #a1a1aa;
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
 
     /* Reversed neutral scale so existing `text-neutral-100` style classes remain legible in light mode. */
     --color-neutral-50: #0a0a0a;
@@ -100,7 +110,7 @@
     --destructive: #dc2626;
     --border: #a1a1aa;
     --input: #a1a1aa;
-    --ring: #52525b;
+    --ring: #09090b;
     --sidebar: #fff;
     --sidebar-foreground: 240 10% 8%;
     --sidebar-primary: 0 0% 10%;
@@ -166,6 +176,13 @@ body {
   border-radius: var(--radius-sm); /* 0.25rem (4px) */
 }
 
+:where(input:not([type='checkbox']):not([type='radio']), textarea, select):focus,
+:where(input:not([type='checkbox']):not([type='radio']), textarea, select):focus-visible {
+  outline: none;
+  border-color: var(--fg);
+  box-shadow: 0 0 0 1px var(--fg);
+}
+
 ::selection {
   background: var(--selection-bg);
   color: var(--selection-fg);
@@ -184,7 +201,9 @@ a {
 
 .row-border {
   position: relative;
+  border-top: 1px solid var(--color-neutral-900);
   border-bottom: 1px solid var(--color-neutral-900);
+  transition: background-color 140ms ease;
 }
 
 .row-border::after {
@@ -198,6 +217,7 @@ a {
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
 .row-border:hover::after,

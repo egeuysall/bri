@@ -5,6 +5,8 @@ import path from 'node:path';
 export interface BriConfig {
   endpoint?: string;
   siteUrl?: string;
+  apiKey?: string;
+  username?: string;
   timeoutMs?: number;
   maxBytes?: number;
   retries?: number;
