@@ -34,7 +34,7 @@ function SidebarSlashToggle() {
       onClick={toggleSidebar}
       className={
         isCollapsed
-          ? 'size-8 justify-start px-1 text-xs tracking-wide'
+          ? 'size-8 justify-center px-0 text-xs tracking-wide'
           : 'h-8 w-full justify-start px-1 text-xs tracking-wide'
       }
     >
@@ -88,7 +88,11 @@ export function AppSidebar({
               <SidebarMenuButton
                 isActive={panel === item.id}
                 onClick={() => onPanelChange(item.id)}
-                className="text-xs data-active:bg-neutral-900 data-active:text-neutral-100"
+                className={
+                  isCollapsed
+                    ? 'justify-center gap-0 px-0 text-center text-xs data-active:bg-neutral-900 data-active:text-neutral-100'
+                    : 'text-xs data-active:bg-neutral-900 data-active:text-neutral-100'
+                }
               >
                 {isCollapsed ? (
                   <span className="font-mono text-[10px] leading-none">{iconByPanel[item.id]}</span>
