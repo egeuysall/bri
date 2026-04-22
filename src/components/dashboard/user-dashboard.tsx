@@ -209,7 +209,7 @@ export function UserDashboard() {
       ? tabFromQuery
       : 'notes';
 
-  const PAGE_SIZE = 12;
+  const DASHBOARD_PAGE_SIZE = 8;
   const visibilityOptions = [
     { value: 'public', label: 'public' },
     { value: 'private', label: 'private' },
@@ -293,20 +293,47 @@ export function UserDashboard() {
     return `/${profileHandle}?public=1`;
   }, [profileHandle]);
 
-  const notePages = Math.max(1, Math.ceil(notes.length / PAGE_SIZE));
-  const linksPages = Math.max(1, Math.ceil(quickLinks.length / PAGE_SIZE));
-  const deletedPages = Math.max(1, Math.ceil(deletedNotes.length / PAGE_SIZE));
+  const sortedNotes = useMemo(
+    () => [...notes].sort((a, b) => b.createdAt - a.createdAt),
+    [notes]
+  );
+  const sortedQuickLinks = useMemo(
+    () => [...quickLinks].sort((a, b) => b.updatedAt - a.updatedAt),
+    [quickLinks]
+  );
+  const sortedDeletedNotes = useMemo(
+    () =>
+      [...deletedNotes].sort(
+        (a, b) => (b.deletedAt ?? b.updatedAt ?? 0) - (a.deletedAt ?? a.updatedAt ?? 0)
+      ),
+    [deletedNotes]
+  );
+  const notePages = Math.max(1, Math.ceil(sortedNotes.length / DASHBOARD_PAGE_SIZE));
+  const linksPages = Math.max(1, Math.ceil(sortedQuickLinks.length / DASHBOARD_PAGE_SIZE));
+  const deletedPages = Math.max(1, Math.ceil(sortedDeletedNotes.length / DASHBOARD_PAGE_SIZE));
   const visibleNotes = useMemo(
-    () => notes.slice((notesPage - 1) * PAGE_SIZE, notesPage * PAGE_SIZE),
-    [notes, notesPage]
+    () =>
+      sortedNotes.slice(
+        (notesPage - 1) * DASHBOARD_PAGE_SIZE,
+        notesPage * DASHBOARD_PAGE_SIZE
+      ),
+    [notesPage, sortedNotes]
   );
   const visibleDeletedNotes = useMemo(
-    () => deletedNotes.slice((deletedPage - 1) * PAGE_SIZE, deletedPage * PAGE_SIZE),
-    [deletedNotes, deletedPage]
+    () =>
+      sortedDeletedNotes.slice(
+        (deletedPage - 1) * DASHBOARD_PAGE_SIZE,
+        deletedPage * DASHBOARD_PAGE_SIZE
+      ),
+    [deletedPage, sortedDeletedNotes]
   );
   const visibleQuickLinks = useMemo(
-    () => quickLinks.slice((linksPage - 1) * PAGE_SIZE, linksPage * PAGE_SIZE),
-    [quickLinks, linksPage]
+    () =>
+      sortedQuickLinks.slice(
+        (linksPage - 1) * DASHBOARD_PAGE_SIZE,
+        linksPage * DASHBOARD_PAGE_SIZE
+      ),
+    [linksPage, sortedQuickLinks]
   );
   const viewsBySlug = useMemo<Record<string, number>>(() => {
     if (!analytics) return {};
@@ -970,13 +997,17 @@ export function UserDashboard() {
               <div className="w-full space-y-3">
                 <h1 className="text-sm text-neutral-200">Your notes</h1>
                 {notes.length === 0 ? <p className="text-xs text-neutral-500">No notes yet.</p> : null}
-                {visibleNotes.map((note) => {
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {visibleNotes.map((note, index) => {
                   const isEditing = editingNoteId === note.id;
+                  const isOddLastCard =
+                    visibleNotes.length % 2 === 1 && index === visibleNotes.length - 1;
+                  const desktopSpanClass = isEditing || isOddLastCard ? 'lg:col-span-2' : '';
                   if (isEditing) {
                     return (
                       <article
                         key={note.id}
-                        className="space-y-3 rounded-sm border border-neutral-900 p-3"
+                        className={`space-y-3 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
                       >
                         <div className="grid gap-2 md:grid-cols-2">
                           <input
@@ -1071,7 +1102,7 @@ export function UserDashboard() {
                   return (
                     <article
                       key={note.id}
-                      className="group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40"
+                      className={`group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40 ${desktopSpanClass}`}
                       role="link"
                       tabIndex={0}
                       onClick={() => {
@@ -1093,7 +1124,7 @@ export function UserDashboard() {
                             &middot; views {viewsBySlug[note.slug] ?? 0}
                           </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                           <Button
                             type="button"
                             variant="default"
@@ -1151,7 +1182,8 @@ export function UserDashboard() {
                     </article>
                   );
                 })}
-                {notes.length > PAGE_SIZE ? (
+                </div>
+                {sortedNotes.length > DASHBOARD_PAGE_SIZE ? (
                   <Pagination className="justify-start">
                     <PaginationContent>
                       <PaginationItem>
@@ -1356,13 +1388,17 @@ export function UserDashboard() {
                 {quickLinks.length === 0 ? (
                   <p className="text-xs text-neutral-500">No quick links yet.</p>
                 ) : null}
-                {visibleQuickLinks.map((link) => {
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {visibleQuickLinks.map((link, index) => {
                   const isEditing = editingLinkId === link.id;
+                  const isOddLastCard =
+                    visibleQuickLinks.length % 2 === 1 && index === visibleQuickLinks.length - 1;
+                  const desktopSpanClass = isEditing || isOddLastCard ? 'lg:col-span-2' : '';
                   if (isEditing) {
                     return (
                       <article
                         key={link.id}
-                        className="space-y-2 rounded-sm border border-neutral-900 p-3"
+                        className={`space-y-2 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
                       >
                         <div className="grid gap-2 md:grid-cols-4">
                           <input
@@ -1415,7 +1451,7 @@ export function UserDashboard() {
                   return (
                     <article
                       key={link.id}
-                      className="group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40"
+                      className={`group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40 ${desktopSpanClass}`}
                       role="link"
                       tabIndex={0}
                       onClick={() => {
@@ -1438,7 +1474,7 @@ export function UserDashboard() {
                             {link.lastClickedAt ? ` · last ${formatDate(link.lastClickedAt)}` : ''}
                           </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                           <Button
                             type="button"
                             variant="default"
@@ -1496,7 +1532,8 @@ export function UserDashboard() {
                     </article>
                   );
                 })}
-                {quickLinks.length > PAGE_SIZE ? (
+                </div>
+                {sortedQuickLinks.length > DASHBOARD_PAGE_SIZE ? (
                   <Pagination className="justify-start">
                     <PaginationContent>
                       <PaginationItem>
@@ -1756,55 +1793,64 @@ export function UserDashboard() {
                 {deletedNotes.length === 0 ? (
                   <p className="text-xs text-neutral-500">No recently deleted notes.</p>
                 ) : null}
-                {visibleDeletedNotes.map((note) => (
-                  <article
-                    key={note.id}
-                    className="group rounded-sm border border-neutral-900 px-3 py-3"
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="text-sm text-neutral-200">
-                          {note.title}
-                        </p>
-                        <p className="mt-1 text-[11px] text-neutral-500">
-                          deleted {formatDate(note.deletedAt)} &middot; permanent delete{' '}
-                          {formatDate(note.purgeAt)}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          className="h-7 border border-neutral-800 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                          onClick={() => {
-                            void patchNote(note.id, 'restore').catch((err) =>
-                              toast.error(err instanceof Error ? err.message : 'Failed to restore note')
-                            );
-                          }}
-                        >
-                          Restore
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="default"
-                          className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                          onClick={() => {
-                            void patchNote(note.id, 'permanentDelete').catch((err) =>
-                              toast.error(
-                                err instanceof Error
-                                  ? err.message
-                                  : 'Failed to permanently delete note'
-                              )
-                            );
-                          }}
-                        >
-                          Delete forever
-                        </Button>
-                      </div>
-                    </div>
-                  </article>
-                ))}
-                {deletedNotes.length > PAGE_SIZE ? (
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  {visibleDeletedNotes.map((note, index) => {
+                    const isOddLastCard =
+                      visibleDeletedNotes.length % 2 === 1 &&
+                      index === visibleDeletedNotes.length - 1;
+                    const desktopSpanClass = isOddLastCard ? 'lg:col-span-2' : '';
+
+                    return (
+                      <article
+                        key={note.id}
+                        className={`group rounded-sm border border-neutral-900 px-3 py-3 ${desktopSpanClass}`}
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="text-sm text-neutral-200">
+                              {note.title}
+                            </p>
+                            <p className="mt-1 text-[11px] text-neutral-500">
+                              deleted {formatDate(note.deletedAt)} &middot; permanent delete{' '}
+                              {formatDate(note.purgeAt)}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="h-7 border border-neutral-800 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                              onClick={() => {
+                                void patchNote(note.id, 'restore').catch((err) =>
+                                  toast.error(err instanceof Error ? err.message : 'Failed to restore note')
+                                );
+                              }}
+                            >
+                              Restore
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="default"
+                              className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                              onClick={() => {
+                                void patchNote(note.id, 'permanentDelete').catch((err) =>
+                                  toast.error(
+                                    err instanceof Error
+                                      ? err.message
+                                      : 'Failed to permanently delete note'
+                                  )
+                                );
+                              }}
+                            >
+                              Delete forever
+                            </Button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+                {sortedDeletedNotes.length > DASHBOARD_PAGE_SIZE ? (
                   <Pagination className="justify-start">
                     <PaginationContent>
                       <PaginationItem>

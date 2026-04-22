@@ -15,7 +15,7 @@ import {
 } from '@/lib/user-handle';
 
 export const revalidate = 0;
-const PUBLIC_LIST_PAGE_SIZE = 10;
+const PUBLIC_LIST_PAGE_SIZE = 5;
 
 function singleQueryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
@@ -63,15 +63,17 @@ export default async function DashboardPage({
     notFound();
   }
 
-  const notePages = Math.max(1, Math.ceil(notes.length / PUBLIC_LIST_PAGE_SIZE));
-  const linkPages = Math.max(1, Math.ceil(links.length / PUBLIC_LIST_PAGE_SIZE));
+  const sortedNotes = [...notes].sort((a, b) => b.createdAt - a.createdAt);
+  const sortedLinks = [...links].sort((a, b) => b.updatedAt - a.updatedAt);
+  const notePages = Math.max(1, Math.ceil(sortedNotes.length / PUBLIC_LIST_PAGE_SIZE));
+  const linkPages = Math.max(1, Math.ceil(sortedLinks.length / PUBLIC_LIST_PAGE_SIZE));
   const notePage = Math.min(parsePage(singleQueryParam(resolvedSearchParams.notePage)), notePages);
   const linkPage = Math.min(parsePage(singleQueryParam(resolvedSearchParams.linkPage)), linkPages);
-  const visibleNotes = notes.slice(
+  const visibleNotes = sortedNotes.slice(
     (notePage - 1) * PUBLIC_LIST_PAGE_SIZE,
     notePage * PUBLIC_LIST_PAGE_SIZE
   );
-  const visibleLinks = links.slice(
+  const visibleLinks = sortedLinks.slice(
     (linkPage - 1) * PUBLIC_LIST_PAGE_SIZE,
     linkPage * PUBLIC_LIST_PAGE_SIZE
   );
