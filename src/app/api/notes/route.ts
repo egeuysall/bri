@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import {
   createNoteWithApiKey,
   createNoteWithAuth,
+  expireDueNotesWithApiKey,
+  expireMyDueNotes,
   listMyNotes,
   listNotesWithApiKey,
   type NoteVisibility,
@@ -48,6 +50,9 @@ export async function GET(request: Request) {
     }
 
     try {
+      if (state === 'active') {
+        await expireMyDueNotes({ token }).catch(() => undefined);
+      }
       const notes = await listMyNotes({ state, token });
       return NextResponse.json({ data: notes });
     } catch (error) {
@@ -62,6 +67,9 @@ export async function GET(request: Request) {
   }
 
   try {
+    if (state === 'active') {
+      await expireDueNotesWithApiKey({ apiKey }).catch(() => undefined);
+    }
     const notes = await listNotesWithApiKey({ state, apiKey });
     return NextResponse.json({ data: notes });
   } catch (error) {

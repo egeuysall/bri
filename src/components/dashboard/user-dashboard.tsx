@@ -1439,7 +1439,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={note.id}
-                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -1452,7 +1452,7 @@ export function UserDashboard() {
                             }
                           }}
                         >
-                          <div className="flex h-full flex-col gap-2 pr-0 sm:pr-80">
+                          <div className="flex h-full flex-col gap-2">
                             <div className="min-w-0">
                               <Link
                                 href={`/${note.username}/${note.slug}`}
@@ -1461,19 +1461,19 @@ export function UserDashboard() {
                               >
                                 {note.title}
                               </Link>
-                              <p className="mt-1 truncate text-[11px] text-neutral-500">
+                              <p className="mt-1 text-[11px] leading-4 text-neutral-500">
                                 {note.visibility} &middot; created {formatDate(note.createdAt)}{' '}
                                 &middot; expires {formatExpiresIn(note.expiresAt)} &middot; views{' '}
                                 {viewsBySlug[note.slug] ?? 0}
                               </p>
-                              <p className="mt-1 truncate text-[11px] text-neutral-500">
+                              <p className="mt-1 text-[11px] leading-4 text-neutral-500">
                                 invited {inviteInfo.invitedCount}
                               </p>
-                              <p className="mt-2 truncate text-xs text-neutral-400">
+                              <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-400">
                                 {previewText || 'No preview available.'}
                               </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 md:absolute md:right-3 md:top-3 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <div className="flex flex-wrap items-center gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:rounded-sm md:border md:border-neutral-800/80 md:bg-neutral-950/90 md:px-1.5 md:py-1 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <Button
                                 type="button"
                                 variant="default"
@@ -1889,7 +1889,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={link.id}
-                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -1902,11 +1902,11 @@ export function UserDashboard() {
                             }
                           }}
                         >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex h-full flex-col gap-2.5">
                             <div className="min-w-0">
                               <Link
                                 href={`/${link.username}/${link.key}`}
-                                className="truncate text-sm text-foreground hover:text-foreground hover:underline"
+                                className="line-clamp-2 break-all text-sm text-foreground hover:text-foreground hover:underline"
                                 onClick={(event) => event.stopPropagation()}
                               >
                                 {link.label || link.key} {'>'} {link.targetUrl}
@@ -1920,14 +1920,14 @@ export function UserDashboard() {
                               <p className="mt-1 text-[11px] text-neutral-500">
                                 invited {inviteInfo.invitedCount}
                               </p>
-                              <p className="mt-2 truncate text-xs text-neutral-400">
+                              <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-400">
                                 {excerpt(
                                   link.label ? `${link.label} ${link.targetUrl}` : link.targetUrl,
                                   220
                                 )}
                               </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:rounded-sm md:border md:border-neutral-800/80 md:bg-neutral-950/90 md:px-1.5 md:py-1 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <Button
                                 type="button"
                                 variant="default"
@@ -2358,7 +2358,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={note.id}
-                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => setSelectedDeletedId(note.id)}
@@ -2369,7 +2369,7 @@ export function UserDashboard() {
                             }
                           }}
                         >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex h-full flex-col gap-2.5">
                             <div className="min-w-0">
                               <p className="text-sm text-neutral-200">{note.title}</p>
                               <p className="mt-1 text-[11px] text-neutral-500">
@@ -2377,11 +2377,11 @@ export function UserDashboard() {
                                 {formatDate(note.purgeAt)} &middot; invited{' '}
                                 {inviteInfo.invitedCount}
                               </p>
-                              <p className="mt-2 truncate text-xs text-neutral-400">
+                              <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-400">
                                 {excerpt(note.content, 220)}
                               </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:rounded-sm md:border md:border-neutral-800/80 md:bg-neutral-950/90 md:px-1.5 md:py-1 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <Button
                                 type="button"
                                 variant="default"

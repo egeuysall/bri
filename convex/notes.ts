@@ -252,6 +252,17 @@ async function markDeleted(ctx: MutationCtx, note: Doc<"notes">, now: number) {
   });
 }
 
+function isPastExpiration(note: Pick<Doc<"notes">, "expiresAt">, now: number): boolean {
+  return typeof note.expiresAt === "number" && note.expiresAt <= now;
+}
+
+async function markDeletedIfExpired(ctx: MutationCtx, note: Doc<"notes">, now: number) {
+  if (note.state !== "active") return false;
+  if (!isPastExpiration(note, now)) return false;
+  await markDeleted(ctx, note, now);
+  return true;
+}
+
 export const listMine = query({
   args: {
     state: v.union(v.literal("active"), v.literal("deleted")),
@@ -268,6 +279,11 @@ export const listMine = query({
       )
       .order("desc")
       .take(200);
+
+    if (args.state === "active") {
+      const now = Date.now();
+      return notes.filter((note) => !isPastExpiration(note, now)).map(mapNote);
+    }
 
     return notes.map(mapNote);
   },
@@ -365,6 +381,7 @@ export const listPublicByUsername = query({
   handler: async (ctx, args) => {
     const username = sanitizeUsername(args.username);
     if (!username) return [];
+    const now = Date.now();
 
     const rows = await ctx.db
       .query("notes")
@@ -373,7 +390,9 @@ export const listPublicByUsername = query({
       .take(500);
 
     return rows
-      .filter((row) => row.state === "active" && row.visibility === "public")
+      .filter(
+        (row) => row.state === "active" && row.visibility === "public" && !isPastExpiration(row, now)
+      )
       .slice(0, 100)
       .map(mapNote);
   },
@@ -399,6 +418,11 @@ export const listByApiKey = query({
       .order("desc")
       .take(200);
 
+    if (args.state === "active") {
+      const now = Date.now();
+      return notes.filter((note) => !isPastExpiration(note, now)).map(mapNote);
+    }
+
     return notes.map(mapNote);
   },
 });
@@ -412,6 +436,7 @@ export const getMineById = query({
     const note = await ctx.db.get(args.noteId);
     if (!note) return null;
     if (note.ownerTokenIdentifier !== identity.tokenIdentifier) return null;
+    if (note.state === "active" && isPastExpiration(note, Date.now())) return null;
 
     return mapNote(note);
   },
@@ -434,7 +459,8 @@ export const getByUsernameAndSlug = query({
       .withIndex("by_username_and_slug", (q) => q.eq("username", username).eq("slug", slug))
       .unique();
 
-    if (!note || note.state !== "active") return null;
+    const now = Date.now();
+    if (!note || note.state !== "active" || isPastExpiration(note, now)) return null;
 
     if (note.visibility === "public") return mapNote(note);
 
@@ -544,6 +570,8 @@ export const inviteUser = mutation({
     if (!note) throw new Error("Note not found");
     if (note.ownerTokenIdentifier !== identity.tokenIdentifier) throw new Error("Forbidden");
     if (note.state !== "active") throw new Error("Cannot invite to deleted note");
+    const now = Date.now();
+    if (await markDeletedIfExpired(ctx, note, now)) throw new Error("Cannot invite to deleted note");
 
     const inviteeUsername = sanitizeUsername(args.inviteeUsername);
     if (!inviteeUsername) throw new Error("Invitee username is required");
@@ -557,7 +585,6 @@ export const inviteUser = mutation({
       .unique();
     if (existingInvite) return { invited: true, alreadyInvited: true };
 
-    const now = Date.now();
     await ctx.db.insert("noteInvites", {
       ownerTokenIdentifier: identity.tokenIdentifier,
       noteId: note._id,
@@ -597,6 +624,8 @@ export const inviteUserWithApiKey = mutation({
     if (!note) throw new Error("Note not found");
     if (note.ownerTokenIdentifier !== keyRecord.ownerTokenIdentifier) throw new Error("Forbidden");
     if (note.state !== "active") throw new Error("Cannot invite to deleted note");
+    const now = Date.now();
+    if (await markDeletedIfExpired(ctx, note, now)) throw new Error("Cannot invite to deleted note");
 
     const inviteeUsername = sanitizeUsername(args.inviteeUsername);
     if (!inviteeUsername) throw new Error("Invitee username is required");
@@ -610,7 +639,6 @@ export const inviteUserWithApiKey = mutation({
       .unique();
     if (existingInvite) return { invited: true, alreadyInvited: true };
 
-    const now = Date.now();
     await ctx.db.insert("noteInvites", {
       ownerTokenIdentifier: keyRecord.ownerTokenIdentifier,
       noteId: note._id,
@@ -713,6 +741,7 @@ export const update = mutation({
     if (!note) throw new Error("Note not found");
     if (note.ownerTokenIdentifier !== identity.tokenIdentifier) throw new Error("Forbidden");
     if (note.state !== "active") throw new Error("Cannot edit deleted note");
+    if (await markDeletedIfExpired(ctx, note, Date.now())) throw new Error("Cannot edit deleted note");
 
     const title = sanitizeTitle(args.title);
     const content = args.content.trim();
@@ -768,6 +797,7 @@ export const updateWithApiKey = mutation({
     if (!note) throw new Error("Note not found");
     if (note.ownerTokenIdentifier !== keyRecord.ownerTokenIdentifier) throw new Error("Forbidden");
     if (note.state !== "active") throw new Error("Cannot edit deleted note");
+    if (await markDeletedIfExpired(ctx, note, Date.now())) throw new Error("Cannot edit deleted note");
 
     const title = sanitizeTitle(args.title);
     const content = args.content.trim();
@@ -920,6 +950,7 @@ export const adminUpdate = mutation({
 
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new Error("Note not found");
+    if (await markDeletedIfExpired(ctx, note, Date.now())) throw new Error("Cannot edit deleted note");
 
     const title = sanitizeTitle(args.title);
     const content = args.content.trim();
@@ -965,9 +996,10 @@ export const trackPageView = mutation({
       .withIndex("by_username_and_slug", (q) => q.eq("username", username).eq("slug", slug))
       .unique();
 
-    if (!note || note.state !== "active") return { tracked: false };
-
     const now = Date.now();
+    if (!note || note.state !== "active") return { tracked: false };
+    if (await markDeletedIfExpired(ctx, note, now)) return { tracked: false };
+
     const dayKey = dayKeyFromEpoch(now);
 
     const metric = await ctx.db
@@ -1070,6 +1102,84 @@ export const analyticsMine = query({
       topPages,
       daily,
     };
+  },
+});
+
+export const expireMineDue = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const notes = await ctx.db
+      .query("notes")
+      .withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", identity.tokenIdentifier).eq("state", "active")
+      )
+      .order("desc")
+      .take(200);
+
+    const now = Date.now();
+    let expiredCount = 0;
+    for (const note of notes) {
+      if (await markDeletedIfExpired(ctx, note, now)) {
+        expiredCount += 1;
+      }
+    }
+
+    return { expiredCount };
+  },
+});
+
+export const expireDueByApiKey = mutation({
+  args: {
+    apiKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const keyRecord = await resolveApiKey(ctx, args.apiKey);
+    if (!keyRecord) throw new Error("Invalid API key");
+    if (!hasPermission(keyRecord.permissions, "read")) {
+      throw new Error("API key lacks read permission");
+    }
+
+    const notes = await ctx.db
+      .query("notes")
+      .withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", keyRecord.ownerTokenIdentifier).eq("state", "active")
+      )
+      .order("desc")
+      .take(200);
+
+    const now = Date.now();
+    let expiredCount = 0;
+    for (const note of notes) {
+      if (await markDeletedIfExpired(ctx, note, now)) {
+        expiredCount += 1;
+      }
+    }
+
+    return { expiredCount };
+  },
+});
+
+export const expireDueByUsernameAndSlug = mutation({
+  args: {
+    username: v.string(),
+    slug: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const username = sanitizeUsername(args.username);
+    const slug = slugify(args.slug);
+    if (!username || !slug) return { expired: false };
+
+    const note = await ctx.db
+      .query("notes")
+      .withIndex("by_username_and_slug", (q) => q.eq("username", username).eq("slug", slug))
+      .unique();
+    if (!note) return { expired: false };
+
+    const expired = await markDeletedIfExpired(ctx, note, Date.now());
+    return { expired };
   },
 });
 

@@ -81,6 +81,15 @@ export async function getNoteByUsernameAndSlug(input: {
   apiKey?: string | null;
   token?: string | null;
 }): Promise<NoteRecord | null> {
+  try {
+    await fetchMutation(api.notes.expireDueByUsernameAndSlug, {
+      username: input.username,
+      slug: input.slug,
+    });
+  } catch {
+    // Best-effort cleanup; reads should still proceed.
+  }
+
   const data = await fetchQuery(
     api.notes.getByUsernameAndSlug,
     {
@@ -91,6 +100,14 @@ export async function getNoteByUsernameAndSlug(input: {
     input.token ? { token: input.token } : undefined
   );
   return data ?? null;
+}
+
+export async function expireMyDueNotes(input: { token: string }) {
+  return await fetchMutation(api.notes.expireMineDue, {}, { token: input.token });
+}
+
+export async function expireDueNotesWithApiKey(input: { apiKey: string }) {
+  return await fetchMutation(api.notes.expireDueByApiKey, { apiKey: input.apiKey });
 }
 
 export async function listMyNotes(input: {
