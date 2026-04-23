@@ -1439,7 +1439,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={note.id}
-                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -1533,7 +1533,7 @@ export function UserDashboard() {
                     })}
                   </div>
                   <aside className="hidden self-start xl:block">
-                    <div className="sticky top-20 h-fit max-h-[64rem] overflow-hidden rounded-sm border border-neutral-900 p-3">
+                    <div className="sticky top-20 h-fit max-h-[64rem] overflow-hidden rounded-sm border border-neutral-900 bg-neutral-950 dark:bg-neutral-900/90 p-3">
                       <p className="text-xs text-neutral-500">Selected note</p>
                       {selectedNote ? (
                         <div className="mt-2 flex flex-col space-y-2">
@@ -1889,7 +1889,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={link.id}
-                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -2358,7 +2358,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={note.id}
-                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => setSelectedDeletedId(note.id)}
