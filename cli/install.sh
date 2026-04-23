@@ -6,10 +6,26 @@ BIN_DIR="${BRI_INSTALL_DIR:-${HOME}/.local/bin}"
 TARGET="${BIN_DIR}/bri"
 TMP_TARGET="$(mktemp "${TMPDIR:-/tmp}/bri.XXXXXX")"
 
+info() {
+  echo "[info] $*"
+}
+
+ok() {
+  echo "[ok] $*"
+}
+
+warn() {
+  echo "[warn] $*"
+}
+
+fail() {
+  echo "[error] $*" >&2
+  exit 1
+}
+
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "required command not found: $1" >&2
-    exit 1
+    fail "required command not found: $1"
   fi
 }
 
@@ -33,8 +49,7 @@ detect_asset_name() {
       os="linux"
       ;;
     *)
-      echo "unsupported operating system: ${os}" >&2
-      exit 1
+      fail "unsupported operating system: ${os}"
       ;;
   esac
 
@@ -46,8 +61,7 @@ detect_asset_name() {
       normalized_arch="arm64"
       ;;
     *)
-      echo "unsupported architecture: ${arch}" >&2
-      exit 1
+      fail "unsupported architecture: ${arch}"
       ;;
   esac
 
@@ -104,7 +118,7 @@ ensure_path_persisted() {
   fi
 
   if [ -f "${profile}" ] && grep -Fq "${entry}" "${profile}"; then
-    echo "PATH updated for current session (${BIN_DIR})"
+    info "PATH updated for current session (${BIN_DIR})"
     return 0
   fi
 
@@ -113,7 +127,7 @@ ensure_path_persisted() {
     printf '%s\n' "${entry}"
   } >>"${profile}"
 
-  echo "persisted PATH update in ${profile}"
+  ok "persisted PATH update in ${profile}"
 }
 
 setup_daily_autoupdate() {
@@ -160,7 +174,7 @@ EOF
       launchctl bootstrap "gui/${uid}" "${plist_path}" >/dev/null 2>&1 || true
     fi
 
-    echo "configured daily background auto-update (launchd)"
+    ok "configured daily background auto-update (launchd)"
     return 0
   fi
 
@@ -175,11 +189,28 @@ EOF
       printf '%s\n' "${cron_line}"
     } | awk 'NF > 0' | crontab -
 
-    echo "configured daily background auto-update (cron)"
+    ok "configured daily background auto-update (cron)"
     return 0
   fi
 
-  echo "background auto-update scheduler unavailable on this platform"
+  warn "background auto-update scheduler unavailable on this platform"
+}
+
+finalize_binary() {
+  if [ "$(uname -s)" = "Darwin" ] && command -v xattr >/dev/null 2>&1; then
+    xattr -d com.apple.quarantine "${TARGET}" >/dev/null 2>&1 || true
+    xattr -d com.apple.provenance "${TARGET}" >/dev/null 2>&1 || true
+  fi
+}
+
+verify_binary() {
+  if "${TARGET}" --version >/dev/null 2>&1; then
+    ok "verified binary startup"
+    return 0
+  fi
+
+  rm -f "${TARGET}" >/dev/null 2>&1 || true
+  fail "installed binary failed startup check for ${ASSET_NAME}"
 }
 
 require_cmd curl
@@ -188,16 +219,18 @@ mkdir -p "${BIN_DIR}"
 ASSET_NAME="$(detect_asset_name)"
 DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/latest/download/${ASSET_NAME}"
 
-echo "downloading ${ASSET_NAME} from ${GITHUB_REPO}..."
+info "downloading ${ASSET_NAME} from ${GITHUB_REPO}..."
 curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${DOWNLOAD_URL}" -o "${TMP_TARGET}"
 chmod +x "${TMP_TARGET}"
 mv "${TMP_TARGET}" "${TARGET}"
 chmod 755 "${TARGET}"
+finalize_binary
 
-echo "bri installed at ${TARGET}"
-echo "standalone binary installed (no bun runtime required)"
-echo "release source: https://github.com/${GITHUB_REPO}/releases/latest"
+info "release source: https://github.com/${GITHUB_REPO}/releases/latest"
+verify_binary
+ok "bri installed at ${TARGET}"
+ok "standalone binary installed (no bun runtime required)"
 
 ensure_path_persisted
 setup_daily_autoupdate
-echo "run: bri --help"
+ok "run: bri --help"
