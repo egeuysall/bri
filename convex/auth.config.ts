@@ -1,5 +1,6 @@
 function getRequiredEnv(name: 'CLERK_JWT_ISSUER_DOMAIN'): string {
-  const value = process.env[name];
+  const value = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.[name];
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
   }

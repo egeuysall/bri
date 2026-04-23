@@ -11,8 +11,8 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <section className="flex min-h-[68vh] w-full items-center justify-center">
-      <div className="w-full max-w-lg px-6 py-8 text-center">
+    <section className="pointer-events-none fixed inset-0 flex items-center justify-center">
+      <div className="pointer-events-auto w-full max-w-lg px-6 py-8 text-center">
         <p className="text-xs text-neutral-500">Error</p>
         <h1 className="mt-2 text-xl text-neutral-100">Something went wrong</h1>
         <p className="mt-2 text-sm text-neutral-400">{error.message || 'Unexpected application error.'}</p>

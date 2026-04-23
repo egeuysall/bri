@@ -273,6 +273,91 @@ export const listMine = query({
   },
 });
 
+export const listInviteSummaryMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const activeNotes = await ctx.db
+      .query("notes")
+      .withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", identity.tokenIdentifier).eq("state", "active")
+      )
+      .order("desc")
+      .take(200);
+    const deletedNotes = await ctx.db
+      .query("notes")
+      .withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", identity.tokenIdentifier).eq("state", "deleted")
+      )
+      .order("desc")
+      .take(200);
+
+    const allNotes = [...activeNotes, ...deletedNotes];
+    const rows: Array<{ noteId: Id<"notes">; invitedCount: number; invitees: string[] }> = [];
+    for (const note of allNotes) {
+      const invites = await ctx.db
+        .query("noteInvites")
+        .withIndex("by_noteId_and_inviteeUsername", (q) => q.eq("noteId", note._id))
+        .take(200);
+      const invitees = invites.map((invite) => invite.inviteeUsername);
+      rows.push({
+        noteId: note._id,
+        invitedCount: invitees.length,
+        invitees,
+      });
+    }
+
+    return rows;
+  },
+});
+
+export const listInviteSummaryByApiKey = query({
+  args: {
+    apiKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const keyRecord = await resolveApiKey(ctx, args.apiKey);
+    if (!keyRecord) throw new Error("Invalid API key");
+    if (!hasPermission(keyRecord.permissions, "read")) {
+      throw new Error("API key lacks read permission");
+    }
+
+    const activeNotes = await ctx.db
+      .query("notes")
+      .withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", keyRecord.ownerTokenIdentifier).eq("state", "active")
+      )
+      .order("desc")
+      .take(200);
+    const deletedNotes = await ctx.db
+      .query("notes")
+      .withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", keyRecord.ownerTokenIdentifier).eq("state", "deleted")
+      )
+      .order("desc")
+      .take(200);
+
+    const allNotes = [...activeNotes, ...deletedNotes];
+    const rows: Array<{ noteId: Id<"notes">; invitedCount: number; invitees: string[] }> = [];
+    for (const note of allNotes) {
+      const invites = await ctx.db
+        .query("noteInvites")
+        .withIndex("by_noteId_and_inviteeUsername", (q) => q.eq("noteId", note._id))
+        .take(200);
+      const invitees = invites.map((invite) => invite.inviteeUsername);
+      rows.push({
+        noteId: note._id,
+        invitedCount: invitees.length,
+        invitees,
+      });
+    }
+
+    return rows;
+  },
+});
+
 export const listPublicByUsername = query({
   args: {
     username: v.string(),
@@ -825,7 +910,10 @@ export const adminUpdate = mutation({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
-    const configuredSecret = process.env.BRIDGE_ADMIN_SECRET?.trim() || "";
+    const configuredSecret =
+      (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.[
+        "BRIDGE_ADMIN_SECRET"
+      ]?.trim() || "";
     if (!configuredSecret || args.adminSecret !== configuredSecret) {
       throw new Error("Forbidden");
     }

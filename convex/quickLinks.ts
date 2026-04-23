@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 
 type Permission = "read" | "write" | "read_write";
@@ -197,6 +197,73 @@ export const listMine = query({
       .take(200);
 
     return rows.map(mapLink);
+  },
+});
+
+export const listInviteSummaryMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Not authenticated");
+
+    const links = await ctx.db
+      .query("quickLinks")
+      .withIndex("by_ownerTokenIdentifier_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
+      )
+      .order("desc")
+      .take(200);
+
+    const rows: Array<{ linkId: Id<"quickLinks">; invitedCount: number; invitees: string[] }> = [];
+    for (const link of links) {
+      const invites = await ctx.db
+        .query("quickLinkInvites")
+        .withIndex("by_linkId_and_inviteeUsername", (q) => q.eq("linkId", link._id))
+        .take(200);
+      const invitees = invites.map((invite) => invite.inviteeUsername);
+      rows.push({
+        linkId: link._id,
+        invitedCount: invitees.length,
+        invitees,
+      });
+    }
+    return rows;
+  },
+});
+
+export const listInviteSummaryByApiKey = query({
+  args: {
+    apiKey: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const keyRecord = await resolveApiKey(ctx, args.apiKey);
+    if (!keyRecord) throw new Error("Invalid API key");
+    if (!hasPermission(keyRecord.permissions, "read")) {
+      throw new Error("API key lacks read permission");
+    }
+
+    const links = await ctx.db
+      .query("quickLinks")
+      .withIndex("by_ownerTokenIdentifier_and_createdAt", (q) =>
+        q.eq("ownerTokenIdentifier", keyRecord.ownerTokenIdentifier)
+      )
+      .order("desc")
+      .take(200);
+
+    const rows: Array<{ linkId: Id<"quickLinks">; invitedCount: number; invitees: string[] }> = [];
+    for (const link of links) {
+      const invites = await ctx.db
+        .query("quickLinkInvites")
+        .withIndex("by_linkId_and_inviteeUsername", (q) => q.eq("linkId", link._id))
+        .take(200);
+      const invitees = invites.map((invite) => invite.inviteeUsername);
+      rows.push({
+        linkId: link._id,
+        invitedCount: invitees.length,
+        invitees,
+      });
+    }
+    return rows;
   },
 });
 

@@ -87,3 +87,27 @@ export const getPublicByUsername = query({
     };
   },
 });
+
+export const getMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return null;
+
+    const profile = await ctx.db
+      .query("userProfiles")
+      .withIndex("by_ownerTokenIdentifier", (q) =>
+        q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+    if (!profile) return null;
+
+    return {
+      username: profile.username,
+      displayName: profile.displayName,
+      email: profile.email,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+    };
+  },
+});

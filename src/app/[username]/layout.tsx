@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { getPublicUserProfileByUsername } from '@/lib/notes';
-import { normalizePathHandle, resolveUserHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
+import { normalizePathHandle, resolveUserHandle } from '@/lib/user-handle';
 
 export async function generateMetadata({
   params,
@@ -10,12 +10,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { username } = await params;
   const { sessionClaims } = await auth();
-  let userHandle = resolveUserHandle(sessionClaims as Record<string, unknown> | null | undefined);
-
-  if (!userHandle) {
-    const user = await currentUser();
-    userHandle = resolveUserHandleFromUser(user);
-  }
+  const userHandle = resolveUserHandle(sessionClaims as Record<string, unknown> | null | undefined);
 
   if (userHandle && normalizePathHandle(username) === userHandle) {
     return {

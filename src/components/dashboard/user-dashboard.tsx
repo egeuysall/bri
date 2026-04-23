@@ -1,8 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { toast } from 'sonner';
 import { AppSidebar, type DashboardPanel } from '@/components/app-sidebar';
 import { CodeBlock } from '@/components/markdown/code-block';
@@ -107,6 +110,14 @@ type NotificationRecord = {
   createdAt: number;
 };
 
+type InviteSummaryRecord = {
+  id: string;
+  invitedCount: number;
+  invitees: string[];
+};
+
+type SortMode = 'newest' | 'mostViewed' | 'recentlyUpdated';
+
 function formatDate(value: number | null): string {
   if (!value) return '—';
   const date = new Date(value);
@@ -129,6 +140,79 @@ function formatExpiresIn(value: number | null): string {
 
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
   return `in ${diffDays}d`;
+}
+
+function excerpt(input: string, maxLength = 200): string {
+  const plain = input
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[[^\]]*]\([^)]*\)/g, ' ')
+    .replace(/\[[^\]]+]\([^)]*\)/g, '$1')
+    .replace(/[#>*_~|-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (plain.length <= maxLength) return plain;
+  return `${plain.slice(0, maxLength).trimEnd()}…`;
+}
+
+function normalizeHeading(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^\p{L}\p{N}\s-]/gu, '')
+    .trim();
+}
+
+function stripLeadingHeading(content: string, title: string): string {
+  const lines = content.split('\n');
+  const firstLine = lines[0]?.trim() ?? '';
+  if (!firstLine.startsWith('# ')) return content;
+
+  const headingText = firstLine.replace(/^#\s+/, '');
+  if (normalizeHeading(headingText) !== normalizeHeading(title)) return content;
+
+  return lines.slice(1).join('\n').trimStart();
+}
+
+function DashboardMarkdownPreview({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        pre: ({ children }) => <>{children}</>,
+        code: ({ className, children, ...props }) => {
+          const normalizedContent = String(children);
+          const isBlock = className?.includes('language-') || normalizedContent.includes('\n');
+          if (!isBlock) {
+            return (
+              <code
+                {...props}
+                className="rounded border border-neutral-800 bg-[var(--bg)] px-1.5 py-0.5 font-mono text-[0.9em] font-normal text-neutral-200"
+              >
+                {children}
+              </code>
+            );
+          }
+          const language = className?.replace(/^language-/, '') || 'text';
+          return <CodeBlock language={language}>{normalizedContent.replace(/\n$/, '')}</CodeBlock>;
+        },
+        input: ({ type, checked }) =>
+          type === 'checkbox' ? (
+            <input
+              type="checkbox"
+              checked={Boolean(checked)}
+              readOnly
+              className="mr-2 align-middle"
+            />
+          ) : (
+            <input type={type} readOnly />
+          ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
 }
 
 function comboboxInputClass(widthClass = 'w-56') {
@@ -209,7 +293,9 @@ export function UserDashboard() {
       ? tabFromQuery
       : 'notes';
 
-  const DASHBOARD_PAGE_SIZE = 8;
+  const DESKTOP_PAGE_SIZE = 16;
+  const MOBILE_PAGE_SIZE = 8;
+  const EXPIRING_SOON_MS = 7 * 24 * 60 * 60 * 1000;
   const visibilityOptions = [
     { value: 'public', label: 'public' },
     { value: 'private', label: 'private' },
@@ -238,9 +324,27 @@ export function UserDashboard() {
   const [pins, setPins] = useState<PinnedRecord[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsRecord | null>(null);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [noteInviteSummaryById, setNoteInviteSummaryById] = useState<
+    Record<string, InviteSummaryRecord>
+  >({});
+  const [linkInviteSummaryById, setLinkInviteSummaryById] = useState<
+    Record<string, InviteSummaryRecord>
+  >({});
   const [generatedApiKey, setGeneratedApiKey] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [isDesktop, setIsDesktop] = useState<boolean>(false);
+  const [notesFilter, setNotesFilter] = useState<
+    'all' | 'public' | 'private' | 'expiringSoon' | 'mostViewed'
+  >('all');
+  const [linksFilter, setLinksFilter] = useState<'all' | 'mostViewed'>('all');
+  const [deletedFilter, setDeletedFilter] = useState<'all' | 'expiringSoon' | 'mostViewed'>('all');
+  const [notesSort, setNotesSort] = useState<SortMode>('newest');
+  const [linksSort, setLinksSort] = useState<SortMode>('newest');
+  const [deletedSort, setDeletedSort] = useState<SortMode>('newest');
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
+  const [selectedDeletedId, setSelectedDeletedId] = useState<string | null>(null);
 
   const [noteTitle, setNoteTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
@@ -257,7 +361,9 @@ export function UserDashboard() {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteTitle, setEditingNoteTitle] = useState<string>('');
   const [editingNoteContent, setEditingNoteContent] = useState<string>('');
-  const [editingNoteVisibility, setEditingNoteVisibility] = useState<'public' | 'private'>('public');
+  const [editingNoteVisibility, setEditingNoteVisibility] = useState<'public' | 'private'>(
+    'public'
+  );
   const [editingNoteExpirationValue, setEditingNoteExpirationValue] =
     useState<(typeof expirationOptions)[number]['value']>('30d');
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
@@ -272,6 +378,7 @@ export function UserDashboard() {
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState<boolean>(false);
   const [dismissedAchievementIds, setDismissedAchievementIds] = useState<string[]>([]);
   const [dismissedNoticeIds, setDismissedNoticeIds] = useState<string[]>([]);
+  const dashboardPageSize = isDesktop ? DESKTOP_PAGE_SIZE : MOBILE_PAGE_SIZE;
 
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
@@ -293,48 +400,6 @@ export function UserDashboard() {
     return `/${profileHandle}?public=1`;
   }, [profileHandle]);
 
-  const sortedNotes = useMemo(
-    () => [...notes].sort((a, b) => b.createdAt - a.createdAt),
-    [notes]
-  );
-  const sortedQuickLinks = useMemo(
-    () => [...quickLinks].sort((a, b) => b.updatedAt - a.updatedAt),
-    [quickLinks]
-  );
-  const sortedDeletedNotes = useMemo(
-    () =>
-      [...deletedNotes].sort(
-        (a, b) => (b.deletedAt ?? b.updatedAt ?? 0) - (a.deletedAt ?? a.updatedAt ?? 0)
-      ),
-    [deletedNotes]
-  );
-  const notePages = Math.max(1, Math.ceil(sortedNotes.length / DASHBOARD_PAGE_SIZE));
-  const linksPages = Math.max(1, Math.ceil(sortedQuickLinks.length / DASHBOARD_PAGE_SIZE));
-  const deletedPages = Math.max(1, Math.ceil(sortedDeletedNotes.length / DASHBOARD_PAGE_SIZE));
-  const visibleNotes = useMemo(
-    () =>
-      sortedNotes.slice(
-        (notesPage - 1) * DASHBOARD_PAGE_SIZE,
-        notesPage * DASHBOARD_PAGE_SIZE
-      ),
-    [notesPage, sortedNotes]
-  );
-  const visibleDeletedNotes = useMemo(
-    () =>
-      sortedDeletedNotes.slice(
-        (deletedPage - 1) * DASHBOARD_PAGE_SIZE,
-        deletedPage * DASHBOARD_PAGE_SIZE
-      ),
-    [deletedPage, sortedDeletedNotes]
-  );
-  const visibleQuickLinks = useMemo(
-    () =>
-      sortedQuickLinks.slice(
-        (linksPage - 1) * DASHBOARD_PAGE_SIZE,
-        linksPage * DASHBOARD_PAGE_SIZE
-      ),
-    [linksPage, sortedQuickLinks]
-  );
   const viewsBySlug = useMemo<Record<string, number>>(() => {
     if (!analytics) return {};
     if (analytics.viewsBySlug) return analytics.viewsBySlug;
@@ -385,10 +450,10 @@ export function UserDashboard() {
         count:
           pin.kind === 'note'
             ? pin.noteId
-              ? noteViewsById[pin.noteId] ?? 0
+              ? (noteViewsById[pin.noteId] ?? 0)
               : 0
             : pin.linkId
-              ? linkClicksById[pin.linkId] ?? 0
+              ? (linkClicksById[pin.linkId] ?? 0)
               : 0,
       })),
     [linkClicksById, noteViewsById, pins]
@@ -432,7 +497,14 @@ export function UserDashboard() {
     if (totalViews >= 1000) add('local:achievement:1000-total', '1k views milestone');
 
     return items.filter((row) => !dismissedAchievementIds.includes(row.id));
-  }, [analytics?.daily, analytics?.totalViews, dismissedAchievementIds, notes.length, notifications, quickLinks.length]);
+  }, [
+    analytics?.daily,
+    analytics?.totalViews,
+    dismissedAchievementIds,
+    notes.length,
+    notifications,
+    quickLinks.length,
+  ]);
   const noticeItems = useMemo(() => {
     const items: Array<{ id: string; message: string }> = [];
     const seen = new Set<string>();
@@ -459,6 +531,104 @@ export function UserDashboard() {
 
     return items.filter((row) => !dismissedNoticeIds.includes(row.id));
   }, [dismissedNoticeIds, notes, notifications]);
+
+  const filteredSortedNotes = useMemo(() => {
+    const now = Date.now();
+    let rows = [...notes];
+    if (notesFilter === 'public') rows = rows.filter((note) => note.visibility === 'public');
+    if (notesFilter === 'private') rows = rows.filter((note) => note.visibility === 'private');
+    if (notesFilter === 'expiringSoon') {
+      rows = rows.filter(
+        (note) =>
+          note.expiresAt !== null &&
+          note.expiresAt > now &&
+          note.expiresAt <= now + EXPIRING_SOON_MS
+      );
+    }
+    if (notesFilter === 'mostViewed')
+      rows = rows.filter((note) => (viewsBySlug[note.slug] ?? 0) > 0);
+
+    rows.sort((a, b) => {
+      if (notesSort === 'mostViewed')
+        return (viewsBySlug[b.slug] ?? 0) - (viewsBySlug[a.slug] ?? 0);
+      if (notesSort === 'recentlyUpdated') return b.updatedAt - a.updatedAt;
+      return b.createdAt - a.createdAt;
+    });
+    return rows;
+  }, [EXPIRING_SOON_MS, notes, notesFilter, notesSort, viewsBySlug]);
+
+  const filteredSortedLinks = useMemo(() => {
+    let rows = [...quickLinks];
+    if (linksFilter === 'mostViewed') rows = rows.filter((link) => link.clicks > 0);
+    rows.sort((a, b) => {
+      if (linksSort === 'mostViewed') return b.clicks - a.clicks;
+      if (linksSort === 'recentlyUpdated') return b.updatedAt - a.updatedAt;
+      return b.createdAt - a.createdAt;
+    });
+    return rows;
+  }, [linksFilter, linksSort, quickLinks]);
+
+  const filteredSortedDeletedNotes = useMemo(() => {
+    const now = Date.now();
+    let rows = [...deletedNotes];
+    if (deletedFilter === 'expiringSoon') {
+      rows = rows.filter(
+        (note) =>
+          note.purgeAt !== null && note.purgeAt > now && note.purgeAt <= now + EXPIRING_SOON_MS
+      );
+    }
+    if (deletedFilter === 'mostViewed')
+      rows = rows.filter((note) => (noteViewsById[note.id] ?? 0) > 0);
+
+    rows.sort((a, b) => {
+      if (deletedSort === 'mostViewed')
+        return (noteViewsById[b.id] ?? 0) - (noteViewsById[a.id] ?? 0);
+      if (deletedSort === 'recentlyUpdated') return b.updatedAt - a.updatedAt;
+      return (b.deletedAt ?? b.updatedAt ?? 0) - (a.deletedAt ?? a.updatedAt ?? 0);
+    });
+    return rows;
+  }, [EXPIRING_SOON_MS, deletedFilter, deletedNotes, deletedSort, noteViewsById]);
+
+  const notePages = Math.max(1, Math.ceil(filteredSortedNotes.length / dashboardPageSize));
+  const linksPages = Math.max(1, Math.ceil(filteredSortedLinks.length / dashboardPageSize));
+  const deletedPages = Math.max(
+    1,
+    Math.ceil(filteredSortedDeletedNotes.length / dashboardPageSize)
+  );
+  const visibleNotes = useMemo(
+    () =>
+      filteredSortedNotes.slice((notesPage - 1) * dashboardPageSize, notesPage * dashboardPageSize),
+    [dashboardPageSize, filteredSortedNotes, notesPage]
+  );
+  const visibleDeletedNotes = useMemo(
+    () =>
+      filteredSortedDeletedNotes.slice(
+        (deletedPage - 1) * dashboardPageSize,
+        deletedPage * dashboardPageSize
+      ),
+    [dashboardPageSize, deletedPage, filteredSortedDeletedNotes]
+  );
+  const visibleQuickLinks = useMemo(
+    () =>
+      filteredSortedLinks.slice((linksPage - 1) * dashboardPageSize, linksPage * dashboardPageSize),
+    [dashboardPageSize, filteredSortedLinks, linksPage]
+  );
+  const selectedNote = useMemo(
+    () => visibleNotes.find((note) => note.id === selectedNoteId) ?? visibleNotes[0] ?? null,
+    [selectedNoteId, visibleNotes]
+  );
+  const selectedLink = useMemo(
+    () =>
+      visibleQuickLinks.find((link) => link.id === selectedLinkId) ?? visibleQuickLinks[0] ?? null,
+    [selectedLinkId, visibleQuickLinks]
+  );
+  const selectedDeletedNote = useMemo(
+    () =>
+      visibleDeletedNotes.find((note) => note.id === selectedDeletedId) ??
+      visibleDeletedNotes[0] ??
+      null,
+    [selectedDeletedId, visibleDeletedNotes]
+  );
 
   async function fetchNotes(state: 'active' | 'deleted') {
     const response = await fetch(`/api/notes?state=${state}`);
@@ -533,6 +703,32 @@ export function UserDashboard() {
     setNotifications(json.data?.items ?? []);
   }
 
+  async function refreshInviteSummaries() {
+    const response = await fetch('/api/invitations/summary');
+    if (response.status === 401) {
+      setNoteInviteSummaryById({});
+      setLinkInviteSummaryById({});
+      return;
+    }
+    if (!response.ok) {
+      setNoteInviteSummaryById({});
+      setLinkInviteSummaryById({});
+      return;
+    }
+
+    const json = (await response.json()) as {
+      data?: { notes?: InviteSummaryRecord[]; links?: InviteSummaryRecord[] };
+    };
+    const notesMap: Record<string, InviteSummaryRecord> = {};
+    const linksMap: Record<string, InviteSummaryRecord> = {};
+
+    for (const row of json.data?.notes ?? []) notesMap[row.id] = row;
+    for (const row of json.data?.links ?? []) linksMap[row.id] = row;
+
+    setNoteInviteSummaryById(notesMap);
+    setLinkInviteSummaryById(linksMap);
+  }
+
   async function syncProfile() {
     await fetch('/api/profile/sync', { method: 'POST' });
   }
@@ -557,6 +753,7 @@ export function UserDashboard() {
           refreshPins(),
           refreshAnalytics().catch(() => undefined),
           refreshNotifications().catch(() => undefined),
+          refreshInviteSummaries().catch(() => undefined),
         ]);
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Failed to initialize dashboard');
@@ -578,6 +775,7 @@ export function UserDashboard() {
         refreshQuickLinks(),
         refreshAnalytics(),
         refreshNotifications(),
+        refreshInviteSummaries(),
       ]).catch(() => {
         toast.error('Failed to load settings data');
       });
@@ -585,18 +783,88 @@ export function UserDashboard() {
     }
 
     if (panel === 'notes') {
-      void refreshAnalytics().catch(() => {
+      void Promise.all([refreshAnalytics(), refreshInviteSummaries()]).catch(() => {
         toast.error('Failed to load note views');
       });
       return;
     }
 
     if (panel === 'links') {
-      void Promise.all([refreshQuickLinks(), refreshPins()]).catch(() => {
+      void Promise.all([refreshQuickLinks(), refreshPins(), refreshInviteSummaries()]).catch(() => {
         toast.error('Failed to load links');
+      });
+      return;
+    }
+
+    if (panel === 'deleted') {
+      void refreshInviteSummaries().catch(() => {
+        toast.error('Failed to load deletion metadata');
       });
     }
   }, [panel]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setIsDesktop(mediaQuery.matches);
+    apply();
+    mediaQuery.addEventListener('change', apply);
+    return () => mediaQuery.removeEventListener('change', apply);
+  }, []);
+
+  useEffect(() => {
+    setNotesPage(1);
+  }, [notesFilter, notesSort]);
+
+  useEffect(() => {
+    setLinksPage(1);
+  }, [linksFilter, linksSort]);
+
+  useEffect(() => {
+    setDeletedPage(1);
+  }, [deletedFilter, deletedSort]);
+
+  useEffect(() => {
+    setNotesPage((prev) => Math.min(Math.max(1, prev), notePages));
+  }, [notePages]);
+
+  useEffect(() => {
+    setLinksPage((prev) => Math.min(Math.max(1, prev), linksPages));
+  }, [linksPages]);
+
+  useEffect(() => {
+    setDeletedPage((prev) => Math.min(Math.max(1, prev), deletedPages));
+  }, [deletedPages]);
+
+  useEffect(() => {
+    if (!visibleNotes.length) {
+      setSelectedNoteId(null);
+      return;
+    }
+    if (!selectedNoteId || !visibleNotes.some((note) => note.id === selectedNoteId)) {
+      setSelectedNoteId(visibleNotes[0]?.id ?? null);
+    }
+  }, [selectedNoteId, visibleNotes]);
+
+  useEffect(() => {
+    if (!visibleQuickLinks.length) {
+      setSelectedLinkId(null);
+      return;
+    }
+    if (!selectedLinkId || !visibleQuickLinks.some((link) => link.id === selectedLinkId)) {
+      setSelectedLinkId(visibleQuickLinks[0]?.id ?? null);
+    }
+  }, [selectedLinkId, visibleQuickLinks]);
+
+  useEffect(() => {
+    if (!visibleDeletedNotes.length) {
+      setSelectedDeletedId(null);
+      return;
+    }
+    if (!selectedDeletedId || !visibleDeletedNotes.some((note) => note.id === selectedDeletedId)) {
+      setSelectedDeletedId(visibleDeletedNotes[0]?.id ?? null);
+    }
+  }, [selectedDeletedId, visibleDeletedNotes]);
 
   function wrapSelection(prefix: string, suffix = prefix) {
     const textarea = editorRef.current;
@@ -676,9 +944,7 @@ export function UserDashboard() {
     setEditingNoteTitle(note.title);
     setEditingNoteContent(note.content ?? '');
     setEditingNoteVisibility(note.visibility);
-    setEditingNoteExpirationValue(
-      expirationValueFromExpiresAt(note.expiresAt, expirationOptions)
-    );
+    setEditingNoteExpirationValue(expirationValueFromExpiresAt(note.expiresAt, expirationOptions));
   }
 
   function cancelEditNote() {
@@ -894,7 +1160,10 @@ export function UserDashboard() {
 
   async function submitInvite() {
     if (!inviteTargetKind || !inviteTargetId) return;
-    const normalizedInvitee = inviteeUsername.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    const normalizedInvitee = inviteeUsername
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '');
     if (!normalizedInvitee) {
       toast.error('Invitee username is required');
       return;
@@ -919,6 +1188,7 @@ export function UserDashboard() {
     setInviteTargetKind(null);
     setInviteTargetId(null);
     setInviteeUsername('');
+    await refreshInviteSummaries().catch(() => undefined);
     toast.success(`Invited @${normalizedInvitee}`);
   }
 
@@ -972,7 +1242,7 @@ export function UserDashboard() {
         <header className="flex h-14 items-center gap-2 border-b border-neutral-900 px-4 md:hidden">
           <MobileSidebarTrigger />
         </header>
-        <section className="w-full px-4 py-5 md:px-8">
+        <section className="w-full px-4 py-5 md:px-8 xl:pr-24 2xl:pr-28">
           <div className="mx-auto w-full max-w-none space-y-5">
             {isInitializing ? (
               <div className="space-y-3">
@@ -991,199 +1261,311 @@ export function UserDashboard() {
                 </div>
               </div>
             ) : null}
-            {!isInitializing && loading ? <p className="text-xs text-neutral-500">Refreshing…</p> : null}
+            {!isInitializing && loading ? (
+              <p className="text-xs text-neutral-500">Refreshing…</p>
+            ) : null}
 
             {!isInitializing && panel === 'notes' ? (
               <div className="w-full space-y-3">
-                <h1 className="text-sm text-neutral-200">Your notes</h1>
-                {notes.length === 0 ? <p className="text-xs text-neutral-500">No notes yet.</p> : null}
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {visibleNotes.map((note, index) => {
-                  const isEditing = editingNoteId === note.id;
-                  const isOddLastCard =
-                    visibleNotes.length % 2 === 1 && index === visibleNotes.length - 1;
-                  const desktopSpanClass = isEditing || isOddLastCard ? 'lg:col-span-2' : '';
-                  if (isEditing) {
-                    return (
-                      <article
-                        key={note.id}
-                        className={`space-y-3 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
+                <div className="max-w-[calc(100%-5rem)] space-y-2 xl:max-w-[calc(100%-7rem)]">
+                  <h1 className="text-sm text-neutral-200">Your notes</h1>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ['all', 'All'],
+                        ['public', 'Public'],
+                        ['private', 'Private'],
+                        ['expiringSoon', 'Expiring soon'],
+                        ['mostViewed', 'Most viewed'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        className={`h-7 border px-2 text-[11px] ${
+                          notesFilter === value
+                            ? 'border-neutral-500 text-neutral-100'
+                            : 'border-neutral-800 text-neutral-400'
+                        }`}
+                        onClick={() => setNotesFilter(value)}
                       >
-                        <div className="grid gap-2 md:grid-cols-2">
-                          <input
-                            value={editingNoteTitle}
-                            onChange={(event) => setEditingNoteTitle(event.target.value)}
-                            placeholder="Title"
-                            className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs text-neutral-100"
-                          />
-                          <Combobox
-                            items={[...visibilityOptions]}
-                            value={editingNoteVisibility}
-                            onValueChange={(next) =>
-                              setEditingNoteVisibility(next === 'private' ? 'private' : 'public')
-                            }
-                          >
-                            <ComboboxInput
-                              placeholder="Visibility"
-                              className={comboboxInputClass('w-full')}
-                            />
-                            <ComboboxContent>
-                              <ComboboxEmpty>No visibility found.</ComboboxEmpty>
-                              <ComboboxList>
-                                <ComboboxGroup>
-                                  {visibilityOptions.map((option) => (
-                                    <ComboboxItem key={option.value} value={option.value}>
-                                      {option.label}
-                                    </ComboboxItem>
-                                  ))}
-                                </ComboboxGroup>
-                              </ComboboxList>
-                            </ComboboxContent>
-                          </Combobox>
-                        </div>
-
-                        <textarea
-                          value={editingNoteContent}
-                          onChange={(event) => setEditingNoteContent(event.target.value)}
-                          className="min-h-[14rem] w-full rounded-sm border border-neutral-800 bg-transparent p-2 text-xs text-neutral-200"
-                        />
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Combobox
-                            items={[...expirationOptions]}
-                            value={editingNoteExpirationValue}
-                            onValueChange={(value) => {
-                              const next = expirationOptions.find((option) => option.value === value);
-                              if (next) setEditingNoteExpirationValue(next.value);
-                            }}
-                          >
-                            <ComboboxInput
-                              placeholder="Expiration"
-                              className={comboboxInputClass('w-44')}
-                            />
-                            <ComboboxContent>
-                              <ComboboxEmpty>No duration found.</ComboboxEmpty>
-                              <ComboboxList>
-                                <ComboboxGroup>
-                                  {expirationOptions.map((option) => (
-                                    <ComboboxItem key={option.value} value={option.value}>
-                                      {option.label}
-                                    </ComboboxItem>
-                                  ))}
-                                </ComboboxGroup>
-                              </ComboboxList>
-                            </ComboboxContent>
-                          </Combobox>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-8 text-xs"
-                            onClick={() => {
-                              void saveNoteEdits(note.id).catch((err) =>
-                                toast.error(err instanceof Error ? err.message : 'Failed to update note')
-                              );
-                            }}
-                          >
-                            Save
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-8 border border-neutral-800 text-xs"
-                            onClick={cancelEditNote}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </article>
-                    );
-                  }
-
-                  return (
-                    <article
-                      key={note.id}
-                      className={`group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40 ${desktopSpanClass}`}
-                      role="link"
-                      tabIndex={0}
-                      onClick={() => {
-                        router.push(`/${note.username}/${note.slug}`);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          router.push(`/${note.username}/${note.slug}`);
-                        }
-                      }}
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="text-sm text-neutral-100">{note.title}</p>
-                          <p className="mt-1 text-[11px] text-neutral-500">
-                            /{note.username}/{note.slug} &middot; {note.visibility} &middot; created{' '}
-                            {formatDate(note.createdAt)} &middot; expires {formatExpiresIn(note.expiresAt)}{' '}
-                            &middot; views {viewsBySlug[note.slug] ?? 0}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              startEditNote(note);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openInviteDialog('note', note.id);
-                            }}
-                          >
-                            Share
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void togglePin('note', note.id).catch((err) =>
-                                toast.error(
-                                  err instanceof Error ? err.message : 'Failed to toggle pin'
-                                )
-                              );
-                            }}
-                          >
-                            {pinnedNoteIds.has(note.id) ? '<' : '>'}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void patchNote(note.id, 'softDelete').catch((err) =>
-                                toast.error(
-                                  err instanceof Error ? err.message : 'Failed to delete note'
-                                )
-                              );
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ['newest', 'Newest'],
+                        ['mostViewed', 'Most viewed'],
+                        ['recentlyUpdated', 'Recently updated'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        className={`h-7 border px-2 text-[11px] ${
+                          notesSort === value
+                            ? 'border-neutral-500 text-neutral-100'
+                            : 'border-neutral-800 text-neutral-400'
+                        }`}
+                        onClick={() => setNotesSort(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                {sortedNotes.length > DASHBOARD_PAGE_SIZE ? (
+                {filteredSortedNotes.length === 0 ? (
+                  <p className="text-xs text-neutral-500">No notes match this filter.</p>
+                ) : null}
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_32rem] 2xl:grid-cols-[minmax(0,1fr)_36rem] xl:items-start">
+                  <div className="grid grid-cols-1 items-start gap-1.5 lg:grid-cols-2">
+                    {visibleNotes.map((note, index) => {
+                      const isEditing = editingNoteId === note.id;
+                      const isOddLastCard =
+                        visibleNotes.length % 2 === 1 && index === visibleNotes.length - 1;
+                      const desktopSpanClass = isEditing || isOddLastCard ? 'lg:col-span-2' : '';
+                      const inviteInfo = noteInviteSummaryById[note.id] ?? {
+                        id: note.id,
+                        invitedCount: 0,
+                        invitees: [],
+                      };
+                      const previewText = excerpt(note.content, 220);
+                      if (isEditing) {
+                        return (
+                          <article
+                            key={note.id}
+                            className={`space-y-3 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
+                          >
+                            <div className="grid gap-2 md:grid-cols-2">
+                              <input
+                                value={editingNoteTitle}
+                                onChange={(event) => setEditingNoteTitle(event.target.value)}
+                                placeholder="Title"
+                                className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs text-neutral-100"
+                              />
+                              <Combobox
+                                items={[...visibilityOptions]}
+                                value={editingNoteVisibility}
+                                onValueChange={(next) =>
+                                  setEditingNoteVisibility(
+                                    next === 'private' ? 'private' : 'public'
+                                  )
+                                }
+                              >
+                                <ComboboxInput
+                                  placeholder="Visibility"
+                                  className={comboboxInputClass('w-full')}
+                                />
+                                <ComboboxContent>
+                                  <ComboboxEmpty>No visibility found.</ComboboxEmpty>
+                                  <ComboboxList>
+                                    <ComboboxGroup>
+                                      {visibilityOptions.map((option) => (
+                                        <ComboboxItem key={option.value} value={option.value}>
+                                          {option.label}
+                                        </ComboboxItem>
+                                      ))}
+                                    </ComboboxGroup>
+                                  </ComboboxList>
+                                </ComboboxContent>
+                              </Combobox>
+                            </div>
+
+                            <textarea
+                              value={editingNoteContent}
+                              onChange={(event) => setEditingNoteContent(event.target.value)}
+                              className="min-h-[14rem] w-full rounded-sm border border-neutral-800 bg-transparent p-2 text-xs text-neutral-200"
+                            />
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Combobox
+                                items={[...expirationOptions]}
+                                value={editingNoteExpirationValue}
+                                onValueChange={(value) => {
+                                  const next = expirationOptions.find(
+                                    (option) => option.value === value
+                                  );
+                                  if (next) setEditingNoteExpirationValue(next.value);
+                                }}
+                              >
+                                <ComboboxInput
+                                  placeholder="Expiration"
+                                  className={comboboxInputClass('w-44')}
+                                />
+                                <ComboboxContent>
+                                  <ComboboxEmpty>No duration found.</ComboboxEmpty>
+                                  <ComboboxList>
+                                    <ComboboxGroup>
+                                      {expirationOptions.map((option) => (
+                                        <ComboboxItem key={option.value} value={option.value}>
+                                          {option.label}
+                                        </ComboboxItem>
+                                      ))}
+                                    </ComboboxGroup>
+                                  </ComboboxList>
+                                </ComboboxContent>
+                              </Combobox>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 text-xs"
+                                onClick={() => {
+                                  void saveNoteEdits(note.id).catch((err) =>
+                                    toast.error(
+                                      err instanceof Error ? err.message : 'Failed to update note'
+                                    )
+                                  );
+                                }}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-8 border border-neutral-800 text-xs"
+                                onClick={cancelEditNote}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </article>
+                        );
+                      }
+
+                      return (
+                        <article
+                          key={note.id}
+                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            setSelectedNoteId(note.id);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedNoteId(note.id);
+                            }
+                          }}
+                        >
+                          <div className="flex h-full flex-col gap-2 pr-0 sm:pr-80">
+                            <div className="min-w-0">
+                              <Link
+                                href={`/${note.username}/${note.slug}`}
+                                className="line-clamp-2 text-sm text-foreground hover:text-foreground hover:underline"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {note.title}
+                              </Link>
+                              <p className="mt-1 truncate text-[11px] text-neutral-500">
+                                {note.visibility} &middot; created {formatDate(note.createdAt)}{' '}
+                                &middot; expires {formatExpiresIn(note.expiresAt)} &middot; views{' '}
+                                {viewsBySlug[note.slug] ?? 0}
+                              </p>
+                              <p className="mt-1 truncate text-[11px] text-neutral-500">
+                                invited {inviteInfo.invitedCount}
+                              </p>
+                              <p className="mt-2 truncate text-xs text-neutral-400">
+                                {previewText || 'No preview available.'}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 md:absolute md:right-3 md:top-3 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 min-w-[3.4rem] px-3 text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  startEditNote(note);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 min-w-[3.4rem] px-3 text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openInviteDialog('note', note.id);
+                                }}
+                              >
+                                Share
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 min-w-[2.75rem] px-3 text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void togglePin('note', note.id).catch((err) =>
+                                    toast.error(
+                                      err instanceof Error ? err.message : 'Failed to toggle pin'
+                                    )
+                                  );
+                                }}
+                              >
+                                {pinnedNoteIds.has(note.id) ? '<' : '>'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 min-w-[3.8rem] px-3 text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void patchNote(note.id, 'softDelete').catch((err) =>
+                                    toast.error(
+                                      err instanceof Error ? err.message : 'Failed to delete note'
+                                    )
+                                  );
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                  <aside className="hidden self-start xl:block">
+                    <div className="sticky top-20 h-fit max-h-[64rem] overflow-hidden rounded-sm border border-neutral-900 p-3">
+                      <p className="text-xs text-neutral-500">Selected note</p>
+                      {selectedNote ? (
+                        <div className="mt-2 flex flex-col space-y-2">
+                          <p className="text-sm text-neutral-100">{selectedNote.title}</p>
+                          <p className="truncate text-[11px] text-neutral-500">
+                            edited {formatDate(selectedNote.updatedAt)} &middot; views{' '}
+                            {viewsBySlug[selectedNote.slug] ?? 0} &middot; invitees{' '}
+                            {(noteInviteSummaryById[selectedNote.id]?.invitees ?? [])
+                              .slice(0, 4)
+                              .map((invitee) => `@${invitee}`)
+                              .join(', ') || 'none'}
+                          </p>
+                          <div className="max-h-[calc(64rem-4.5rem)] overflow-auto">
+                            <div className="prose prose-neutral prose-invert max-w-none break-words prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[0.95rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.9rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.85rem]! prose-h3:leading-5! prose-h3:font-medium! prose-h4:text-[0.8rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-900 prose-pre:border prose-pre:border-neutral-800">
+                              <DashboardMarkdownPreview
+                                content={stripLeadingHeading(
+                                  selectedNote.content,
+                                  selectedNote.title
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-neutral-500">
+                          Click a note to preview details.
+                        </p>
+                      )}
+                    </div>
+                  </aside>
+                </div>
+                {filteredSortedNotes.length > dashboardPageSize ? (
                   <Pagination className="justify-start">
                     <PaginationContent>
                       <PaginationItem>
@@ -1345,7 +1727,54 @@ export function UserDashboard() {
 
             {!isInitializing && panel === 'links' ? (
               <div className="w-full space-y-4">
-                <h1 className="text-sm text-neutral-200">Quick links</h1>
+                <div className="space-y-2">
+                  <h1 className="text-sm text-neutral-200">Quick links</h1>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ['all', 'All'],
+                        ['mostViewed', 'Most viewed'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        className={`h-7 border px-2 text-[11px] ${
+                          linksFilter === value
+                            ? 'border-neutral-500 text-neutral-100'
+                            : 'border-neutral-800 text-neutral-400'
+                        }`}
+                        onClick={() => setLinksFilter(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ['newest', 'Newest'],
+                        ['mostViewed', 'Most viewed'],
+                        ['recentlyUpdated', 'Recently updated'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        className={`h-7 border px-2 text-[11px] ${
+                          linksSort === value
+                            ? 'border-neutral-500 text-neutral-100'
+                            : 'border-neutral-800 text-neutral-400'
+                        }`}
+                        onClick={() => setLinksSort(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
 
                 <div className="rounded-sm border border-neutral-900 p-3">
                   <div className="grid gap-2 md:grid-cols-4">
@@ -1385,155 +1814,220 @@ export function UserDashboard() {
                   </div>
                 </div>
 
-                {quickLinks.length === 0 ? (
-                  <p className="text-xs text-neutral-500">No quick links yet.</p>
+                {filteredSortedLinks.length === 0 ? (
+                  <p className="text-xs text-neutral-500">No quick links match this filter.</p>
                 ) : null}
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {visibleQuickLinks.map((link, index) => {
-                  const isEditing = editingLinkId === link.id;
-                  const isOddLastCard =
-                    visibleQuickLinks.length % 2 === 1 && index === visibleQuickLinks.length - 1;
-                  const desktopSpanClass = isEditing || isOddLastCard ? 'lg:col-span-2' : '';
-                  if (isEditing) {
-                    return (
-                      <article
-                        key={link.id}
-                        className={`space-y-2 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
-                      >
-                        <div className="grid gap-2 md:grid-cols-4">
-                          <input
-                            value={editingLinkKey}
-                            onChange={(event) => setEditingLinkKey(event.target.value)}
-                            placeholder="key"
-                            className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs"
-                          />
-                          <input
-                            value={editingLinkUrl}
-                            onChange={(event) => setEditingLinkUrl(event.target.value)}
-                            placeholder="target url"
-                            className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs md:col-span-2"
-                          />
-                          <input
-                            value={editingLinkLabel}
-                            onChange={(event) => setEditingLinkLabel(event.target.value)}
-                            placeholder="label (optional)"
-                            className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-8 text-xs"
-                            onClick={() => {
-                              void saveQuickLinkEdits(link.id).catch((err) =>
-                                toast.error(
-                                  err instanceof Error ? err.message : 'Failed to update quick link'
-                                )
-                              );
-                            }}
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+                  <div className="grid grid-cols-1 items-start gap-1.5 lg:grid-cols-2">
+                    {visibleQuickLinks.map((link, index) => {
+                      const isEditing = editingLinkId === link.id;
+                      const isOddLastCard =
+                        visibleQuickLinks.length % 2 === 1 &&
+                        index === visibleQuickLinks.length - 1;
+                      const desktopSpanClass = isEditing || isOddLastCard ? 'lg:col-span-2' : '';
+                      const inviteInfo = linkInviteSummaryById[link.id] ?? {
+                        id: link.id,
+                        invitedCount: 0,
+                        invitees: [],
+                      };
+                      if (isEditing) {
+                        return (
+                          <article
+                            key={link.id}
+                            className={`space-y-2 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
                           >
-                            Save
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-8 border border-neutral-800 text-xs"
-                            onClick={cancelEditQuickLink}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </article>
-                    );
-                  }
+                            <div className="grid gap-2 md:grid-cols-4">
+                              <input
+                                value={editingLinkKey}
+                                onChange={(event) => setEditingLinkKey(event.target.value)}
+                                placeholder="key"
+                                className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs"
+                              />
+                              <input
+                                value={editingLinkUrl}
+                                onChange={(event) => setEditingLinkUrl(event.target.value)}
+                                placeholder="target url"
+                                className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs md:col-span-2"
+                              />
+                              <input
+                                value={editingLinkLabel}
+                                onChange={(event) => setEditingLinkLabel(event.target.value)}
+                                placeholder="label (optional)"
+                                className="h-8 rounded-sm border border-neutral-800 bg-transparent px-2 text-xs"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 text-xs"
+                                onClick={() => {
+                                  void saveQuickLinkEdits(link.id).catch((err) =>
+                                    toast.error(
+                                      err instanceof Error
+                                        ? err.message
+                                        : 'Failed to update quick link'
+                                    )
+                                  );
+                                }}
+                              >
+                                Save
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="h-8 border border-neutral-800 text-xs"
+                                onClick={cancelEditQuickLink}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </article>
+                        );
+                      }
 
-                  return (
-                    <article
-                      key={link.id}
-                      className={`group cursor-pointer rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40 ${desktopSpanClass}`}
-                      role="link"
-                      tabIndex={0}
-                      onClick={() => {
-                        router.push(`/${link.username}/${link.key}`);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          router.push(`/${link.username}/${link.key}`);
-                        }
-                      }}
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm text-neutral-100">
-                            /{link.username}/{link.key} {'>'} {link.targetUrl}
+                      return (
+                        <article
+                          key={link.id}
+                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            setSelectedLinkId(link.id);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedLinkId(link.id);
+                            }
+                          }}
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <Link
+                                href={`/${link.username}/${link.key}`}
+                                className="truncate text-sm text-foreground hover:text-foreground hover:underline"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                {link.label || link.key} {'>'} {link.targetUrl}
+                              </Link>
+                              <p className="mt-1 text-[11px] text-neutral-500">
+                                {link.label || 'quick link'} &middot; views {link.clicks}
+                                {link.lastClickedAt
+                                  ? ` · last ${formatDate(link.lastClickedAt)}`
+                                  : ''}
+                              </p>
+                              <p className="mt-1 text-[11px] text-neutral-500">
+                                invited {inviteInfo.invitedCount}
+                              </p>
+                              <p className="mt-2 truncate text-xs text-neutral-400">
+                                {excerpt(
+                                  link.label ? `${link.label} ${link.targetUrl}` : link.targetUrl,
+                                  220
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  startEditQuickLink(link);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openInviteDialog('link', link.id);
+                                }}
+                              >
+                                Share
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void togglePin('link', link.id).catch((err) =>
+                                    toast.error(
+                                      err instanceof Error ? err.message : 'Failed to toggle pin'
+                                    )
+                                  );
+                                }}
+                              >
+                                {pinnedLinkIds.has(link.id) ? '<' : '>'}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void removeQuickLinkHandler(link.id).catch((err) =>
+                                    toast.error(
+                                      err instanceof Error
+                                        ? err.message
+                                        : 'Failed to remove quick link'
+                                    )
+                                  );
+                                }}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                  <aside className="hidden self-start xl:block">
+                    <div className="sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-hidden rounded-sm border border-neutral-900 p-3">
+                      <p className="text-xs text-neutral-500">Selected link</p>
+                      {selectedLink ? (
+                        <div className="mt-2 max-h-[calc(100vh-12rem)] space-y-2 overflow-auto">
+                          <p className="text-sm text-neutral-100">
+                            {selectedLink.label || selectedLink.key}
                           </p>
-                          <p className="mt-1 text-[11px] text-neutral-500">
-                            {link.label || 'quick link'} &middot; views {link.clicks}
-                            {link.lastClickedAt ? ` · last ${formatDate(link.lastClickedAt)}` : ''}
+                          <p className="text-[11px] text-neutral-500 break-all">
+                            {selectedLink.targetUrl}
+                          </p>
+                          <p className="text-[11px] text-neutral-500">
+                            edited {formatDate(selectedLink.updatedAt)} &middot; views{' '}
+                            {selectedLink.clicks}
+                          </p>
+                          <p className="text-xs text-neutral-400">
+                            {excerpt(
+                              selectedLink.label
+                                ? `${selectedLink.label} ${selectedLink.targetUrl}`
+                                : selectedLink.targetUrl,
+                              280
+                            )}
+                          </p>
+                          <p className="text-[11px] text-neutral-500">
+                            invitees:{' '}
+                            {(linkInviteSummaryById[selectedLink.id]?.invitees ?? [])
+                              .slice(0, 4)
+                              .map((invitee) => `@${invitee}`)
+                              .join(', ') || 'none'}
                           </p>
                         </div>
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              startEditQuickLink(link);
-                            }}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openInviteDialog('link', link.id);
-                            }}
-                          >
-                            Share
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void togglePin('link', link.id).catch((err) =>
-                                toast.error(
-                                  err instanceof Error ? err.message : 'Failed to toggle pin'
-                                )
-                              );
-                            }}
-                          >
-                            {pinnedLinkIds.has(link.id) ? '<' : '>'}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="default"
-                            className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void removeQuickLinkHandler(link.id).catch((err) =>
-                                toast.error(
-                                  err instanceof Error ? err.message : 'Failed to remove quick link'
-                                )
-                              );
-                            }}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                      ) : (
+                        <p className="mt-2 text-xs text-neutral-500">
+                          Click a link to preview details.
+                        </p>
+                      )}
+                    </div>
+                  </aside>
                 </div>
-                {sortedQuickLinks.length > DASHBOARD_PAGE_SIZE ? (
+                {filteredSortedLinks.length > dashboardPageSize ? (
                   <Pagination className="justify-start">
                     <PaginationContent>
                       <PaginationItem>
@@ -1598,7 +2092,8 @@ export function UserDashboard() {
                 <div className="rounded-sm border border-neutral-900 p-3">
                   <p className="text-xs text-neutral-500">Profile summary</p>
                   <p className="mt-2 text-xs text-neutral-300">
-                    @{profileHandle || 'unknown'} &middot; {notes.length} notes &middot; {quickLinks.length} links
+                    @{profileHandle || 'unknown'} &middot; {notes.length} notes &middot;{' '}
+                    {quickLinks.length} links
                   </p>
                   <p className="mt-1 text-[11px] text-neutral-500">
                     Signed-in view stays dashboard. Public view forced via <code>?public=1</code>.
@@ -1696,9 +2191,12 @@ export function UserDashboard() {
                         className="flex items-center justify-between gap-2 rounded-sm border border-neutral-900 px-2 py-2"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-xs text-neutral-200">{key.label || 'api key'}</p>
+                          <p className="truncate text-xs text-neutral-200">
+                            {key.label || 'api key'}
+                          </p>
                           <p className="text-[11px] text-neutral-500">
-                            {key.prefix} &middot; {key.permissions} &middot; created {formatDate(key.createdAt)}
+                            {key.prefix} &middot; {key.permissions} &middot; created{' '}
+                            {formatDate(key.createdAt)}
                           </p>
                         </div>
                         <Button
@@ -1707,7 +2205,9 @@ export function UserDashboard() {
                           className="h-8 border border-neutral-800 text-xs"
                           onClick={() => {
                             void revokeKey(key.id).catch((err) =>
-                              toast.error(err instanceof Error ? err.message : 'Failed to revoke key')
+                              toast.error(
+                                err instanceof Error ? err.message : 'Failed to revoke key'
+                              )
                             );
                           }}
                         >
@@ -1721,7 +2221,9 @@ export function UserDashboard() {
                 {analytics ? (
                   <Card className="w-full rounded-sm border border-neutral-900 bg-transparent py-0 ring-0">
                     <CardHeader className="border-b border-neutral-900 px-4 py-3">
-                      <CardTitle className="text-sm text-neutral-200">Analytics ({analytics.days}d)</CardTitle>
+                      <CardTitle className="text-sm text-neutral-200">
+                        Analytics ({analytics.days}d)
+                      </CardTitle>
                       <CardDescription className="text-xs text-neutral-500">
                         Total views: {analytics.totalViews.toLocaleString()}
                       </CardDescription>
@@ -1789,68 +2291,164 @@ export function UserDashboard() {
 
             {!isInitializing && panel === 'deleted' ? (
               <div className="w-full space-y-3">
-                <h1 className="text-sm text-neutral-200">Recently deleted</h1>
-                {deletedNotes.length === 0 ? (
-                  <p className="text-xs text-neutral-500">No recently deleted notes.</p>
-                ) : null}
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  {visibleDeletedNotes.map((note, index) => {
-                    const isOddLastCard =
-                      visibleDeletedNotes.length % 2 === 1 &&
-                      index === visibleDeletedNotes.length - 1;
-                    const desktopSpanClass = isOddLastCard ? 'lg:col-span-2' : '';
-
-                    return (
-                      <article
-                        key={note.id}
-                        className={`group rounded-sm border border-neutral-900 px-3 py-3 ${desktopSpanClass}`}
+                <div className="space-y-2">
+                  <h1 className="text-sm text-neutral-200">Recently deleted</h1>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ['all', 'All'],
+                        ['expiringSoon', 'Expiring soon'],
+                        ['mostViewed', 'Most viewed'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        className={`h-7 border px-2 text-[11px] ${
+                          deletedFilter === value
+                            ? 'border-neutral-500 text-neutral-100'
+                            : 'border-neutral-800 text-neutral-400'
+                        }`}
+                        onClick={() => setDeletedFilter(value)}
                       >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
-                            <p className="text-sm text-neutral-200">
-                              {note.title}
-                            </p>
-                            <p className="mt-1 text-[11px] text-neutral-500">
-                              deleted {formatDate(note.deletedAt)} &middot; permanent delete{' '}
-                              {formatDate(note.purgeAt)}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="h-7 border border-neutral-800 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                              onClick={() => {
-                                void patchNote(note.id, 'restore').catch((err) =>
-                                  toast.error(err instanceof Error ? err.message : 'Failed to restore note')
-                                );
-                              }}
-                            >
-                              Restore
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="default"
-                              className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
-                              onClick={() => {
-                                void patchNote(note.id, 'permanentDelete').catch((err) =>
-                                  toast.error(
-                                    err instanceof Error
-                                      ? err.message
-                                      : 'Failed to permanently delete note'
-                                  )
-                                );
-                              }}
-                            >
-                              Delete forever
-                            </Button>
-                          </div>
-                        </div>
-                      </article>
-                    );
-                  })}
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {(
+                      [
+                        ['newest', 'Newest'],
+                        ['mostViewed', 'Most viewed'],
+                        ['recentlyUpdated', 'Recently updated'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <Button
+                        key={value}
+                        type="button"
+                        variant="ghost"
+                        className={`h-7 border px-2 text-[11px] ${
+                          deletedSort === value
+                            ? 'border-neutral-500 text-neutral-100'
+                            : 'border-neutral-800 text-neutral-400'
+                        }`}
+                        onClick={() => setDeletedSort(value)}
+                      >
+                        {label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                {sortedDeletedNotes.length > DASHBOARD_PAGE_SIZE ? (
+                {filteredSortedDeletedNotes.length === 0 ? (
+                  <p className="text-xs text-neutral-500">No deleted notes match this filter.</p>
+                ) : null}
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_20rem] xl:items-start">
+                  <div className="grid grid-cols-1 items-start gap-1.5 lg:grid-cols-2">
+                    {visibleDeletedNotes.map((note, index) => {
+                      const isOddLastCard =
+                        visibleDeletedNotes.length % 2 === 1 &&
+                        index === visibleDeletedNotes.length - 1;
+                      const desktopSpanClass = isOddLastCard ? 'lg:col-span-2' : '';
+                      const inviteInfo = noteInviteSummaryById[note.id] ?? {
+                        id: note.id,
+                        invitedCount: 0,
+                        invitees: [],
+                      };
+                      return (
+                        <article
+                          key={note.id}
+                          className={`group h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 md:h-28 ${desktopSpanClass}`}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedDeletedId(note.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ' ') {
+                              event.preventDefault();
+                              setSelectedDeletedId(note.id);
+                            }
+                          }}
+                        >
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                              <p className="text-sm text-neutral-200">{note.title}</p>
+                              <p className="mt-1 text-[11px] text-neutral-500">
+                                deleted {formatDate(note.deletedAt)} &middot; permanent delete{' '}
+                                {formatDate(note.purgeAt)} &middot; invited{' '}
+                                {inviteInfo.invitedCount}
+                              </p>
+                              <p className="mt-2 truncate text-xs text-neutral-400">
+                                {excerpt(note.content, 220)}
+                              </p>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 min-w-[3.8rem] px-3 text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void patchNote(note.id, 'restore').catch((err) =>
+                                    toast.error(
+                                      err instanceof Error ? err.message : 'Failed to restore note'
+                                    )
+                                  );
+                                }}
+                              >
+                                Restore
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="h-8 min-w-[8.5rem] whitespace-nowrap px-3 text-xs"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void patchNote(note.id, 'permanentDelete').catch((err) =>
+                                    toast.error(
+                                      err instanceof Error
+                                        ? err.message
+                                        : 'Failed to permanently delete note'
+                                    )
+                                  );
+                                }}
+                              >
+                                Delete forever
+                              </Button>
+                            </div>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                  <aside className="hidden self-start xl:block">
+                    <div className="sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-hidden rounded-sm border border-neutral-900 p-3">
+                      <p className="text-xs text-neutral-500">Selected deleted note</p>
+                      {selectedDeletedNote ? (
+                        <div className="mt-2 max-h-[calc(100vh-12rem)] space-y-2 overflow-auto">
+                          <p className="text-sm text-neutral-100">{selectedDeletedNote.title}</p>
+                          <p className="text-[11px] text-neutral-500">
+                            deleted {formatDate(selectedDeletedNote.deletedAt)} &middot; purge{' '}
+                            {formatDate(selectedDeletedNote.purgeAt)}
+                          </p>
+                          <p className="text-[11px] text-neutral-500">
+                            views {noteViewsById[selectedDeletedNote.id] ?? 0} &middot; invitees{' '}
+                            {(
+                              noteInviteSummaryById[selectedDeletedNote.id]?.invitedCount ?? 0
+                            ).toString()}
+                          </p>
+                          <p className="text-xs text-neutral-400">
+                            {excerpt(selectedDeletedNote.content, 300)}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-neutral-500">
+                          Click a deleted note to preview details.
+                        </p>
+                      )}
+                    </div>
+                  </aside>
+                </div>
+                {filteredSortedDeletedNotes.length > dashboardPageSize ? (
                   <Pagination className="justify-start">
                     <PaginationContent>
                       <PaginationItem>
@@ -1968,9 +2566,7 @@ export function UserDashboard() {
                             onClick={() => {
                               void openNotification(row.id).catch((err) =>
                                 toast.error(
-                                  err instanceof Error
-                                    ? err.message
-                                    : 'Failed to open notification'
+                                  err instanceof Error ? err.message : 'Failed to open notification'
                                 )
                               );
                             }}

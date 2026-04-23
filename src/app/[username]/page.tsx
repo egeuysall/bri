@@ -4,6 +4,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { UserDashboard } from '@/components/dashboard/user-dashboard';
 import { PublicProfileAvatar } from '@/components/public-profile-avatar';
 import {
+  getMyUserProfile,
   getPublicUserProfileByUsername,
   listPublicNotesByUsername,
   listQuickLinksByUsername,
@@ -41,12 +42,23 @@ export default async function DashboardPage({
   const normalizedPathHandle = normalizePathHandle(username);
   if (!normalizedPathHandle) notFound();
 
-  const { sessionClaims } = await auth();
-  const user = await currentUser();
+  const { sessionClaims, userId, getToken } = await auth();
   let userHandle = resolveUserHandle(sessionClaims as Record<string, unknown> | null | undefined);
 
-  if (!userHandle) {
-    userHandle = resolveUserHandleFromUser(user);
+  if (!userHandle && userId) {
+    const token = (await getToken({ template: 'convex' })) ?? (await getToken()) ?? null;
+    if (token) {
+      const profile = await getMyUserProfile({ token }).catch(() => null);
+      if (profile?.username) {
+        userHandle = normalizePathHandle(profile.username);
+      }
+    }
+  }
+
+  if (!userHandle && userId) {
+    const user = await currentUser().catch(() => null);
+    const fallbackHandle = resolveUserHandleFromUser(user);
+    if (fallbackHandle) userHandle = fallbackHandle;
   }
 
   if (!forcePublicProfile && userHandle && normalizedPathHandle === userHandle) {
@@ -113,11 +125,10 @@ export default async function DashboardPage({
               <Link
                 key={note.id}
                 href={`/${note.username}/${note.slug}`}
-                className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40"
+                className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
               >
                 <p className="text-sm text-neutral-100">{note.title}</p>
                 <p className="mt-1 text-[11px] text-neutral-500">
-                  /{note.username}/{note.slug} &middot;{' '}
                   {new Date(note.createdAt).toLocaleDateString()}
                 </p>
               </Link>
@@ -161,10 +172,10 @@ export default async function DashboardPage({
               <a
                 key={link.id}
                 href={`/${link.username}/${link.key}`}
-                className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-900/40"
+                className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
               >
                 <p className="truncate text-sm text-neutral-100">
-                  /{link.username}/{link.key} &gt; {link.targetUrl}
+                  {link.label || link.key} &gt; {link.targetUrl}
                 </p>
                 <p className="mt-1 text-[11px] text-neutral-500">
                   {link.label || 'quick link'} &middot; {link.clicks} views

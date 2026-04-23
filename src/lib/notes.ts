@@ -69,6 +69,12 @@ export type NotificationRecord = {
   createdAt: number;
 };
 
+export type InviteSummaryRecord = {
+  id: string;
+  invitedCount: number;
+  invitees: string[];
+};
+
 export async function getNoteByUsernameAndSlug(input: {
   username: string;
   slug: string;
@@ -110,6 +116,26 @@ export async function listNotesWithApiKey(input: {
     apiKey: input.apiKey,
     state: input.state,
   });
+}
+
+export async function listMyNoteInviteSummaries(input: { token: string }): Promise<InviteSummaryRecord[]> {
+  const rows = await fetchQuery(api.notes.listInviteSummaryMine, {}, { token: input.token });
+  return rows.map((row) => ({
+    id: row.noteId as string,
+    invitedCount: row.invitedCount,
+    invitees: row.invitees,
+  }));
+}
+
+export async function listNoteInviteSummariesWithApiKey(input: {
+  apiKey: string;
+}): Promise<InviteSummaryRecord[]> {
+  const rows = await fetchQuery(api.notes.listInviteSummaryByApiKey, { apiKey: input.apiKey });
+  return rows.map((row) => ({
+    id: row.noteId as string,
+    invitedCount: row.invitedCount,
+    invitees: row.invitees,
+  }));
 }
 
 export async function createNoteWithAuth(input: {
@@ -303,6 +329,30 @@ export async function listQuickLinksWithApiKey(input: {
   apiKey: string;
 }): Promise<QuickLinkRecord[]> {
   return await fetchQuery(api.quickLinks.listByApiKey, { apiKey: input.apiKey });
+}
+
+export async function listMyQuickLinkInviteSummaries(input: {
+  token: string;
+}): Promise<InviteSummaryRecord[]> {
+  const rows = await fetchQuery(api.quickLinks.listInviteSummaryMine, {}, { token: input.token });
+  return rows.map((row) => ({
+    id: row.linkId as string,
+    invitedCount: row.invitedCount,
+    invitees: row.invitees,
+  }));
+}
+
+export async function listQuickLinkInviteSummariesWithApiKey(input: {
+  apiKey: string;
+}): Promise<InviteSummaryRecord[]> {
+  const rows = await fetchQuery(api.quickLinks.listInviteSummaryByApiKey, {
+    apiKey: input.apiKey,
+  });
+  return rows.map((row) => ({
+    id: row.linkId as string,
+    invitedCount: row.invitedCount,
+    invitees: row.invitees,
+  }));
 }
 
 export async function createQuickLink(input: {
@@ -533,6 +583,13 @@ export async function getPublicUserProfileByUsername(input: {
   const data = await fetchQuery(api.userProfiles.getPublicByUsername, {
     username: input.username,
   });
+  return data ?? null;
+}
+
+export async function getMyUserProfile(input: {
+  token: string;
+}): Promise<UserProfilePublicRecord | null> {
+  const data = await fetchQuery(api.userProfiles.getMine, {}, { token: input.token });
   return data ?? null;
 }
 
