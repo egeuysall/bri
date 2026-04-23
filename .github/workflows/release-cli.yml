@@ -48,13 +48,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - artifact_name: cli-darwin-arm64
+          - artifact_name: cli-darwin
             runs_on: macos-14
             specs: |
               bun-darwin-arm64:bri-darwin-arm64
-          - artifact_name: cli-darwin-x64
-            runs_on: macos-13
-            specs: |
               bun-darwin-x64:bri-darwin-x64
           - artifact_name: cli-linux
             runs_on: ubuntu-latest
