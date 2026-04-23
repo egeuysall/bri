@@ -9,8 +9,11 @@ export const VERSION = '2.1.0';
 const IS_DEV = process.env.NODE_ENV === 'development';
 export const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bri.egeuysal.com';
 export const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/notes`;
-export const UPDATE_SOURCE_URL = `${DEFAULT_SITE_URL}/bri-version.json`;
-export const INSTALL_COMMAND = `curl -fsSL ${DEFAULT_SITE_URL}/install.sh | bash`;
+export const RELEASE_REPO = 'egeuysall/bri';
+export const UPDATE_SOURCE_URL = `https://api.github.com/repos/${RELEASE_REPO}/releases/latest`;
+export const INSTALL_COMMAND = IS_DEV
+  ? 'bash ./cli/install.sh'
+  : `curl -fsSL ${DEFAULT_SITE_URL}/install.sh | bash`;
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_BYTES = 1_048_576;
 export const DEFAULT_RETRIES = 2;
@@ -162,6 +165,16 @@ export type ConfigOptions = {
   json?: boolean;
 };
 
+export type SelfUpdateOptions = {
+  checkOnly?: boolean;
+  yes?: boolean;
+  quiet?: boolean;
+  installPath?: string;
+  json?: boolean;
+  color: boolean;
+  updateCheck: boolean;
+};
+
 export function colorize(text: string, code: string, enabled: boolean): string {
   if (!enabled) {
     return text;
@@ -230,6 +243,7 @@ export function renderTopHelp(enableColor: boolean): void {
   console.log('  logout    remove api key');
   console.log('  slug      generate slug from markdown');
   console.log('  doctor    runtime and endpoint checks');
+  console.log('  self-update  check/apply latest released binary');
   console.log('  config    manage local defaults');
   console.log('');
   console.log('Quick start:');
@@ -566,6 +580,7 @@ export function normalizeArgv(argv: string[]): string[] {
     'publish',
     'slug',
     'doctor',
+    'self-update',
     'login',
     'logout',
     'notes',

@@ -79,6 +79,10 @@ lib-cov/
 .tern-port
 .vscode-test/
 
+# CLI release artifacts
+dist/cli-release/
+public/bin/
+
 # Env files
 .env
 .env.local

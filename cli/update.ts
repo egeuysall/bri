@@ -12,10 +12,19 @@ interface RemoteVersionInfo {
   releaseUrl?: string;
 }
 
+interface GitHubReleaseInfo {
+  tag_name?: string;
+  html_url?: string;
+}
+
 const UPDATE_INTERVAL_MS = 24 * 60 * 60 * 1000;
 const CACHE_DIR = path.join(os.homedir(), '.cache', 'bri');
 const STATE_PATH = path.join(CACHE_DIR, 'update-state.json');
 const LEGACY_STATE_PATH = path.join(os.homedir(), '.cache', 'bri', 'update-state.json');
+
+function normalizeVersion(input: string): string {
+  return input.trim().replace(/^v/i, '');
+}
 
 function parseSemver(input: string): [number, number, number] {
   const match = input.trim().match(/^(\d+)\.(\d+)\.(\d+)/);
@@ -77,7 +86,8 @@ async function fetchRemoteVersion(
     const response = await fetch(sourceUrl, {
       method: 'GET',
       headers: {
-        Accept: 'application/json',
+        Accept: 'application/vnd.github+json, application/json',
+        'User-Agent': 'bri-cli',
       },
       signal: controller.signal,
     });
@@ -87,13 +97,30 @@ async function fetchRemoteVersion(
     }
 
     const raw = await response.text();
-    const parsed = JSON.parse(raw) as RemoteVersionInfo;
+    const parsed = JSON.parse(raw) as Partial<RemoteVersionInfo & GitHubReleaseInfo>;
+    let version: string | undefined;
+    let releaseUrl: string | undefined;
 
-    if (!parsed || typeof parsed.version !== 'string') {
+    if (parsed && typeof parsed.version === 'string') {
+      version = normalizeVersion(parsed.version);
+      if (typeof parsed.releaseUrl === 'string' && parsed.releaseUrl.trim().length > 0) {
+        releaseUrl = parsed.releaseUrl;
+      }
+    } else if (parsed && typeof parsed.tag_name === 'string') {
+      version = normalizeVersion(parsed.tag_name);
+      if (typeof parsed.html_url === 'string' && parsed.html_url.trim().length > 0) {
+        releaseUrl = parsed.html_url;
+      }
+    }
+
+    if (!version) {
       return null;
     }
 
-    return parsed;
+    return {
+      version,
+      releaseUrl,
+    };
   } catch {
     return null;
   } finally {

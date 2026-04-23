@@ -26,6 +26,7 @@ import {
   runDoctor,
   runLogin,
   runLogout,
+  runSelfUpdate,
   runSlug,
 } from './commands/system';
 import {
@@ -44,6 +45,7 @@ import {
   type NotificationsActionOptions,
   type NotificationsListOptions,
   type PublishOptions,
+  type SelfUpdateOptions,
   type SlugOptions,
   VERSION,
   createPrinter,
@@ -67,6 +69,10 @@ async function main(): Promise<void> {
   program.name('bri').description('bri CLI: publish markdown to bri').version(VERSION);
   program.option('--no-update-check', 'skip 24h update check');
   program.hook('preAction', async (_thisCommand, actionCommand) => {
+    if (actionCommand.name() === 'self-update') {
+      return;
+    }
+
     const options = actionCommand.optsWithGlobals<{
       updateCheck?: boolean;
       color?: boolean;
@@ -126,6 +132,20 @@ async function main(): Promise<void> {
     .action(async (_unused: unknown, command: Command) => {
       const options = command.opts<DoctorOptions>();
       await runDoctor(options, command);
+    });
+
+  program
+    .command('self-update')
+    .description('check for and install the latest released binary')
+    .option('--check-only', 'only report whether an update is available')
+    .option('--yes', 'non-interactive mode for scripts')
+    .option('-q, --quiet', 'reduce non-essential logs')
+    .option('--install-path <path>', 'explicit installed binary path to replace')
+    .option('--json', 'output machine readable json')
+    .option('--no-color', 'disable ansi colors')
+    .action(async (_unused: unknown, command: Command) => {
+      const options = command.opts<SelfUpdateOptions>();
+      await runSelfUpdate(options, command);
     });
 
   program

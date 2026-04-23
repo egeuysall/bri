@@ -1,0 +1,72 @@
+name: Release CLI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="$(node -e "const fs=require('fs');const src=fs.readFileSync('cli/core/shared.ts','utf8');const m=src.match(/export const VERSION = '([^']+)'/);if(!m){process.exit(1)};process.stdout.write(m[1]);")"
+          TAG="v${VERSION}"
+
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "release_exists=true" >>"${GITHUB_OUTPUT}"
+          else
+            echo "release_exists=false" >>"${GITHUB_OUTPUT}"
+          fi
+
+          echo "version=${VERSION}" >>"${GITHUB_OUTPUT}"
+          echo "tag=${TAG}" >>"${GITHUB_OUTPUT}"
+
+      - name: Skip existing release tag
+        if: steps.meta.outputs.release_exists == 'true'
+        run: |
+          echo "Release ${TAG} already exists. Skipping."
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+
+      - name: Build release binaries
+        if: steps.meta.outputs.release_exists != 'true'
+        run: |
+          chmod +x ./cli/build-release-binaries.sh
+          ./cli/build-release-binaries.sh dist/cli-release
+
+      - name: Publish GitHub release
+        if: steps.meta.outputs.release_exists != 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: bri ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/cli-release/bri-darwin-arm64
+            dist/cli-release/bri-darwin-x64
+            dist/cli-release/bri-linux-arm64
+            dist/cli-release/bri-linux-x64
+            dist/cli-release/bri-windows-x64.exe
+            dist/cli-release/SHA256SUMS

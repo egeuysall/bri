@@ -14,7 +14,10 @@ import {
   type ConfigOptions,
   type DoctorOptions,
   type LoginOptions,
+  RELEASE_REPO,
+  type SelfUpdateOptions,
   type SlugOptions,
+  VERSION,
   ansi,
   colorize,
   createPrinter,
@@ -27,6 +30,7 @@ import {
   readMarkdownStdin,
   validateUrl,
 } from '../core/shared';
+import { performSelfUpdate } from '../self-update';
 
 export type ConfigKey = keyof BriConfig;
 
@@ -197,6 +201,47 @@ export async function runDoctor(options: DoctorOptions, command: Command): Promi
       ? colorize('[ok]', ansi.green, color)
       : colorize('[warn]', ansi.yellow, color);
     printer.line(`${prefix} ${item.name}: ${item.detail}`);
+  }
+}
+
+export async function runSelfUpdate(options: SelfUpdateOptions, command: Command): Promise<void> {
+  const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
+  const printer = createPrinter(color, Boolean(options.quiet) || Boolean(options.json));
+
+  const result = await performSelfUpdate({
+    currentVersion: VERSION,
+    repo: RELEASE_REPO,
+    checkOnly: options.checkOnly,
+    installPath: options.installPath,
+  });
+
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+
+  if (result.status === 'up-to-date') {
+    printer.ok(`already up to date (${result.currentVersion})`);
+    return;
+  }
+
+  if (result.status === 'not-installed') {
+    printer.warn(`update available: ${result.latestVersion} (current ${result.currentVersion})`);
+    printer.info('standalone install path not detected; rerun with --install-path <path>');
+    return;
+  }
+
+  if (result.status === 'update-available' || options.checkOnly) {
+    printer.warn(`update available: ${result.latestVersion} (current ${result.currentVersion})`);
+    if (result.releaseUrl) {
+      printer.info(`release: ${result.releaseUrl}`);
+    }
+    return;
+  }
+
+  printer.ok(`updated to ${result.latestVersion}`);
+  if (result.binaryPath) {
+    printer.info(`installed: ${result.binaryPath}`);
   }
 }
 
