@@ -1473,11 +1473,11 @@ export function UserDashboard() {
                                 {previewText || 'No preview available.'}
                               </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:rounded-sm md:border md:border-neutral-800/80 md:bg-neutral-950/90 md:px-1.5 md:py-1 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <div className="flex flex-wrap items-center gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.4rem] px-3 text-xs"
+                                className="h-8 min-w-[3.4rem] bg-black px-3 text-xs hover:bg-neutral-900"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   startEditNote(note);
@@ -1488,7 +1488,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.4rem] px-3 text-xs"
+                                className="h-8 min-w-[3.4rem] bg-black px-3 text-xs hover:bg-neutral-900"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   openInviteDialog('note', note.id);
@@ -1499,7 +1499,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[2.75rem] px-3 text-xs"
+                                className="h-8 min-w-[2.75rem] bg-black px-3 text-xs hover:bg-neutral-900"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void togglePin('note', note.id).catch((err) =>
@@ -1514,7 +1514,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.8rem] px-3 text-xs"
+                                className="h-8 min-w-[3.8rem] bg-black px-3 text-xs hover:bg-neutral-900"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void patchNote(note.id, 'softDelete').catch((err) =>
@@ -1927,11 +1927,11 @@ export function UserDashboard() {
                                 )}
                               </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:rounded-sm md:border md:border-neutral-800/80 md:bg-neutral-950/90 md:px-1.5 md:py-1 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   startEditQuickLink(link);
@@ -1942,7 +1942,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   openInviteDialog('link', link.id);
@@ -1953,7 +1953,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void togglePin('link', link.id).catch((err) =>
@@ -1968,7 +1968,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs"
+                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void removeQuickLinkHandler(link.id).catch((err) =>
@@ -2381,11 +2381,11 @@ export function UserDashboard() {
                                 {excerpt(note.content, 220)}
                               </p>
                             </div>
-                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:rounded-sm md:border md:border-neutral-800/80 md:bg-neutral-950/90 md:px-1.5 md:py-1 md:shadow-sm md:backdrop-blur-sm md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.8rem] px-3 text-xs"
+                                className="h-8 min-w-[3.8rem] bg-black px-3 text-xs hover:bg-neutral-900"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void patchNote(note.id, 'restore').catch((err) =>
@@ -2400,7 +2400,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[8.5rem] whitespace-nowrap px-3 text-xs"
+                                className="h-8 min-w-[8.5rem] whitespace-nowrap bg-black px-3 text-xs hover:bg-neutral-900"
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void patchNote(note.id, 'permanentDelete').catch((err) =>
