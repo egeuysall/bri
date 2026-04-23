@@ -3,7 +3,7 @@
   "scripts": { "start": "expo start" },
   "dependencies": {
     "@clerk/expo": "latest",
-    "expo": "latest",
+    "expo": "^48.0.0",
     "expo-router": "latest",
     "expo-secure-store": "latest",
     "react": "latest",

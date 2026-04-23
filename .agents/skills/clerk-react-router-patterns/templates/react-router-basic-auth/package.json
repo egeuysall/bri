@@ -15,6 +15,6 @@
   "devDependencies": {
     "@react-router/dev": "latest",
     "@react-router/node": "latest",
-    "vite": "latest"
+    "vite": "^6.4.2"
   }
 }
