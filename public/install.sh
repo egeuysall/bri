@@ -6,8 +6,11 @@ BIN_DIR="${BRI_INSTALL_DIR:-${HOME}/.local/bin}"
 TARGET="${BIN_DIR}/bri"
 TMP_TARGET="$(mktemp "${TMPDIR:-/tmp}/bri.XXXXXX")"
 TMP_CHECKSUMS="$(mktemp "${TMPDIR:-/tmp}/bri-sha.XXXXXX")"
-RELEASE_BASE_URL="${BRI_RELEASE_BASE_URL:-https://github.com/${GITHUB_REPO}/releases/latest/download}"
-RELEASE_SOURCE_URL="${BRI_RELEASE_SOURCE_URL:-https://github.com/${GITHUB_REPO}/releases/latest}"
+DEFAULT_RELEASE_BASE_URL="https://github.com/${GITHUB_REPO}/releases/latest/download"
+DEFAULT_RELEASE_SOURCE_URL="https://github.com/${GITHUB_REPO}/releases/latest"
+RELEASE_BASE_URL="${BRI_RELEASE_BASE_URL:-}"
+RELEASE_SOURCE_URL="${BRI_RELEASE_SOURCE_URL:-}"
+RELEASE_API_URL="${BRI_RELEASE_API_URL:-https://api.github.com/repos/${GITHUB_REPO}/releases/latest}"
 
 info() {
   echo "[info] $*"
@@ -36,6 +39,14 @@ cleanup() {
   rm -f "${TMP_TARGET}" "${TMP_CHECKSUMS}"
 }
 trap cleanup EXIT
+
+extract_json_string() {
+  local json key compact
+  json="$1"
+  key="$2"
+  compact="$(printf '%s' "${json}" | tr -d '\r\n')"
+  printf '%s' "${compact}" | sed -nE "s/.*\"${key}\"[[:space:]]*:[[:space:]]*\"([^\"]+)\".*/\\1/p" | head -n1
+}
 
 detect_asset_name() {
   local os arch normalized_arch
@@ -208,6 +219,47 @@ download_to_file() {
   curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${url}" -o "${output}"
 }
 
+fetch_text_url() {
+  local url
+  url="$1"
+
+  if is_local_http_url "${url}"; then
+    curl --fail --location --retry 3 --retry-connrefused --silent --show-error "${url}"
+    return 0
+  fi
+
+  curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${url}"
+}
+
+resolve_release_urls() {
+  local release_json release_tag
+
+  if [ -n "${RELEASE_BASE_URL}" ]; then
+    if [ -z "${RELEASE_SOURCE_URL}" ]; then
+      RELEASE_SOURCE_URL="${DEFAULT_RELEASE_SOURCE_URL}"
+    fi
+    return 0
+  fi
+
+  release_json="$(fetch_text_url "${RELEASE_API_URL}" 2>/dev/null || true)"
+  release_tag="$(extract_json_string "${release_json}" "tag_name")"
+
+  if [ -n "${release_tag}" ]; then
+    RELEASE_BASE_URL="https://github.com/${GITHUB_REPO}/releases/download/${release_tag}"
+    if [ -z "${RELEASE_SOURCE_URL}" ]; then
+      RELEASE_SOURCE_URL="https://github.com/${GITHUB_REPO}/releases/tag/${release_tag}"
+    fi
+    info "resolved release tag: ${release_tag}"
+    return 0
+  fi
+
+  RELEASE_BASE_URL="${DEFAULT_RELEASE_BASE_URL}"
+  if [ -z "${RELEASE_SOURCE_URL}" ]; then
+    RELEASE_SOURCE_URL="${DEFAULT_RELEASE_SOURCE_URL}"
+  fi
+  warn "unable to resolve latest release tag via API, using latest alias"
+}
+
 setup_daily_autoupdate() {
   local os marker cron_line current_cron filtered_cron uid launch_agents_dir plist_path
   local command_string
@@ -325,6 +377,7 @@ verify_binary() {
 
 require_cmd curl
 mkdir -p "${BIN_DIR}"
+resolve_release_urls
 
 ASSET_NAME="$(detect_asset_name)"
 DOWNLOAD_URL="${RELEASE_BASE_URL}/${ASSET_NAME}"
