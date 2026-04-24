@@ -1,24 +1,19 @@
-import { createHash } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-
-interface GitHubReleaseAsset {
-  name: string;
-  browser_download_url: string;
-}
+import { spawnSync } from 'node:child_process';
 
 interface GitHubRelease {
   tag_name?: string;
   html_url?: string;
-  assets?: GitHubReleaseAsset[];
 }
 
 export interface SelfUpdateResult {
-  status: 'up-to-date' | 'update-available' | 'updated' | 'not-installed';
+  status: 'up-to-date' | 'update-available' | 'updated';
   currentVersion: string;
   latestVersion: string;
   releaseUrl?: string;
-  binaryPath?: string;
 }
 
 function normalizeVersion(raw: string): string {
@@ -44,55 +39,6 @@ function isNewerVersion(remote: string, current: string): boolean {
   return rc > cc;
 }
 
-function detectAssetName(): string {
-  const platform = process.platform;
-  const arch = process.arch;
-
-  let osLabel: string;
-  let archLabel: string;
-
-  if (platform === 'darwin') {
-    osLabel = 'darwin';
-  } else if (platform === 'linux') {
-    osLabel = 'linux';
-  } else if (platform === 'win32') {
-    osLabel = 'windows';
-  } else {
-    throw new Error(`unsupported operating system: ${platform}`);
-  }
-
-  if (arch === 'x64') {
-    archLabel = 'x64';
-  } else if (arch === 'arm64') {
-    archLabel = 'arm64';
-  } else {
-    throw new Error(`unsupported architecture: ${arch}`);
-  }
-
-  const ext = platform === 'win32' ? '.exe' : '';
-  return `bri-${osLabel}-${archLabel}${ext}`;
-}
-
-function resolveBinaryPath(installPath?: string): string | null {
-  if (installPath && installPath.trim()) {
-    return path.resolve(installPath);
-  }
-
-  const envInstallPath = process.env.BRI_INSTALL_PATH;
-  if (envInstallPath && envInstallPath.trim()) {
-    return path.resolve(envInstallPath);
-  }
-
-  const execPath = process.execPath;
-  const execBase = path.basename(execPath).toLowerCase();
-
-  if (execBase === 'bun' || execBase === 'bunx' || execBase === 'node' || execBase === 'nodejs') {
-    return null;
-  }
-
-  return execPath;
-}
-
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     method: 'GET',
@@ -109,60 +55,78 @@ async function fetchJson<T>(url: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function fetchBinary(url: string): Promise<Uint8Array> {
+function isAllowedInstallerUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === 'https:') {
+      return true;
+    }
+
+    if (parsed.protocol === 'http:') {
+      return (
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1' ||
+        parsed.hostname === '::1'
+      );
+    }
+
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+async function runInstaller(url: string): Promise<void> {
+  if (process.platform === 'win32') {
+    throw new Error('self-update is not supported on Windows in bun-runtime mode');
+  }
+
+  if (!isAllowedInstallerUrl(url)) {
+    throw new Error(`unsupported installer url: ${url}`);
+  }
+
   const response = await fetch(url, {
     method: 'GET',
     headers: {
-      Accept: 'application/octet-stream',
+      Accept: 'text/plain,*/*',
       'User-Agent': 'bri-cli',
     },
   });
 
   if (!response.ok) {
-    throw new Error(`download failed (${response.status}) for ${url}`);
+    throw new Error(`failed to download installer (${response.status}) from ${url}`);
   }
 
-  const buffer = await response.arrayBuffer();
-  return new Uint8Array(buffer);
-}
-
-function parseChecksumTable(content: string): Map<string, string> {
-  const checksums = new Map<string, string>();
-
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    const match = trimmed.match(/^([a-fA-F0-9]{64})\s+\*?(.+)$/);
-    if (!match) continue;
-    const hash = (match[1] ?? '').toLowerCase();
-    const name = (match[2] ?? '').trim();
-    if (!name) continue;
-    checksums.set(name, hash);
+  const script = await response.text();
+  if (!script.includes('#!/usr/bin/env bash') && !script.includes('#!/bin/bash')) {
+    throw new Error('installer payload does not look like a shell installer');
   }
 
-  return checksums;
-}
+  const tmpPath = path.join(os.tmpdir(), `bri-install-${Date.now()}-${randomUUID()}.sh`);
 
-function sha256Hex(input: Uint8Array): string {
-  return createHash('sha256').update(input).digest('hex').toLowerCase();
-}
-
-async function replaceBinary(targetPath: string, payload: Uint8Array): Promise<void> {
-  const targetDir = path.dirname(targetPath);
-  const tempPath = path.join(
-    targetDir,
-    `.bri-update-${Date.now()}-${Math.random().toString(16).slice(2)}`
-  );
-
-  await fs.mkdir(targetDir, { recursive: true });
-  await fs.writeFile(tempPath, payload, { mode: 0o755 });
-  await fs.chmod(tempPath, 0o755);
+  await fs.writeFile(tmpPath, script, { mode: 0o700 });
+  await fs.chmod(tmpPath, 0o700);
 
   try {
-    await fs.rename(tempPath, targetPath);
-  } catch (error) {
-    await fs.rm(tempPath, { force: true });
-    throw error;
+    const result = spawnSync('/bin/bash', [tmpPath], {
+      stdio: 'inherit',
+      env: process.env,
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    if (typeof result.status === 'number' && result.status !== 0) {
+      throw new Error(`installer exited with code ${result.status}`);
+    }
+
+    if (result.status === null) {
+      const signal = result.signal ?? 'unknown';
+      throw new Error(`installer terminated by signal ${signal}`);
+    }
+  } finally {
+    await fs.rm(tmpPath, { force: true });
   }
 }
 
@@ -170,7 +134,6 @@ export async function performSelfUpdate(options: {
   currentVersion: string;
   repo: string;
   checkOnly?: boolean;
-  installPath?: string;
 }): Promise<SelfUpdateResult> {
   const currentVersion = normalizeVersion(options.currentVersion);
   const release = await fetchJson<GitHubRelease>(
@@ -191,62 +154,22 @@ export async function performSelfUpdate(options: {
     };
   }
 
-  const binaryPath = resolveBinaryPath(options.installPath);
-  if (!binaryPath) {
-    return {
-      status: 'not-installed',
-      currentVersion,
-      latestVersion,
-      releaseUrl: release.html_url,
-    };
-  }
-
   if (options.checkOnly) {
     return {
       status: 'update-available',
       currentVersion,
       latestVersion,
       releaseUrl: release.html_url,
-      binaryPath,
     };
   }
 
-  const assets = release.assets ?? [];
-  const assetName = detectAssetName();
-  const binaryAsset = assets.find((item) => item.name === assetName);
-  const checksumAsset = assets.find((item) => item.name === 'SHA256SUMS');
-
-  if (!binaryAsset) {
-    throw new Error(`release asset not found: ${assetName}`);
-  }
-  if (!checksumAsset) {
-    throw new Error('release asset not found: SHA256SUMS');
-  }
-
-  const [binaryBytes, checksumBytes] = await Promise.all([
-    fetchBinary(binaryAsset.browser_download_url),
-    fetchBinary(checksumAsset.browser_download_url),
-  ]);
-
-  const checksumMap = parseChecksumTable(new TextDecoder().decode(checksumBytes));
-  const expectedHash = checksumMap.get(assetName);
-
-  if (!expectedHash) {
-    throw new Error(`SHA256SUMS missing entry for ${assetName}`);
-  }
-
-  const actualHash = sha256Hex(binaryBytes);
-  if (actualHash !== expectedHash) {
-    throw new Error(`checksum mismatch for ${assetName}`);
-  }
-
-  await replaceBinary(binaryPath, binaryBytes);
+  const installerUrl = process.env.BRI_INSTALLER_URL ?? 'https://bri.egeuysal.com/install.sh';
+  await runInstaller(installerUrl);
 
   return {
     status: 'updated',
     currentVersion,
     latestVersion,
     releaseUrl: release.html_url,
-    binaryPath,
   };
 }

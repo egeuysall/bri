@@ -214,7 +214,6 @@ export async function runSelfUpdate(options: SelfUpdateOptions, command: Command
     currentVersion: VERSION,
     repo: RELEASE_REPO,
     checkOnly: options.checkOnly,
-    installPath: options.installPath,
   });
 
   if (options.json) {
@@ -227,24 +226,17 @@ export async function runSelfUpdate(options: SelfUpdateOptions, command: Command
     return;
   }
 
-  if (result.status === 'not-installed') {
-    printer.warn(`update available: ${result.latestVersion} (current ${result.currentVersion})`);
-    printer.info('standalone install path not detected; rerun with --install-path <path>');
-    return;
-  }
-
   if (result.status === 'update-available' || options.checkOnly) {
     printer.warn(`update available: ${result.latestVersion} (current ${result.currentVersion})`);
     if (result.releaseUrl) {
       printer.info(`release: ${result.releaseUrl}`);
     }
+    printer.info('run self-update to reinstall with latest bun-runtime release');
     return;
   }
 
   printer.ok(`updated to ${result.latestVersion}`);
-  if (result.binaryPath) {
-    printer.info(`installed: ${result.binaryPath}`);
-  }
+  printer.info('reinstalled latest bun-runtime wrapper');
 }
 
 export async function runConfigList(options: ConfigOptions): Promise<void> {

@@ -136,11 +136,10 @@ async function main(): Promise<void> {
 
   program
     .command('self-update')
-    .description('check for and install the latest released binary')
+    .description('check for and reinstall the latest bun-runtime release')
     .option('--check-only', 'only report whether an update is available')
     .option('--yes', 'non-interactive mode for scripts')
     .option('-q, --quiet', 'reduce non-essential logs')
-    .option('--install-path <path>', 'explicit installed binary path to replace')
     .option('--json', 'output machine readable json')
     .option('--no-color', 'disable ansi colors')
     .action(async (_unused: unknown, command: Command) => {

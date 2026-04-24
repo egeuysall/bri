@@ -5,7 +5,7 @@ import process from 'node:process';
 import { Command, type OptionValueSource } from 'commander';
 import { checkForUpdates } from '../update';
 
-export const VERSION = '2.1.4';
+export const VERSION = '2.1.5';
 const IS_DEV = process.env.NODE_ENV === 'development';
 export const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bri.egeuysal.com';
 export const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/notes`;
@@ -169,7 +169,6 @@ export type SelfUpdateOptions = {
   checkOnly?: boolean;
   yes?: boolean;
   quiet?: boolean;
-  installPath?: string;
   json?: boolean;
   color: boolean;
   updateCheck: boolean;
@@ -243,7 +242,7 @@ export function renderTopHelp(enableColor: boolean): void {
   console.log('  logout    remove api key');
   console.log('  slug      generate slug from markdown');
   console.log('  doctor    runtime and endpoint checks');
-  console.log('  self-update  check/apply latest released binary');
+  console.log('  self-update  check/apply latest bun-runtime reinstall');
   console.log('  config    manage local defaults');
   console.log('');
   console.log('Quick start:');

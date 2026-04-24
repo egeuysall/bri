@@ -29,7 +29,7 @@ bun dev
 curl -fsSL https://bri.egeuysal.com/install.sh | bash
 ```
 
-The installer pulls the latest cross-platform CLI asset from GitHub Releases, validates checksums, auto-adds the install directory to `PATH`, and configures a daily background `self-update` job.
+The installer resolves the latest release tag, installs Bun if needed, downloads the source bundle, installs dependencies, auto-adds the install directory to `PATH`, and configures a daily background reinstall job.
 
 The app will be available at `http://localhost:3000`.
 
