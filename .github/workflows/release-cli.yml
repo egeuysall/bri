@@ -116,6 +116,22 @@ jobs:
               exit 1
             fi
 
+            host_arch="$(uname -m | tr '[:upper:]' '[:lower:]')"
+            case "${host_arch}" in
+              x86_64|amd64)
+                if [[ "${asset}" == *-arm64 || "${asset}" == *-aarch64 ]]; then
+                  echo "skip smoke test for ${asset} on ${host_arch}"
+                  continue
+                fi
+                ;;
+              arm64|aarch64)
+                if [[ "${asset}" == *-x64* || "${asset}" == *-amd64* ]]; then
+                  echo "skip smoke test for ${asset} on ${host_arch}"
+                  continue
+                fi
+                ;;
+            esac
+
             chmod +x "${asset_path}" 2>/dev/null || true
             "${asset_path}" --version >/dev/null
           done
