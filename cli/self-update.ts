@@ -78,10 +78,15 @@ function resolveBinaryPath(installPath?: string): string | null {
     return path.resolve(installPath);
   }
 
+  const envInstallPath = process.env.BRI_INSTALL_PATH;
+  if (envInstallPath && envInstallPath.trim()) {
+    return path.resolve(envInstallPath);
+  }
+
   const execPath = process.execPath;
   const execBase = path.basename(execPath).toLowerCase();
 
-  if (execBase === 'bun' || execBase === 'bunx') {
+  if (execBase === 'bun' || execBase === 'bunx' || execBase === 'node' || execBase === 'nodejs') {
     return null;
   }
 

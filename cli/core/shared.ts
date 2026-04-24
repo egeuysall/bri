@@ -5,14 +5,14 @@ import process from 'node:process';
 import { Command, type OptionValueSource } from 'commander';
 import { checkForUpdates } from '../update';
 
-export const VERSION = '2.1.2';
+export const VERSION = '2.1.3';
 const IS_DEV = process.env.NODE_ENV === 'development';
 export const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bri.egeuysal.com';
 export const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/notes`;
 export const RELEASE_REPO = 'egeuysall/bri';
 export const UPDATE_SOURCE_URL = `https://api.github.com/repos/${RELEASE_REPO}/releases/latest`;
 export const INSTALL_COMMAND = IS_DEV
-  ? 'bash ./cli/install.sh'
+  ? 'bash ./public/install.sh'
   : `curl -fsSL ${DEFAULT_SITE_URL}/install.sh | bash`;
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_BYTES = 1_048_576;

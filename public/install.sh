@@ -5,7 +5,9 @@ GITHUB_REPO="${BRI_GITHUB_REPO:-egeuysall/bri}"
 BIN_DIR="${BRI_INSTALL_DIR:-${HOME}/.local/bin}"
 TARGET="${BIN_DIR}/bri"
 TMP_TARGET="$(mktemp "${TMPDIR:-/tmp}/bri.XXXXXX")"
-SOURCE_ROOT="${BRI_SOURCE_ROOT:-${HOME}/.local/share/bri-cli}"
+TMP_CHECKSUMS="$(mktemp "${TMPDIR:-/tmp}/bri-sha.XXXXXX")"
+RELEASE_BASE_URL="${BRI_RELEASE_BASE_URL:-https://github.com/${GITHUB_REPO}/releases/latest/download}"
+RELEASE_SOURCE_URL="${BRI_RELEASE_SOURCE_URL:-https://github.com/${GITHUB_REPO}/releases/latest}"
 
 info() {
   echo "[info] $*"
@@ -31,17 +33,9 @@ require_cmd() {
 }
 
 cleanup() {
-  rm -f "${TMP_TARGET}"
+  rm -f "${TMP_TARGET}" "${TMP_CHECKSUMS}"
 }
 trap cleanup EXIT
-
-extract_json_field() {
-  local json key compact
-  json="$1"
-  key="$2"
-  compact="$(printf '%s' "${json}" | tr -d '\r\n')"
-  printf '%s' "${compact}" | sed -nE "s/.*\"${key}\"[[:space:]]*:[[:space:]]*\"([^\"]+)\".*/\\1/p" | head -n1
-}
 
 detect_asset_name() {
   local os arch normalized_arch
@@ -139,85 +133,94 @@ ensure_path_persisted() {
   ok "persisted PATH update in ${profile}"
 }
 
-setup_daily_autoupdate() {
-  local os marker cron_line current_cron filtered_cron uid launch_agents_dir plist_path
+sha256_file() {
+  local file_path
+  file_path="$1"
 
-  os="$(uname -s)"
-
-  if [ "${os}" = "Darwin" ]; then
-    launch_agents_dir="${HOME}/Library/LaunchAgents"
-    plist_path="${launch_agents_dir}/com.bri.cli.autoupdate.plist"
-    mkdir -p "${launch_agents_dir}"
-
-    cat >"${plist_path}" <<EOF
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-  <dict>
-    <key>Label</key>
-    <string>com.bri.cli.autoupdate</string>
-    <key>ProgramArguments</key>
-    <array>
-      <string>${TARGET}</string>
-      <string>self-update</string>
-      <string>--yes</string>
-      <string>--quiet</string>
-      <string>--install-path</string>
-      <string>${TARGET}</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>StartInterval</key>
-    <integer>86400</integer>
-    <key>StandardOutPath</key>
-    <string>/tmp/bri-autoupdate.log</string>
-    <key>StandardErrorPath</key>
-    <string>/tmp/bri-autoupdate.log</string>
-  </dict>
-</plist>
-EOF
-
-    if command -v launchctl >/dev/null 2>&1; then
-      uid="$(id -u)"
-      launchctl bootout "gui/${uid}" "${plist_path}" >/dev/null 2>&1 || true
-      launchctl bootstrap "gui/${uid}" "${plist_path}" >/dev/null 2>&1 || true
-    fi
-
-    ok "configured daily background auto-update (launchd)"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "${file_path}" | awk '{print tolower($1)}'
     return 0
   fi
 
-  if [ "${os}" = "Linux" ] && command -v crontab >/dev/null 2>&1; then
-    marker="# bri-cli-auto-update"
-    cron_line="17 4 * * * ${TARGET} self-update --yes --quiet --install-path ${TARGET} >/dev/null 2>&1 ${marker}"
-    current_cron="$(crontab -l 2>/dev/null || true)"
-    filtered_cron="$(printf '%s\n' "${current_cron}" | grep -v "${marker}" || true)"
-
-    {
-      printf '%s\n' "${filtered_cron}"
-      printf '%s\n' "${cron_line}"
-    } | awk 'NF > 0' | crontab -
-
-    ok "configured daily background auto-update (cron)"
+  if command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "${file_path}" | awk '{print tolower($1)}'
     return 0
   fi
 
-  warn "background auto-update scheduler unavailable on this platform"
+  fail "no sha256 tool available (need sha256sum or shasum)"
 }
 
-setup_daily_reinstall() {
+expected_checksum_for_asset() {
+  local asset_name
+  asset_name="$1"
+
+  awk -v asset="${asset_name}" '
+    {
+      hash=$1
+      name=$2
+      gsub(/^\*/, "", name)
+      if (tolower(name) == tolower(asset)) {
+        print tolower(hash)
+        exit 0
+      }
+    }
+  ' "${TMP_CHECKSUMS}"
+}
+
+verify_download_checksum() {
+  local asset_name expected actual
+  asset_name="$1"
+
+  expected="$(expected_checksum_for_asset "${asset_name}")"
+  if [ -z "${expected}" ]; then
+    fail "SHA256SUMS missing entry for ${asset_name}"
+  fi
+
+  actual="$(sha256_file "${TMP_TARGET}")"
+  if [ "${actual}" != "${expected}" ]; then
+    fail "checksum mismatch for ${asset_name} (expected ${expected}, got ${actual})"
+  fi
+
+  ok "verified checksum for ${asset_name}"
+}
+
+is_local_http_url() {
+  case "$1" in
+    http://localhost/*|http://localhost:*/*|http://127.0.0.1/*|http://127.0.0.1:*/*|http://[::1]/*|http://[::1]:*/*)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+download_to_file() {
+  local url output
+  url="$1"
+  output="$2"
+
+  if is_local_http_url "${url}"; then
+    curl --fail --location --retry 3 --retry-connrefused --silent --show-error "${url}" -o "${output}"
+    return 0
+  fi
+
+  curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${url}" -o "${output}"
+}
+
+setup_daily_autoupdate() {
   local os marker cron_line current_cron filtered_cron uid launch_agents_dir plist_path
   local command_string
 
   os="$(uname -s)"
-  command_string="curl -fsSL https://bri.egeuysal.com/install.sh | bash"
+  command_string="\"${TARGET}\" self-update --yes --quiet --install-path \"${TARGET}\""
 
   if [ "${os}" = "Darwin" ]; then
     launch_agents_dir="${HOME}/Library/LaunchAgents"
     plist_path="${launch_agents_dir}/com.bri.cli.autoupdate.plist"
     mkdir -p "${launch_agents_dir}"
 
-    cat >"${plist_path}" <<EOF
+    cat >"${plist_path}" <<EOF2
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -240,7 +243,7 @@ setup_daily_reinstall() {
     <string>/tmp/bri-autoupdate.log</string>
   </dict>
 </plist>
-EOF
+EOF2
 
     if command -v launchctl >/dev/null 2>&1; then
       uid="$(id -u)"
@@ -248,13 +251,13 @@ EOF
       launchctl bootstrap "gui/${uid}" "${plist_path}" >/dev/null 2>&1 || true
     fi
 
-    ok "configured daily background auto-update (launchd reinstall mode)"
+    ok "configured daily background auto-update (launchd)"
     return 0
   fi
 
   if [ "${os}" = "Linux" ] && command -v crontab >/dev/null 2>&1; then
     marker="# bri-cli-auto-update"
-    cron_line="17 4 * * * ${command_string} >/dev/null 2>&1 ${marker}"
+    cron_line="17 4 * * * /bin/bash -lc '${command_string}' >/dev/null 2>&1 ${marker}"
     current_cron="$(crontab -l 2>/dev/null || true)"
     filtered_cron="$(printf '%s\n' "${current_cron}" | grep -v "${marker}" || true)"
 
@@ -263,7 +266,7 @@ EOF
       printf '%s\n' "${cron_line}"
     } | awk 'NF > 0' | crontab -
 
-    ok "configured daily background auto-update (cron reinstall mode)"
+    ok "configured daily background auto-update (cron)"
     return 0
   fi
 
@@ -277,119 +280,76 @@ finalize_binary() {
   fi
 }
 
+run_startup_probe() {
+  local first_line timeout_seconds elapsed pid process_state
+
+  timeout_seconds=8
+  first_line="$(head -n 1 "${TARGET}" 2>/dev/null || true)"
+
+  if [[ "${first_line}" == '#!'* ]]; then
+    (/bin/bash "${TARGET}" --version >/dev/null 2>&1) &
+  else
+    ("${TARGET}" --version >/dev/null 2>&1) &
+  fi
+
+  pid=$!
+  elapsed=0
+
+  while kill -0 "${pid}" >/dev/null 2>&1; do
+    process_state="$(ps -p "${pid}" -o stat= 2>/dev/null | tr -d '[:space:]' || true)"
+    if [[ "${process_state}" == Z* || "${process_state}" == *Z* ]]; then
+      break
+    fi
+
+    if [ "${elapsed}" -ge "${timeout_seconds}" ]; then
+      kill -9 "${pid}" >/dev/null 2>&1 || true
+      wait "${pid}" 2>/dev/null || true
+      return 124
+    fi
+
+    sleep 1
+    elapsed=$((elapsed + 1))
+  done
+
+  wait "${pid}"
+}
+
 verify_binary() {
-  if "${TARGET}" --version >/dev/null 2>&1; then
-    ok "verified binary startup"
+  if run_startup_probe; then
+    ok "verified CLI startup"
     return 0
   fi
 
   return 1
 }
 
-ensure_bun_runtime() {
-  if command -v bun >/dev/null 2>&1; then
-    return 0
-  fi
-
-  info "bun runtime not found, installing bun..."
-  curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error https://bun.sh/install | bash
-  export PATH="${HOME}/.bun/bin:${PATH}"
-
-  if command -v bun >/dev/null 2>&1; then
-    ok "bun runtime installed"
-    return 0
-  fi
-
-  fail "bun runtime installation failed"
-}
-
-latest_release_tag() {
-  local api_url json tag
-  api_url="https://api.github.com/repos/${GITHUB_REPO}/releases/latest"
-  json="$(curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${api_url}")"
-  tag="$(extract_json_field "${json}" "tag_name")"
-  if [ -z "${tag}" ]; then
-    fail "failed to resolve latest release tag from ${api_url}"
-  fi
-  printf '%s' "${tag}"
-}
-
-install_source_fallback() {
-  local tag source_archive archive_root source_dir wrapper_content
-  local source_url
-
-  ensure_bun_runtime
-  tag="$(latest_release_tag)"
-  source_url="https://github.com/${GITHUB_REPO}/archive/refs/tags/${tag}.tar.gz"
-  source_archive="$(mktemp "${TMPDIR:-/tmp}/bri-source.XXXXXX.tar.gz")"
-
-  info "downloading source bundle ${tag} from ${GITHUB_REPO}..."
-  curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${source_url}" -o "${source_archive}"
-
-  mkdir -p "${SOURCE_ROOT}"
-  archive_root="$(tar -tzf "${source_archive}" | head -n1 | cut -d'/' -f1)"
-  if [ -z "${archive_root}" ]; then
-    rm -f "${source_archive}"
-    fail "failed to inspect source archive root"
-  fi
-
-  rm -rf "${SOURCE_ROOT:?}/${archive_root}"
-  tar -xzf "${source_archive}" -C "${SOURCE_ROOT}"
-  rm -f "${source_archive}"
-
-  source_dir="${SOURCE_ROOT}/${archive_root}"
-  info "installing source dependencies with bun..."
-  (
-    cd "${source_dir}"
-    bun install --frozen-lockfile --ignore-scripts
-  )
-
-  wrapper_content="#!/usr/bin/env bash
-set -euo pipefail
-if command -v bun >/dev/null 2>&1; then
-  exec bun run \"${source_dir}/cli/bri.ts\" \"\$@\"
-fi
-if [ -x \"${HOME}/.bun/bin/bun\" ]; then
-  exec \"${HOME}/.bun/bin/bun\" run \"${source_dir}/cli/bri.ts\" \"\$@\"
-fi
-echo \"[error] bun runtime not found; rerun installer\" >&2
-exit 1
-"
-
-  printf '%s' "${wrapper_content}" >"${TARGET}"
-  chmod 755 "${TARGET}"
-  ok "installed source fallback wrapper at ${TARGET}"
-}
-
 require_cmd curl
 mkdir -p "${BIN_DIR}"
 
 ASSET_NAME="$(detect_asset_name)"
-DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/latest/download/${ASSET_NAME}"
+DOWNLOAD_URL="${RELEASE_BASE_URL}/${ASSET_NAME}"
+CHECKSUMS_URL="${RELEASE_BASE_URL}/SHA256SUMS"
 
 info "downloading ${ASSET_NAME} from ${GITHUB_REPO}..."
-curl --fail --location --proto '=https' --tlsv1.2 --retry 3 --retry-connrefused --silent --show-error "${DOWNLOAD_URL}" -o "${TMP_TARGET}"
+download_to_file "${DOWNLOAD_URL}" "${TMP_TARGET}"
+
+info "downloading SHA256SUMS from ${GITHUB_REPO}..."
+download_to_file "${CHECKSUMS_URL}" "${TMP_CHECKSUMS}"
+
+verify_download_checksum "${ASSET_NAME}"
+
 chmod +x "${TMP_TARGET}"
 mv "${TMP_TARGET}" "${TARGET}"
 chmod 755 "${TARGET}"
 finalize_binary
 
-info "release source: https://github.com/${GITHUB_REPO}/releases/latest"
+info "release source: ${RELEASE_SOURCE_URL}"
 
-if verify_binary; then
-  ok "bri installed at ${TARGET}"
-  ok "standalone binary installed (no bun runtime required)"
-  ensure_path_persisted
-  setup_daily_autoupdate
-  ok "run: bri --help"
-  exit 0
+if ! verify_binary; then
+  fail "installed asset failed startup check for ${ASSET_NAME}; no runtime fallback is configured"
 fi
 
-warn "standalone binary failed startup check for ${ASSET_NAME}"
-warn "falling back to bun-runtime mode for reliable execution on this system"
-rm -f "${TARGET}" >/dev/null 2>&1 || true
-install_source_fallback
-
+ok "bri installed at ${TARGET}"
 ensure_path_persisted
-setup_daily_reinstall
+setup_daily_autoupdate
 ok "run: bri --help"

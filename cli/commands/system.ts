@@ -117,10 +117,12 @@ export async function runDoctor(options: DoctorOptions, command: Command): Promi
 
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
 
+  const bunVersion = process.versions.bun;
+  const nodeVersion = process.versions.node;
   checks.push({
-    name: 'bun-runtime',
-    ok: typeof process.versions.bun === 'string',
-    detail: process.versions.bun ? `bun ${process.versions.bun}` : 'bun runtime missing',
+    name: 'runtime',
+    ok: typeof nodeVersion === 'string' && nodeVersion.length > 0,
+    detail: bunVersion ? `bun ${bunVersion} (node ${nodeVersion})` : `node ${nodeVersion}`,
   });
 
   checks.push({

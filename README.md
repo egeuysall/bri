@@ -29,7 +29,7 @@ bun dev
 curl -fsSL https://bri.egeuysal.com/install.sh | bash
 ```
 
-The installer pulls the latest cross-platform binary from GitHub Releases, auto-adds the install directory to `PATH`, and configures a daily background `self-update` job.
+The installer pulls the latest cross-platform CLI asset from GitHub Releases, validates checksums, auto-adds the install directory to `PATH`, and configures a daily background `self-update` job. Node.js 20+ is required at runtime.
 
 The app will be available at `http://localhost:3000`.
 
