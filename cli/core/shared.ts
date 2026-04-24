@@ -5,7 +5,7 @@ import process from 'node:process';
 import { Command, type OptionValueSource } from 'commander';
 import { checkForUpdates } from '../update';
 
-export const VERSION = '2.1.3';
+export const VERSION = '2.1.4';
 const IS_DEV = process.env.NODE_ENV === 'development';
 export const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bri.egeuysal.com';
 export const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/notes`;

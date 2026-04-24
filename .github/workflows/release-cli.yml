@@ -116,11 +116,8 @@ jobs:
               exit 1
             fi
 
-            if [[ "${asset}" == *.exe ]]; then
-              "${asset_path}" --version >/dev/null
-            else
-              bash "${asset_path}" --version >/dev/null
-            fi
+            chmod +x "${asset_path}" 2>/dev/null || true
+            "${asset_path}" --version >/dev/null
           done
 
       - name: Upload build artifact
