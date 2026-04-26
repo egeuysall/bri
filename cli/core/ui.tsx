@@ -1,5 +1,14 @@
 import type React from 'react';
 import { Box, Text, renderToString } from 'ink';
+import {
+  Alert,
+  Badge as InkBadge,
+  StatusMessage,
+  ThemeProvider,
+  UnorderedList,
+  defaultTheme,
+  extendTheme,
+} from '@inkjs/ui';
 
 const defaultSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.BRI_SITE_URL ?? 'https://bri.fyi').replace(
   /\/+$/,
@@ -16,6 +25,15 @@ type StatusRow = {
   label: string;
   value: string;
   tone?: 'ok' | 'warn' | 'info' | 'muted';
+};
+
+type PublishResult = {
+  enableColor: boolean;
+  dryRun: boolean;
+  source: string;
+  slug: string;
+  url: string;
+  elapsedMs?: number;
 };
 
 type TableColumn<T> = {
@@ -47,6 +65,73 @@ const palette = {
   surface: '#2b2725',
 };
 
+const briTheme = extendTheme(defaultTheme, {
+  components: {
+    Badge: {
+      styles: {
+        container: () => ({
+          backgroundColor: palette.accent,
+        }),
+        label: () => ({
+          color: '#211814',
+          bold: true,
+        }),
+      },
+    },
+    Alert: {
+      styles: {
+        container: () => ({
+          borderStyle: 'round',
+          borderColor: palette.accent,
+          gap: 1,
+          paddingX: 1,
+        }),
+        icon: () => ({
+          color: palette.accent,
+        }),
+        title: () => ({
+          bold: true,
+          color: palette.command,
+        }),
+        message: () => ({
+          color: palette.command,
+        }),
+      },
+    },
+    StatusMessage: {
+      styles: {
+        icon: ({ variant }: { variant: 'success' | 'error' | 'warning' | 'info' }) => ({
+          color:
+            variant === 'success'
+              ? palette.ok
+              : variant === 'warning'
+                ? palette.warn
+                : variant === 'error'
+                  ? palette.error
+                  : palette.accent,
+        }),
+        text: () => ({
+          color: palette.command,
+        }),
+      },
+    },
+    UnorderedList: {
+      styles: {
+        marker: () => ({
+          color: palette.accent,
+        }),
+        content: () => ({
+          flexDirection: 'row',
+          flexShrink: 1,
+        }),
+      },
+      config: () => ({
+        marker: '•',
+      }),
+    },
+  },
+});
+
 function toneColor(tone: StatusRow['tone']): string {
   if (tone === 'warn') return palette.warn;
   if (tone === 'ok') return palette.ok;
@@ -70,7 +155,7 @@ function stripPadding(value: string): string {
 
 function print(element: React.ReactNode, columns?: number): void {
   const terminalColumns = process.stdout.columns ?? 100;
-  const output = renderToString(element, {
+  const output = renderToString(<ThemeProvider theme={briTheme}>{element}</ThemeProvider>, {
     columns: columns ?? Math.min(100, terminalColumns),
   });
   console.log(output);
@@ -78,7 +163,7 @@ function print(element: React.ReactNode, columns?: number): void {
 
 function printError(element: React.ReactNode): void {
   const terminalColumns = process.stderr.columns ?? process.stdout.columns ?? 100;
-  const output = renderToString(element, {
+  const output = renderToString(<ThemeProvider theme={briTheme}>{element}</ThemeProvider>, {
     columns: Math.min(100, terminalColumns),
   });
   process.stderr.write(`${output}\n`);
@@ -97,17 +182,21 @@ function Logo({ enableColor }: { enableColor: boolean }) {
 }
 
 function Badge({ children, enableColor }: { children: string; enableColor: boolean }) {
-  return (
-    <Text
-      bold
-      color={color(enableColor, '#211814')}
-      backgroundColor={color(enableColor, palette.accent)}
-    >
-      {' '}
-      {children}
-      {' '}
-    </Text>
-  );
+  if (enableColor) {
+    return <InkBadge color={palette.accent}>{children}</InkBadge>;
+  }
+
+  return <Text bold>{children}</Text>;
+}
+
+function toneBadgeColor(tone: StatusRow['tone']): string {
+  return tone === 'muted' ? palette.line : palette.accent;
+}
+
+function statusVariant(tone: StatusRow['tone']): 'success' | 'warning' | 'info' {
+  if (tone === 'ok') return 'success';
+  if (tone === 'warn') return 'warning';
+  return 'info';
 }
 
 function SectionTitle({ children, enableColor }: { children: string; enableColor: boolean }) {
@@ -213,27 +302,44 @@ export function renderPanel(input: {
   footer?: string;
   stderr?: boolean;
 }): void {
+  const alertRow = input.rows.length === 1 && input.rows[0]?.tone === 'warn' ? input.rows[0] : undefined;
   const element = (
     <Box flexDirection="column">
-      <Box borderStyle="round" borderColor={color(input.enableColor, palette.accent)} paddingX={1}>
-        <Box>
-          <Text color={color(input.enableColor, palette.accent)}>● </Text>
-          <Text bold color={color(input.enableColor, palette.command)}>
-            {input.title}
-          </Text>
-        </Box>
-      </Box>
-      <Box flexDirection="column" marginTop={1}>
-        {input.rows.map((row) => (
-          <Box key={row.label}>
-            <Box width={16}>
-              <Text color={color(input.enableColor, palette.dim)}>{stripPadding(row.label)}</Text>
-            </Box>
-            <Text color={color(input.enableColor, palette.line)}>│ </Text>
-            <Text color={color(input.enableColor, toneColor(row.tone))}>{row.value}</Text>
+      {alertRow ? (
+        <Alert variant="warning" title={input.title}>
+          {alertRow.value}
+        </Alert>
+      ) : (
+        <Box borderStyle="round" borderColor={color(input.enableColor, palette.accent)} paddingX={1}>
+          <Box>
+            <Text color={color(input.enableColor, palette.accent)}>● </Text>
+            <Text bold color={color(input.enableColor, palette.command)}>
+              {input.title}
+            </Text>
           </Box>
-        ))}
-      </Box>
+        </Box>
+      )}
+      {alertRow ? null : (
+        <Box flexDirection="column" marginTop={1}>
+          {input.rows.map((row) => (
+            <Box key={row.label}>
+              <Box width={16}>
+                {row.label === 'status' && input.enableColor ? (
+                  <InkBadge color={toneBadgeColor(row.tone)}>{row.value}</InkBadge>
+                ) : (
+                  <Text color={color(input.enableColor, palette.dim)}>{stripPadding(row.label)}</Text>
+                )}
+              </Box>
+              <Text color={color(input.enableColor, palette.line)}>│ </Text>
+              {row.label === 'status' ? (
+                <StatusMessage variant={statusVariant(row.tone)}>{row.value}</StatusMessage>
+              ) : (
+                <Text color={color(input.enableColor, toneColor(row.tone))}>{row.value}</Text>
+              )}
+            </Box>
+          ))}
+        </Box>
+      )}
       {input.footer ? (
         <Box marginTop={1} borderStyle="single" borderColor={color(input.enableColor, palette.line)} paddingX={1}>
           <Text color={color(input.enableColor, palette.dim)}>{input.footer}</Text>
@@ -248,6 +354,55 @@ export function renderPanel(input: {
   }
 
   print(element);
+}
+
+export function renderPublishResult(input: PublishResult): void {
+  const variant = input.dryRun ? 'warning' : 'success';
+  const title = input.dryRun ? 'Publish dry run' : 'Published';
+  const elapsed = typeof input.elapsedMs === 'number' ? `${input.elapsedMs} ms` : undefined;
+  const badge = input.dryRun ? 'DRY RUN' : 'LIVE';
+
+  print(
+    <Box flexDirection="column">
+      <Alert variant={variant} title={title}>
+        {input.dryRun ? 'Input valid. No request sent.' : 'Post is live.'}
+      </Alert>
+      <Box marginTop={1}>
+        <InkBadge color={palette.accent}>{badge}</InkBadge>
+        <Text color={color(input.enableColor, palette.dim)}> bri publish</Text>
+      </Box>
+      <Box marginTop={1}>
+        <UnorderedList>
+          <UnorderedList.Item>
+            <Box width={9}>
+              <Text color={color(input.enableColor, palette.dim)}>source</Text>
+            </Box>
+            <Text color={color(input.enableColor, palette.command)}>{input.source}</Text>
+          </UnorderedList.Item>
+          <UnorderedList.Item>
+            <Box width={9}>
+              <Text color={color(input.enableColor, palette.dim)}>slug</Text>
+            </Box>
+            <Text color={color(input.enableColor, palette.ok)}>{input.slug}</Text>
+          </UnorderedList.Item>
+          <UnorderedList.Item>
+            <Box width={9}>
+              <Text color={color(input.enableColor, palette.dim)}>url</Text>
+            </Box>
+            <Text color={color(input.enableColor, palette.accentSoft)}>{input.url}</Text>
+          </UnorderedList.Item>
+          {elapsed ? (
+            <UnorderedList.Item>
+              <Box width={9}>
+                <Text color={color(input.enableColor, palette.dim)}>elapsed</Text>
+              </Box>
+              <Text color={color(input.enableColor, palette.command)}>{elapsed}</Text>
+            </UnorderedList.Item>
+          ) : null}
+        </UnorderedList>
+      </Box>
+    </Box>
+  );
 }
 
 export function renderTable<T>(input: {

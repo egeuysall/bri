@@ -2,10 +2,9 @@ import { spawn, spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { Command, type OptionValueSource } from 'commander';
 import { checkForUpdates } from '../update';
 import versionManifest from '../version.json';
-import { renderCliHelp, renderPanel } from './ui';
+import { renderCliHelp, renderPublishResult } from './ui';
 
 export const VERSION = versionManifest.version;
 export const DEFAULT_SITE_URL = (
@@ -177,6 +176,12 @@ export type SelfUpdateOptions = {
   updateCheck: boolean;
 };
 
+export type OptionValueSource = 'default' | 'config' | 'env' | 'cli' | 'implied';
+
+export type CommandLike = {
+  getOptionValueSource?: (key: string) => OptionValueSource | undefined;
+};
+
 export function colorize(text: string, code: string, enabled: boolean): string {
   if (!enabled) {
     return text;
@@ -220,39 +225,22 @@ export function renderPublishOutput(input: {
   url: string;
   elapsedMs?: number;
 }): void {
-  const modeLabel = input.dryRun ? 'dry-run' : 'published';
-  const rows: Array<{ label: string; value: string; tone?: 'ok' | 'warn' | 'info' | 'muted' }> = [
-    { label: 'status', value: modeLabel, tone: input.dryRun ? 'warn' : 'ok' },
-    { label: 'source', value: input.source, tone: 'muted' },
-    { label: 'slug', value: input.slug, tone: 'ok' },
-    { label: 'url', value: input.url, tone: 'info' },
-  ];
-
-  if (typeof input.elapsedMs === 'number') {
-    rows.push({ label: 'elapsed', value: `${input.elapsedMs} ms`, tone: 'muted' });
-  }
-
-  renderPanel({
-    title: 'bri publish',
-    enableColor: input.enableColor,
-    rows,
-    footer: input.dryRun ? 'No request sent.' : undefined,
-  });
+  renderPublishResult(input);
 }
 
 export function renderTopHelp(enableColor: boolean): void {
   renderCliHelp(enableColor, VERSION);
 }
 
-export function getOptionSource(command: Command, key: string): OptionValueSource | undefined {
+export function getOptionSource(command: CommandLike, key: string): OptionValueSource | undefined {
   try {
-    return command.getOptionValueSource(key);
+    return command.getOptionValueSource?.(key);
   } catch {
     return undefined;
   }
 }
 
-export function optionProvidedByCli(command: Command, key: string): boolean {
+export function optionProvidedByCli(command: CommandLike, key: string): boolean {
   return getOptionSource(command, key) === 'cli';
 }
 
@@ -474,7 +462,7 @@ export async function maybeCheckUpdates(enabled: boolean, printer: Printer): Pro
 }
 
 export function getStringSetting(
-  command: Command,
+  command: CommandLike,
   key: string,
   cliValue: string | undefined,
   envValue: string | undefined,
@@ -497,7 +485,7 @@ export function getStringSetting(
 }
 
 export function getNumberSetting(
-  command: Command,
+  command: CommandLike,
   key: string,
   cliValue: string | undefined,
   envValue: string | undefined,
@@ -526,7 +514,7 @@ export function getNumberSetting(
 }
 
 export function getBooleanSetting(
-  command: Command,
+  command: CommandLike,
   key: string,
   cliValue: boolean,
   envValue: string | undefined,

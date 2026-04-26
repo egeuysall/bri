@@ -1,4 +1,3 @@
-import { Command } from 'commander';
 import { loadConfig } from '../config';
 import { fetchWithApiKey } from '../core/http';
 import {
@@ -26,10 +25,11 @@ import {
   readMarkdownFile,
   readMarkdownStdin,
   validateUrl,
+  type CommandLike,
 } from '../core/shared';
 import { renderPanel, renderTable } from '../core/ui';
 
-export async function runNotesList(options: NotesListOptions, command: Command): Promise<void> {
+export async function runNotesList(options: NotesListOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const endpointRaw = getStringSetting(
     command,
@@ -88,7 +88,7 @@ export async function runNotesRead(
   username: string,
   slug: string,
   options: NotesReadOptions,
-  command: Command
+  command: CommandLike
 ): Promise<void> {
   const config = await loadConfig();
   const siteRaw = optionProvidedByCli(command, 'endpoint')
@@ -117,7 +117,7 @@ export async function runNotesRead(
   console.log(data.content || '');
 }
 
-export async function runNotesUpdate(id: string, options: NotesUpdateOptions, command: Command): Promise<void> {
+export async function runNotesUpdate(id: string, options: NotesUpdateOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
@@ -179,7 +179,7 @@ export async function runNotesUpdate(id: string, options: NotesUpdateOptions, co
   });
 }
 
-export async function runNotesDelete(id: string, options: NotesDeleteOptions, command: Command): Promise<void> {
+export async function runNotesDelete(id: string, options: NotesDeleteOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
@@ -214,7 +214,7 @@ export async function runNotesDelete(id: string, options: NotesDeleteOptions, co
   });
 }
 
-export async function runLinksList(options: LinksListOptions, command: Command): Promise<void> {
+export async function runLinksList(options: LinksListOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
@@ -274,7 +274,7 @@ export async function runLinksList(options: LinksListOptions, command: Command):
   });
 }
 
-export async function runLinksCreate(options: LinksCreateOptions, command: Command): Promise<void> {
+export async function runLinksCreate(options: LinksCreateOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
@@ -320,7 +320,7 @@ export async function runLinksCreate(options: LinksCreateOptions, command: Comma
   });
 }
 
-export async function runLinksUpdate(id: string, options: LinksUpdateOptions, command: Command): Promise<void> {
+export async function runLinksUpdate(id: string, options: LinksUpdateOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
@@ -366,7 +366,7 @@ export async function runLinksUpdate(id: string, options: LinksUpdateOptions, co
   });
 }
 
-export async function runLinksDelete(id: string, options: LinksDeleteOptions, command: Command): Promise<void> {
+export async function runLinksDelete(id: string, options: LinksDeleteOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
@@ -403,7 +403,7 @@ export async function runInvite(
   kind: 'note' | 'link',
   id: string,
   options: InviteOptions,
-  command: Command
+  command: CommandLike
 ): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
@@ -450,7 +450,7 @@ export async function runInvite(
 
 export async function runNotificationsList(
   options: NotificationsListOptions,
-  command: Command
+  command: CommandLike
 ): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
@@ -517,7 +517,7 @@ export async function runNotificationsList(
 export async function runNotificationsOpen(
   notificationId: string,
   options: NotificationsActionOptions,
-  command: Command
+  command: CommandLike
 ): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
@@ -578,7 +578,7 @@ export async function runNotificationsOpen(
 export async function runNotificationsDismiss(
   notificationId: string,
   options: NotificationsActionOptions,
-  command: Command
+  command: CommandLike
 ): Promise<void> {
   const config = await loadConfig();
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();

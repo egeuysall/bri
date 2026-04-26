@@ -1,4 +1,3 @@
-import { Command } from 'commander';
 import { closeFlagsClient, initFlagsClient, resolveCliFlags } from '../flags';
 import { loadConfig } from '../config';
 import { publishMarkdown } from '../core/http';
@@ -22,9 +21,10 @@ import {
   readMarkdownStdin,
   renderPublishOutput,
   validateUrl,
+  type CommandLike,
 } from '../core/shared';
 
-export async function runPublish(options: PublishOptions, command: Command): Promise<void> {
+export async function runPublish(options: PublishOptions, command: CommandLike): Promise<void> {
   const config = await loadConfig();
 
   const flagsClient = await initFlagsClient();

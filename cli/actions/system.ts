@@ -1,4 +1,3 @@
-import { Command } from 'commander';
 import {
   type BriConfig,
   getConfigPath,
@@ -27,6 +26,7 @@ import {
   readMarkdownFile,
   readMarkdownStdin,
   validateUrl,
+  type CommandLike,
 } from '../core/shared';
 import { renderPanel, renderTable } from '../core/ui';
 import { performSelfUpdate } from '../self-update';
@@ -85,7 +85,7 @@ export async function runLogout(): Promise<void> {
   });
 }
 
-export async function runSlug(options: SlugOptions, command: Command): Promise<void> {
+export async function runSlug(options: SlugOptions, command: CommandLike): Promise<void> {
   const maxBytes = optionProvidedByCli(command, 'maxBytes')
     ? parsePositiveInt(options.maxBytes, 'max-bytes')
     : (parseOptionalPositiveInt(process.env.BRI_MAX_BYTES) ?? DEFAULT_MAX_BYTES);
@@ -122,7 +122,7 @@ export async function runSlug(options: SlugOptions, command: Command): Promise<v
   }
 }
 
-export async function runDoctor(options: DoctorOptions, command: Command): Promise<void> {
+export async function runDoctor(options: DoctorOptions, command: CommandLike): Promise<void> {
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
 
   const endpointRaw =
@@ -226,7 +226,7 @@ export async function runDoctor(options: DoctorOptions, command: Command): Promi
   });
 }
 
-export async function runSelfUpdate(options: SelfUpdateOptions, command: Command): Promise<void> {
+export async function runSelfUpdate(options: SelfUpdateOptions, command: CommandLike): Promise<void> {
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
   const printer = createPrinter(color, Boolean(options.quiet) || Boolean(options.json));
 
