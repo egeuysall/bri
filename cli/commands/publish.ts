@@ -226,6 +226,7 @@ export async function runPublish(options: PublishOptions, command: Command): Pro
         source: sourcePath ?? 'stdin.md',
         slug: normalizedSlug,
         url: postUrl,
+        elapsedMs: published.elapsedMs,
       });
     }
 

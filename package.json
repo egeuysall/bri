@@ -12,7 +12,8 @@
     "lint": "eslint src --ext ts,tsx",
     "lint:fix": "eslint src --ext ts,tsx --fix",
     "start": "next start",
-    "cli": "NODE_ENV=development bun run ./cli/bri.ts"
+    "cli": "NODE_ENV=development bun run ./cli/bri.ts",
+    "cli:version:sync": "node scripts/sync-cli-version.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -26,6 +27,7 @@
     "commander": "^14.0.3",
     "convex": "^1.36.0",
     "facehash": "^0.1.0",
+    "ink": "^7.0.1",
     "lucide-react": "^1.8.0",
     "next": "16.2.4",
     "react": "19.2.5",

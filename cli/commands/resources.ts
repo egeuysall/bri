@@ -16,7 +16,6 @@ import {
   type NotesUpdateOptions,
   type NotificationsActionOptions,
   type NotificationsListOptions,
-  createPrinter,
   getStringSetting,
   openInBrowser,
   optionProvidedByCli,
@@ -28,6 +27,7 @@ import {
   readMarkdownStdin,
   validateUrl,
 } from '../core/shared';
+import { renderPanel, renderTable } from '../core/ui';
 
 export async function runNotesList(options: NotesListOptions, command: Command): Promise<void> {
   const config = await loadConfig();
@@ -52,19 +52,36 @@ export async function runNotesList(options: NotesListOptions, command: Command):
   }
 
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
-  const printer = createPrinter(color, false);
   if (!Array.isArray(data) || data.length === 0) {
-    printer.line('no notes');
+    renderTable({
+      title: `bri notes (${state})`,
+      rows: [],
+      columns: [],
+      enableColor: color,
+      empty: 'no notes',
+    });
     return;
   }
 
-  for (const row of data) {
-    const title = typeof row.title === 'string' ? row.title : 'untitled';
-    const id = typeof row.id === 'string' ? row.id : '';
-    const username = typeof row.username === 'string' ? row.username : '';
-    const slug = typeof row.slug === 'string' ? row.slug : '';
-    printer.line(`${id}  ${username}/${slug}  ${title}`);
-  }
+  renderTable({
+    title: `bri notes (${state})`,
+    rows: data,
+    enableColor: color,
+    empty: 'no notes',
+    columns: [
+      { header: 'id', width: 16, render: (row) => (typeof row.id === 'string' ? row.id : '') },
+      {
+        header: 'path',
+        width: 28,
+        render: (row) => {
+          const username = typeof row.username === 'string' ? row.username : '';
+          const slug = typeof row.slug === 'string' ? row.slug : '';
+          return `${username}/${slug}`;
+        },
+      },
+      { header: 'title', width: 42, render: (row) => (typeof row.title === 'string' ? row.title : 'untitled') },
+    ],
+  });
 }
 
 export async function runNotesRead(
@@ -155,7 +172,11 @@ export async function runNotesUpdate(id: string, options: NotesUpdateOptions, co
     console.log(JSON.stringify({ data }, null, 2));
     return;
   }
-  console.log('updated');
+  renderPanel({
+    title: 'bri note',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [{ label: 'status', value: 'updated', tone: 'ok' }],
+  });
 }
 
 export async function runNotesDelete(id: string, options: NotesDeleteOptions, command: Command): Promise<void> {
@@ -186,7 +207,11 @@ export async function runNotesDelete(id: string, options: NotesDeleteOptions, co
     console.log(JSON.stringify({ data }, null, 2));
     return;
   }
-  console.log(options.permanent ? 'deleted forever' : 'deleted');
+  renderPanel({
+    title: 'bri note',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [{ label: 'status', value: options.permanent ? 'deleted forever' : 'deleted', tone: 'ok' }],
+  });
 }
 
 export async function runLinksList(options: LinksListOptions, command: Command): Promise<void> {
@@ -212,20 +237,41 @@ export async function runLinksList(options: LinksListOptions, command: Command):
   }
 
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
-  const printer = createPrinter(color, false);
   if (!Array.isArray(data) || data.length === 0) {
-    printer.line('no links');
+    renderTable({
+      title: 'bri links',
+      rows: [],
+      columns: [],
+      enableColor: color,
+      empty: 'no links',
+    });
     return;
   }
 
-  for (const row of data) {
-    const id = typeof row.id === 'string' ? row.id : '';
-    const username = typeof row.username === 'string' ? row.username : '';
-    const key = typeof row.key === 'string' ? row.key : '';
-    const targetUrl = typeof row.targetUrl === 'string' ? row.targetUrl : '';
-    const clicks = typeof row.clicks === 'number' ? row.clicks : 0;
-    printer.line(`${id}  ${username}/${key}  ${targetUrl}  clicks:${clicks}`);
-  }
+  renderTable({
+    title: 'bri links',
+    rows: data,
+    enableColor: color,
+    empty: 'no links',
+    columns: [
+      { header: 'id', width: 16, render: (row) => (typeof row.id === 'string' ? row.id : '') },
+      {
+        header: 'path',
+        width: 24,
+        render: (row) => {
+          const username = typeof row.username === 'string' ? row.username : '';
+          const key = typeof row.key === 'string' ? row.key : '';
+          return `${username}/${key}`;
+        },
+      },
+      { header: 'target', width: 42, render: (row) => (typeof row.targetUrl === 'string' ? row.targetUrl : '') },
+      {
+        header: 'clicks',
+        width: 8,
+        render: (row) => (typeof row.clicks === 'number' ? String(row.clicks) : '0'),
+      },
+    ],
+  });
 }
 
 export async function runLinksCreate(options: LinksCreateOptions, command: Command): Promise<void> {
@@ -264,7 +310,14 @@ export async function runLinksCreate(options: LinksCreateOptions, command: Comma
     console.log(JSON.stringify({ data }, null, 2));
     return;
   }
-  console.log('created');
+  renderPanel({
+    title: 'bri link',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'created', tone: 'ok' },
+      { label: 'key', value: key, tone: 'info' },
+    ],
+  });
 }
 
 export async function runLinksUpdate(id: string, options: LinksUpdateOptions, command: Command): Promise<void> {
@@ -303,7 +356,14 @@ export async function runLinksUpdate(id: string, options: LinksUpdateOptions, co
     console.log(JSON.stringify({ data }, null, 2));
     return;
   }
-  console.log('updated');
+  renderPanel({
+    title: 'bri link',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'updated', tone: 'ok' },
+      { label: 'id', value: id, tone: 'muted' },
+    ],
+  });
 }
 
 export async function runLinksDelete(id: string, options: LinksDeleteOptions, command: Command): Promise<void> {
@@ -329,7 +389,14 @@ export async function runLinksDelete(id: string, options: LinksDeleteOptions, co
     return;
   }
 
-  console.log('deleted');
+  renderPanel({
+    title: 'bri link',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'deleted', tone: 'ok' },
+      { label: 'id', value: id, tone: 'muted' },
+    ],
+  });
 }
 
 export async function runInvite(
@@ -371,7 +438,14 @@ export async function runInvite(
     console.log(JSON.stringify({ data }, null, 2));
     return;
   }
-  console.log(`invited @${inviteeUsername}`);
+  renderPanel({
+    title: `bri ${kind} invite`,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'invited', tone: 'ok' },
+      { label: 'username', value: `@${inviteeUsername}`, tone: 'info' },
+    ],
+  });
 }
 
 export async function runNotificationsList(
@@ -412,18 +486,32 @@ export async function runNotificationsList(
 
   const rows = Array.isArray(data?.items) ? data.items : [];
   if (rows.length === 0) {
-    console.log('no notifications');
+    renderTable({
+      title: 'bri notifications',
+      rows: [],
+      columns: [],
+      enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+      empty: 'no notifications',
+    });
     return;
   }
 
-  for (const row of rows) {
-    const id = typeof row.id === 'string' ? row.id : '';
-    const kind = typeof row.kind === 'string' ? row.kind : 'notice';
-    const message = typeof row.message === 'string' ? row.message : '';
-    const createdAt =
-      typeof row.createdAt === 'number' ? new Date(row.createdAt).toISOString() : 'unknown';
-    console.log(`${id}  [${kind}]  ${message}  ${createdAt}`);
-  }
+  renderTable({
+    title: 'bri notifications',
+    rows,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    empty: 'no notifications',
+    columns: [
+      { header: 'id', width: 16, render: (row) => (typeof row.id === 'string' ? row.id : '') },
+      { header: 'kind', width: 12, render: (row) => (typeof row.kind === 'string' ? row.kind : 'notice') },
+      { header: 'message', width: 48, render: (row) => (typeof row.message === 'string' ? row.message : '') },
+      {
+        header: 'created',
+        width: 24,
+        render: (row) => (typeof row.createdAt === 'number' ? new Date(row.createdAt).toISOString() : 'unknown'),
+      },
+    ],
+  });
 }
 
 export async function runNotificationsOpen(
@@ -466,12 +554,23 @@ export async function runNotificationsOpen(
   }
 
   if (!href) {
-    console.log('notification target unavailable');
+    renderPanel({
+      title: 'bri notification',
+      enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+      rows: [{ label: 'status', value: 'target unavailable', tone: 'warn' }],
+    });
     return;
   }
 
   const targetUrl = new URL(href, siteUrl).toString();
-  console.log(targetUrl);
+  renderPanel({
+    title: 'bri notification',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'opened', tone: 'ok' },
+      { label: 'url', value: targetUrl, tone: 'info' },
+    ],
+  });
   void openInBrowser(targetUrl);
 }
 
@@ -510,5 +609,9 @@ export async function runNotificationsDismiss(
     return;
   }
 
-  console.log('dismissed');
+  renderPanel({
+    title: 'bri notification',
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    rows: [{ label: 'status', value: 'dismissed', tone: 'ok' }],
+  });
 }

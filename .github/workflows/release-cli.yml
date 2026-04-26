@@ -10,61 +10,66 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-cli-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  meta:
+  release:
+    if: ${{ github.event_name == 'workflow_dispatch' || !contains(github.event.head_commit.message, '[skip cli-release]') }}
     runs-on: ubuntu-latest
-    outputs:
-      release_exists: ${{ steps.meta.outputs.release_exists }}
-      version: ${{ steps.meta.outputs.version }}
-      tag: ${{ steps.meta.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ github.token }}
 
-      - name: Resolve release metadata
-        id: meta
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --tags --force
+
+      - name: Resolve next CLI version
+        id: version
         shell: bash
         run: |
           set -euo pipefail
 
-          VERSION="$(node -e "const fs=require('fs');const src=fs.readFileSync('cli/core/shared.ts','utf8');const m=src.match(/export const VERSION = '([^']+)'/);if(!m){process.exit(1)};process.stdout.write(m[1]);")"
-          TAG="v${VERSION}"
+          current="$(node -e "const v=require('./cli/version.json').version;if(!/^\\d+\\.\\d+\\.\\d+$/.test(v)) process.exit(1); process.stdout.write(v)")"
+          IFS=. read -r major minor patch <<<"${current}"
+          version="${current}"
+          tag="v${version}"
 
-          if gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
-            echo "release_exists=true" >>"${GITHUB_OUTPUT}"
-          else
-            echo "release_exists=false" >>"${GITHUB_OUTPUT}"
+          while git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; do
+            patch="$((patch + 1))"
+            version="${major}.${minor}.${patch}"
+            tag="v${version}"
+          done
+
+          node -e "const fs=require('fs'); const version=process.argv[1]; const releaseUrl='https://github.com/egeuysall/bri/releases'; const data=JSON.stringify({version, releaseUrl}, null, 2)+'\\n'; fs.writeFileSync('cli/version.json', data); fs.writeFileSync('public/bri-version.json', data);" "${version}"
+          node scripts/sync-cli-version.mjs
+
+          if ! git diff --quiet -- cli/version.json public/bri-version.json; then
+            git add cli/version.json public/bri-version.json
+            git commit -m "chore(cli): release ${version} [skip cli-release]"
           fi
 
-          echo "version=${VERSION}" >>"${GITHUB_OUTPUT}"
-          echo "tag=${TAG}" >>"${GITHUB_OUTPUT}"
-        env:
-          GH_TOKEN: ${{ github.token }}
+          git tag "${tag}"
+          git push origin HEAD:"${GITHUB_REF_NAME}"
+          git push origin "${tag}"
 
-  release:
-    needs: meta
-    if: needs.meta.outputs.release_exists != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Publish GitHub release with gh CLI
+          echo "version=${version}" >>"${GITHUB_OUTPUT}"
+          echo "tag=${tag}" >>"${GITHUB_OUTPUT}"
+
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-
-          TAG="${{ needs.meta.outputs.tag }}"
-          gh release create "${TAG}" \
+          gh release create "${{ steps.version.outputs.tag }}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --title "bri ${TAG}" \
+            --title "bri ${{ steps.version.outputs.tag }}" \
             --generate-notes
-
-  skip-existing-release:
-    needs: meta
-    if: needs.meta.outputs.release_exists == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Skip existing release tag
-        run: echo "Release ${{ needs.meta.outputs.tag }} already exists. Skipping."

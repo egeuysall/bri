@@ -53,14 +53,31 @@ import {
   normalizeArgv,
   renderTopHelp,
 } from './core/shared';
+import { renderPanel } from './core/ui';
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
-  if (
-    argv.length === 0 ||
-    (argv.length === 1 && (argv[0] === '-h' || argv[0] === '--help' || argv[0] === 'help'))
-  ) {
-    renderTopHelp(process.stdout.isTTY);
+  const wantsTopHelp = argv.some((arg) => arg === '-h' || arg === '--help' || arg === 'help');
+  const topLevelOnlyFlags = argv.every((arg) =>
+    ['--no-color', '--no-update-check', '-h', '--help', 'help'].includes(arg)
+  );
+  const hasCommand = argv.some((arg) =>
+    [
+      'publish',
+      'slug',
+      'doctor',
+      'self-update',
+      'login',
+      'logout',
+      'notes',
+      'links',
+      'notifications',
+      'config',
+    ].includes(arg)
+  );
+
+  if (argv.length === 0 || ((wantsTopHelp || topLevelOnlyFlags) && !hasCommand)) {
+    renderTopHelp(process.stdout.isTTY && !argv.includes('--no-color'));
     return;
   }
 
@@ -354,6 +371,11 @@ async function main(): Promise<void> {
 
 main().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
-  console.error(`[error] ${message}`);
+  renderPanel({
+    title: 'bri error',
+    enableColor: process.stderr.isTTY,
+    rows: [{ label: 'error', value: message, tone: 'warn' }],
+    stderr: true,
+  });
   process.exit(1);
 });

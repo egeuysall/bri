@@ -804,6 +804,22 @@ export function UserDashboard() {
   }, [panel]);
 
   useEffect(() => {
+    if (isInitializing || !loading) {
+      toast.dismiss('dashboard-refreshing');
+      return;
+    }
+
+    toast.loading('Refreshing dashboard', {
+      id: 'dashboard-refreshing',
+      duration: Infinity,
+    });
+
+    return () => {
+      toast.dismiss('dashboard-refreshing');
+    };
+  }, [isInitializing, loading]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     const apply = () => setIsDesktop(mediaQuery.matches);
@@ -1261,10 +1277,6 @@ export function UserDashboard() {
                 </div>
               </div>
             ) : null}
-            {!isInitializing && loading ? (
-              <p className="text-xs text-neutral-500">Refreshing…</p>
-            ) : null}
-
             {!isInitializing && panel === 'notes' ? (
               <div className="w-full space-y-3">
                 <div className="max-w-[calc(100%-5rem)] space-y-2 xl:max-w-[calc(100%-7rem)]">

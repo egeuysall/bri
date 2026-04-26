@@ -18,8 +18,6 @@ import {
   type SelfUpdateOptions,
   type SlugOptions,
   VERSION,
-  ansi,
-  colorize,
   createPrinter,
   hasBinary,
   optionProvidedByCli,
@@ -30,6 +28,7 @@ import {
   readMarkdownStdin,
   validateUrl,
 } from '../core/shared';
+import { renderPanel, renderTable } from '../core/ui';
 import { performSelfUpdate } from '../self-update';
 
 export type ConfigKey = keyof BriConfig;
@@ -67,12 +66,23 @@ export async function runLogin(options: LoginOptions): Promise<void> {
     apiKey,
     ...(username ? { username } : {}),
   });
-  console.log('login saved');
+  renderPanel({
+    title: 'bri auth',
+    enableColor: process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'login saved', tone: 'ok' },
+      ...(username ? [{ label: 'username', value: username, tone: 'info' as const }] : []),
+    ],
+  });
 }
 
 export async function runLogout(): Promise<void> {
   await unsetConfigKey('apiKey');
-  console.log('logged out');
+  renderPanel({
+    title: 'bri auth',
+    enableColor: process.stdout.isTTY,
+    rows: [{ label: 'status', value: 'logged out', tone: 'ok' }],
+  });
 }
 
 export async function runSlug(options: SlugOptions, command: Command): Promise<void> {
@@ -81,7 +91,6 @@ export async function runSlug(options: SlugOptions, command: Command): Promise<v
     : (parseOptionalPositiveInt(process.env.BRI_MAX_BYTES) ?? DEFAULT_MAX_BYTES);
 
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
-  const printer = createPrinter(color, Boolean(options.json));
 
   let content = '';
   let sourcePath = options.path;
@@ -102,13 +111,19 @@ export async function runSlug(options: SlugOptions, command: Command): Promise<v
   if (options.json) {
     console.log(JSON.stringify({ slug, source: sourcePath }, null, 2));
   } else {
-    printer.line(slug);
+    renderPanel({
+      title: 'bri slug',
+      enableColor: color,
+      rows: [
+        { label: 'slug', value: slug, tone: 'ok' },
+        { label: 'source', value: sourcePath ?? 'stdin.md', tone: 'muted' },
+      ],
+    });
   }
 }
 
 export async function runDoctor(options: DoctorOptions, command: Command): Promise<void> {
   const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
-  const printer = createPrinter(color, Boolean(options.json));
 
   const endpointRaw =
     (optionProvidedByCli(command, 'endpoint') ? options.endpoint : undefined) ??
@@ -198,12 +213,17 @@ export async function runDoctor(options: DoctorOptions, command: Command): Promi
     return;
   }
 
-  for (const item of checks) {
-    const prefix = item.ok
-      ? colorize('[ok]', ansi.green, color)
-      : colorize('[warn]', ansi.yellow, color);
-    printer.line(`${prefix} ${item.name}: ${item.detail}`);
-  }
+  renderTable({
+    title: 'bri doctor',
+    rows: checks,
+    enableColor: color,
+    empty: 'no checks',
+    columns: [
+      { header: 'status', width: 8, render: (row) => (row.ok ? 'ok' : 'warn') },
+      { header: 'check', width: 22, render: (row) => row.name },
+      { header: 'detail', width: 60, render: (row) => row.detail },
+    ],
+  });
 }
 
 export async function runSelfUpdate(options: SelfUpdateOptions, command: Command): Promise<void> {
@@ -250,13 +270,24 @@ export async function runConfigList(options: ConfigOptions): Promise<void> {
   const keys = Object.keys(config) as ConfigKey[];
 
   if (keys.length === 0) {
-    console.log('config is empty');
+    renderPanel({
+      title: 'bri config',
+      enableColor: process.stdout.isTTY,
+      rows: [{ label: 'status', value: 'config is empty', tone: 'muted' }],
+    });
     return;
   }
 
-  for (const key of keys) {
-    console.log(`${key}=${String(config[key])}`);
-  }
+  renderTable({
+    title: 'bri config',
+    rows: keys.map((key) => ({ key, value: String(config[key]) })),
+    enableColor: process.stdout.isTTY,
+    empty: 'config is empty',
+    columns: [
+      { header: 'key', width: 16, render: (row) => row.key },
+      { header: 'value', width: 72, render: (row) => (row.key === 'apiKey' ? '***' : row.value) },
+    ],
+  });
 }
 
 function parseConfigValue(key: ConfigKey, raw: string): string | number | boolean {
@@ -298,7 +329,14 @@ export async function runConfigSet(key: string, value: string): Promise<void> {
     [typedKey]: parsedValue,
   });
 
-  console.log(`saved ${typedKey}`);
+  renderPanel({
+    title: 'bri config',
+    enableColor: process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'saved', tone: 'ok' },
+      { label: 'key', value: typedKey, tone: 'info' },
+    ],
+  });
 }
 
 export async function runConfigUnset(key: string): Promise<void> {
@@ -307,10 +345,21 @@ export async function runConfigUnset(key: string): Promise<void> {
   }
 
   await unsetConfigKey(key as ConfigKey);
-  console.log(`removed ${key}`);
+  renderPanel({
+    title: 'bri config',
+    enableColor: process.stdout.isTTY,
+    rows: [
+      { label: 'status', value: 'removed', tone: 'ok' },
+      { label: 'key', value: key, tone: 'info' },
+    ],
+  });
 }
 
 export async function runConfigReset(): Promise<void> {
   await saveConfig({});
-  console.log('config reset');
+  renderPanel({
+    title: 'bri config',
+    enableColor: process.stdout.isTTY,
+    rows: [{ label: 'status', value: 'config reset', tone: 'ok' }],
+  });
 }

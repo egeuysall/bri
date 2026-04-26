@@ -4,16 +4,15 @@ import path from 'node:path';
 import process from 'node:process';
 import { Command, type OptionValueSource } from 'commander';
 import { checkForUpdates } from '../update';
+import versionManifest from '../version.json';
+import { renderCliHelp, renderPanel } from './ui';
 
-export const VERSION = '2.1.5';
-const IS_DEV = process.env.NODE_ENV === 'development';
-export const DEFAULT_SITE_URL = IS_DEV ? 'http://localhost:3000' : 'https://bri.egeuysal.com';
+export const VERSION = versionManifest.version;
+export const DEFAULT_SITE_URL = 'https://bri.egeuysal.com';
 export const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/notes`;
 export const RELEASE_REPO = 'egeuysall/bri';
 export const UPDATE_SOURCE_URL = `https://api.github.com/repos/${RELEASE_REPO}/releases/latest`;
-export const INSTALL_COMMAND = IS_DEV
-  ? 'bash ./public/install.sh'
-  : `curl -fsSL ${DEFAULT_SITE_URL}/install.sh | bash`;
+export const INSTALL_COMMAND = `curl -fsSL ${DEFAULT_SITE_URL}/install.sh | bash`;
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_BYTES = 1_048_576;
 export const DEFAULT_RETRIES = 2;
@@ -215,44 +214,30 @@ export function renderPublishOutput(input: {
   source: string;
   slug: string;
   url: string;
+  elapsedMs?: number;
 }): void {
-  const slugValue = colorize(input.slug, ansi.green, input.enableColor);
-  const urlValue = colorize(input.url, ansi.cyan, input.enableColor);
   const modeLabel = input.dryRun ? 'dry-run' : 'published';
+  const rows: Array<{ label: string; value: string; tone?: 'ok' | 'warn' | 'info' | 'muted' }> = [
+    { label: 'status', value: modeLabel, tone: input.dryRun ? 'warn' : 'ok' },
+    { label: 'source', value: input.source, tone: 'muted' },
+    { label: 'slug', value: input.slug, tone: 'ok' },
+    { label: 'url', value: input.url, tone: 'info' },
+  ];
 
-  console.log(`mode: ${modeLabel}`);
-  console.log(`source: ${input.source}`);
-  console.log(`slug: ${slugValue}`);
-  console.log(`url: ${urlValue}`);
+  if (typeof input.elapsedMs === 'number') {
+    rows.push({ label: 'elapsed', value: `${input.elapsedMs} ms`, tone: 'muted' });
+  }
+
+  renderPanel({
+    title: 'bri publish',
+    enableColor: input.enableColor,
+    rows,
+    footer: input.dryRun ? 'No request sent.' : undefined,
+  });
 }
 
 export function renderTopHelp(enableColor: boolean): void {
-  const title = colorize('bri', ansi.bold, enableColor);
-  const usage = colorize('bri [command] [options]', ansi.cyan, enableColor);
-
-  console.log(`${title}  markdown publishing CLI`);
-  console.log(`Usage: ${usage}`);
-  console.log('');
-  console.log('Commands:');
-  console.log('  publish   publish markdown to bri');
-  console.log('  notes     notes CRUD (list/read/update/delete)');
-  console.log('  links     quick links CRUD (list/create/update/delete)');
-  console.log('  notifications  inbox for invitations/alerts');
-  console.log('  login     save api key');
-  console.log('  logout    remove api key');
-  console.log('  slug      generate slug from markdown');
-  console.log('  doctor    runtime and endpoint checks');
-  console.log('  self-update  check/apply latest bun-runtime reinstall');
-  console.log('  config    manage local defaults');
-  console.log('');
-  console.log('Quick start:');
-  console.log('  bri -p ./post.md');
-  console.log('  bri publish --path ./post.md --dry-run');
-  console.log('  cat post.md | bri publish --stdin');
-  console.log('');
-  console.log('Help:');
-  console.log('  bri publish --help');
-  console.log('  bri config --help');
+  renderCliHelp(enableColor, VERSION);
 }
 
 export function getOptionSource(command: Command, key: string): OptionValueSource | undefined {
@@ -569,6 +554,16 @@ export function normalizeArgv(argv: string[]): string[] {
   const passthrough = [...argv];
   const bin = passthrough[0] ?? 'bun';
   const script = passthrough[1] ?? 'bri';
+  const userArgs = passthrough.slice(2);
+
+  if (userArgs[0] === 'run' && userArgs[1] === 'cli') {
+    return [bin, script, ...userArgs.slice(2)];
+  }
+
+  if (userArgs[0] === 'cli') {
+    return [bin, script, ...userArgs.slice(1)];
+  }
+
   const first = passthrough[2];
 
   if (!first) {
