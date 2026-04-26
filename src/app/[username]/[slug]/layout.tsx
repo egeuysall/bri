@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { getNoteByUsernameAndSlug } from '@/lib/notes';
+import { getSiteUrl } from '@/lib/site-url';
 
 function shortDescription(text: string, maxLength = 165): string {
   const cleaned = text
@@ -37,11 +38,7 @@ export async function generateMetadata({
     };
   }
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://bri.egeuysal.com');
-
-  const canonical = `${siteUrl.replace(/\/$/, '')}/${note.username}/${note.slug}`;
+  const canonical = `${getSiteUrl()}/${note.username}/${note.slug}`;
 
   return {
     title: note.title,

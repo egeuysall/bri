@@ -5,7 +5,7 @@ GITHUB_REPO="${BRI_GITHUB_REPO:-egeuysall/bri}"
 BIN_DIR="${BRI_INSTALL_DIR:-${HOME}/.local/bin}"
 TARGET="${BIN_DIR}/bri"
 SOURCE_ROOT="${BRI_SOURCE_ROOT:-${HOME}/.local/share/bri-cli}"
-INSTALLER_URL="${BRI_INSTALLER_URL:-https://bri.egeuysal.com/install.sh}"
+INSTALLER_URL="${BRI_INSTALLER_URL:-${NEXT_PUBLIC_SITE_URL:-https://bri.fyi}/install.sh}"
 RELEASE_API_URL="${BRI_RELEASE_API_URL:-https://api.github.com/repos/${GITHUB_REPO}/releases/latest}"
 RELEASE_TAG="${BRI_RELEASE_TAG:-}"
 

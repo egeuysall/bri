@@ -26,7 +26,7 @@ bun dev
 ## CLI
 
 ```bash
-curl -fsSL https://bri.egeuysal.com/install.sh | bash
+curl -fsSL https://bri.fyi/install.sh | bash
 ```
 
 The installer resolves the latest release tag, installs Bun if needed, downloads the source bundle, installs dependencies, auto-adds the install directory to `PATH`, and configures a daily background reinstall job.

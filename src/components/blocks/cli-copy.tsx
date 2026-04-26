@@ -1,8 +1,9 @@
 import { CodeBlock } from '@/components/markdown/code-block';
 import { CliMotionPreview } from '@/components/blocks/cli-motion-preview';
+import { getInstallCommand } from '@/lib/site-url';
 
 export function CliSection() {
-  const installCommand = 'curl -fsSL https://bri.egeuysal.com/install.sh | bash';
+  const installCommand = getInstallCommand();
 
   return (
     <div className="w-full space-y-7">

@@ -1,6 +1,11 @@
 import type React from 'react';
 import { Box, Text, renderToString } from 'ink';
 
+const defaultSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.BRI_SITE_URL ?? 'https://bri.fyi').replace(
+  /\/+$/,
+  ''
+);
+
 type CommandRow = {
   command: string;
   description: string;
@@ -192,7 +197,9 @@ export function renderCliHelp(enableColor: boolean, version: string): void {
             <Text color={color(enableColor, palette.command)}>bri publish --path ./post.md --dry-run</Text>
           </Box>
           <Text color={color(enableColor, palette.dim)}>help  bri publish --help</Text>
-          <Text color={color(enableColor, palette.dim)}>install  curl -fsSL https://bri.egeuysal.com/install.sh | bash</Text>
+          <Text color={color(enableColor, palette.dim)}>
+            install  curl -fsSL {defaultSiteUrl}/install.sh | bash
+          </Text>
         </Box>
       </Box>
     </Box>

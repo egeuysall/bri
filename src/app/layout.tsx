@@ -9,6 +9,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Fonts
 import { geistMono } from '@/lib/fonts';
+import { getSiteUrl } from '@/lib/site-url';
 
 // Internal Components
 import { SiteShell } from '@/components/layout/site-shell';
@@ -49,9 +50,7 @@ const template = 'bri';
  * The base URL of the site.
  * @type {string}
  */
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://bri.egeuysal.com');
+const siteUrl = getSiteUrl();
 
 /**
  * The name of the site's author.

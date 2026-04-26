@@ -3,6 +3,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { DEFAULT_SITE_URL } from './core/shared';
 
 interface GitHubRelease {
   tag_name?: string;
@@ -163,7 +164,7 @@ export async function performSelfUpdate(options: {
     };
   }
 
-  const installerUrl = process.env.BRI_INSTALLER_URL ?? 'https://bri.egeuysal.com/install.sh';
+  const installerUrl = process.env.BRI_INSTALLER_URL ?? `${DEFAULT_SITE_URL}/install.sh`;
   await runInstaller(installerUrl);
 
   return {

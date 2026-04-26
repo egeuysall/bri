@@ -43,6 +43,7 @@ import {
 } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
+import { getInstallCommand } from '@/lib/site-url';
 
 type NoteRecord = {
   id: string;
@@ -383,10 +384,7 @@ export function UserDashboard() {
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   const cliInstallCommand = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return `curl -fsSL ${window.location.origin}/install.sh | bash`;
-    }
-    return 'curl -fsSL https://bri.egeuysal.com/install.sh | bash';
+    return getInstallCommand();
   }, []);
   const profileHandle = useMemo(() => {
     const segments = pathname.split('/').filter(Boolean);
