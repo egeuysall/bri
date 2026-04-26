@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { selectPublicProfile } from "./userProfilesModel";
 
 function sanitizeUsername(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "");
@@ -35,12 +36,13 @@ export const syncMine = mutation({
     const email = cleanEmail(args.email);
     const now = Date.now();
 
-    const existing = await ctx.db
+    const profiles = await ctx.db
       .query("userProfiles")
       .withIndex("by_ownerTokenIdentifier", (q) =>
         q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
       )
-      .unique();
+      .take(5);
+    const existing = selectPublicProfile(profiles);
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -72,10 +74,11 @@ export const getPublicByUsername = query({
     const username = sanitizeUsername(args.username);
     if (!username) return null;
 
-    const profile = await ctx.db
+    const profiles = await ctx.db
       .query("userProfiles")
       .withIndex("by_username", (q) => q.eq("username", username))
-      .unique();
+      .take(5);
+    const profile = selectPublicProfile(profiles);
     if (!profile) return null;
 
     return {
@@ -94,12 +97,13 @@ export const getMine = query({
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) return null;
 
-    const profile = await ctx.db
+    const profiles = await ctx.db
       .query("userProfiles")
       .withIndex("by_ownerTokenIdentifier", (q) =>
         q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
       )
-      .unique();
+      .take(5);
+    const profile = selectPublicProfile(profiles);
     if (!profile) return null;
 
     return {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { getPublicUserProfileByUsername } from '@/lib/notes';
-import { normalizePathHandle, resolveUserHandle } from '@/lib/user-handle';
+import { isPublicUsernamePath, normalizePathHandle, resolveUserHandle } from '@/lib/user-handle';
 
 export async function generateMetadata({
   params,
@@ -9,6 +9,13 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
+  if (!isPublicUsernamePath(username)) {
+    return {
+      title: 'Not Found',
+      description: 'The requested page could not be found.',
+    };
+  }
+
   const { sessionClaims } = await auth();
   const userHandle = resolveUserHandle(sessionClaims as Record<string, unknown> | null | undefined);
 

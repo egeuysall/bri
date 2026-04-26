@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { getNoteByUsernameAndSlug } from '@/lib/notes';
 import { getSiteUrl } from '@/lib/site-url';
+import { isPublicResourcePath, isPublicUsernamePath } from '@/lib/user-handle';
 
 function shortDescription(text: string, maxLength = 165): string {
   const cleaned = text
@@ -21,6 +22,13 @@ export async function generateMetadata({
   params: Promise<{ username: string; slug: string }>;
 }): Promise<Metadata> {
   const { username, slug } = await params;
+  if (!isPublicUsernamePath(username) || !isPublicResourcePath(slug)) {
+    return {
+      title: 'Note Not Found',
+      description: 'The requested note could not be found.',
+    };
+  }
+
   const { getToken } = await auth();
   const token = (await getToken({ template: 'convex' })) ?? (await getToken()) ?? null;
 

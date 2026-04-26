@@ -9,6 +9,7 @@ import {
   trackNotePageView,
   trackQuickLinkClick,
 } from '@/lib/notes';
+import { isPublicResourcePath, isPublicUsernamePath } from '@/lib/user-handle';
 
 function normalizeHeading(value: string): string {
   return value
@@ -50,6 +51,8 @@ export default async function NotePage({
   params: Promise<{ username: string; slug: string }>;
 }) {
   const { username, slug } = await params;
+  if (!isPublicUsernamePath(username) || !isPublicResourcePath(slug)) notFound();
+
   const { getToken } = await auth();
   const token = (await getToken({ template: 'convex' })) ?? (await getToken()) ?? null;
 

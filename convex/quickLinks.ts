@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { selectPublicProfile } from "./userProfilesModel";
 
 type Permission = "read" | "write" | "read_write";
 type NeededPermission = "read" | "write";
@@ -131,12 +132,13 @@ async function upsertUserProfile(
   const email = cleanEmail(readIdentityString(identity.email));
   const now = Date.now();
 
-  const existing = await ctx.db
+  const profiles = await ctx.db
     .query("userProfiles")
     .withIndex("by_ownerTokenIdentifier", (q) =>
       q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
     )
-    .unique();
+    .take(5);
+  const existing = selectPublicProfile(profiles);
 
   if (existing) {
     await ctx.db.patch(existing._id, {

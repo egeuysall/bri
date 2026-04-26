@@ -3,6 +3,7 @@ import { internalMutation, mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { selectPublicProfile } from "./userProfilesModel";
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -163,12 +164,13 @@ async function upsertUserProfile(
   const email = cleanEmail(readIdentityString(identity.email));
   const now = Date.now();
 
-  const existing = await ctx.db
+  const profiles = await ctx.db
     .query("userProfiles")
     .withIndex("by_ownerTokenIdentifier", (q) =>
       q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
     )
-    .unique();
+    .take(5);
+  const existing = selectPublicProfile(profiles);
 
   if (existing) {
     await ctx.db.patch(existing._id, {
@@ -194,12 +196,13 @@ async function resolveViewerUsername(
   ctx: ConvexCtx,
   identity: { tokenIdentifier: string } & Record<string, unknown>
 ) {
-  const profile = await ctx.db
+  const profiles = await ctx.db
     .query("userProfiles")
     .withIndex("by_ownerTokenIdentifier", (q) =>
       q.eq("ownerTokenIdentifier", identity.tokenIdentifier)
     )
-    .unique();
+    .take(5);
+  const profile = selectPublicProfile(profiles);
 
   if (profile?.username) return profile.username;
   return resolveUsernameFromIdentity(identity);

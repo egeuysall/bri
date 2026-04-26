@@ -15,6 +15,7 @@ import type * as pins from "../pins.js";
 import type * as posts from "../posts.js";
 import type * as quickLinks from "../quickLinks.js";
 import type * as userProfiles from "../userProfiles.js";
+import type * as userProfilesModel from "../userProfilesModel.js";
 
 import type {
   ApiFromModules,
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   posts: typeof posts;
   quickLinks: typeof quickLinks;
   userProfiles: typeof userProfiles;
+  userProfilesModel: typeof userProfilesModel;
 }>;
 
 /**

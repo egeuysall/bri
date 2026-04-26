@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
+import { selectPublicProfile } from "./userProfilesModel";
 
 type Permission = "read" | "write" | "read_write";
 type NeededPermission = "read" | "write";
@@ -81,10 +82,11 @@ async function resolveViewerUsername(
   tokenIdentifier: string,
   identity: Record<string, unknown>
 ) {
-  const profile = await ctx.db
+  const profiles = await ctx.db
     .query("userProfiles")
     .withIndex("by_ownerTokenIdentifier", (q) => q.eq("ownerTokenIdentifier", tokenIdentifier))
-    .unique();
+    .take(5);
+  const profile = selectPublicProfile(profiles);
   if (profile?.username) return profile.username;
   return resolveUsernameFromIdentity(identity);
 }

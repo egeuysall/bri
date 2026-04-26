@@ -9,6 +9,16 @@ type UserLike = {
   }> | null;
 } | null | undefined;
 
+const RESERVED_PUBLIC_PATHS = new Set([
+  'apple-icon',
+  'favicon',
+  'icon',
+  'manifest',
+  'robots',
+  'sign-in',
+  'sign-up',
+]);
+
 function sanitizeHandle(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
 }
@@ -78,4 +88,18 @@ export function resolveUserHandleFromUser(user: UserLike): string | null {
 
 export function normalizePathHandle(value: string): string {
   return sanitizeHandle(value);
+}
+
+export function isPublicUsernamePath(value: string): boolean {
+  const trimmed = value.trim();
+  const normalized = sanitizeHandle(trimmed);
+  if (!normalized || normalized !== trimmed.toLowerCase()) return false;
+  if (RESERVED_PUBLIC_PATHS.has(normalized)) return false;
+  return true;
+}
+
+export function isPublicResourcePath(value: string): boolean {
+  const trimmed = value.trim();
+  const normalized = sanitizeHandle(trimmed);
+  return Boolean(normalized && normalized === trimmed.toLowerCase());
 }

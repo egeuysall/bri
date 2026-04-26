@@ -10,6 +10,7 @@ import {
   listQuickLinksByUsername,
 } from '@/lib/notes';
 import {
+  isPublicUsernamePath,
   normalizePathHandle,
   resolveUserHandle,
   resolveUserHandleFromUser,
@@ -39,6 +40,8 @@ export default async function DashboardPage({
   const { username } = await params;
   const resolvedSearchParams = await searchParams;
   const forcePublicProfile = resolvedSearchParams.public === '1';
+  if (!isPublicUsernamePath(username)) notFound();
+
   const normalizedPathHandle = normalizePathHandle(username);
   if (!normalizedPathHandle) notFound();
 
