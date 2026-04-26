@@ -7,11 +7,7 @@ import versionManifest from '../version.json';
 import { renderCliHelp, renderPublishResult } from './ui';
 
 export const VERSION = versionManifest.version;
-export const DEFAULT_SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.BRI_SITE_URL ??
-  'https://bri.fyi'
-).replace(/\/+$/, '');
+export const DEFAULT_SITE_URL = (process.env.BRI_SITE_URL ?? 'https://bri.fyi').replace(/\/+$/, '');
 export const DEFAULT_API_ENDPOINT = `${DEFAULT_SITE_URL}/api/notes`;
 export const RELEASE_REPO = 'egeuysall/bri';
 export const UPDATE_SOURCE_URL = `https://api.github.com/repos/${RELEASE_REPO}/releases/latest`;

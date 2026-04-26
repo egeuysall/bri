@@ -93,7 +93,7 @@ export async function runNotesRead(
   const config = await loadConfig();
   const siteRaw = optionProvidedByCli(command, 'endpoint')
     ? options.endpoint ?? DEFAULT_SITE_URL
-    : (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.BRI_SITE_URL ?? config.siteUrl ?? DEFAULT_SITE_URL);
+    : (process.env.BRI_SITE_URL ?? config.siteUrl ?? DEFAULT_SITE_URL);
   const base = validateUrl(siteRaw, 'site-url');
   const endpoint = new URL(`/api/public/notes/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`, base);
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
@@ -532,8 +532,7 @@ export async function runNotificationsOpen(
     DEFAULT_API_ENDPOINT
   );
   const baseEndpoint = validateUrl(endpointRaw, 'endpoint');
-  const siteUrlRaw =
-    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.BRI_SITE_URL ?? config.siteUrl ?? DEFAULT_SITE_URL;
+  const siteUrlRaw = process.env.BRI_SITE_URL ?? config.siteUrl ?? DEFAULT_SITE_URL;
   const siteUrl = validateUrl(siteUrlRaw, 'site-url');
   const endpoint = new URL('/api/notifications', baseEndpoint);
 

@@ -10,10 +10,7 @@ import {
   extendTheme,
 } from '@inkjs/ui';
 
-const defaultSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.BRI_SITE_URL ?? 'https://bri.fyi').replace(
-  /\/+$/,
-  ''
-);
+const defaultSiteUrl = (process.env.BRI_SITE_URL ?? 'https://bri.fyi').replace(/\/+$/, '');
 
 type CommandRow = {
   command: string;

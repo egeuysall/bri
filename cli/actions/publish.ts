@@ -49,7 +49,7 @@ export async function runPublish(options: PublishOptions, command: CommandLike):
     command,
     'siteUrl',
     options.siteUrl,
-    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.BRI_SITE_URL,
+    process.env.BRI_SITE_URL,
     config.siteUrl,
     DEFAULT_SITE_URL
   );
