@@ -220,6 +220,9 @@ function comboboxInputClass(widthClass = 'w-56') {
   return `${widthClass} h-8 border-neutral-800 bg-transparent text-xs`;
 }
 
+const dashboardActionButtonClass =
+  '!border-[var(--line)] bg-[var(--bg)] !text-[var(--fg)] hover:!border-[var(--fg)] hover:bg-[var(--background)] hover:!text-[var(--fg)]';
+
 const chartConfig = {
   pageViews: {
     label: 'Pages',
@@ -1487,7 +1490,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.4rem] bg-black px-3 text-xs hover:bg-neutral-900"
+                                className={`${dashboardActionButtonClass} h-8 min-w-[3.4rem] px-3 text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   startEditNote(note);
@@ -1498,7 +1501,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.4rem] bg-black px-3 text-xs hover:bg-neutral-900"
+                                className={`${dashboardActionButtonClass} h-8 min-w-[3.4rem] px-3 text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   openInviteDialog('note', note.id);
@@ -1509,7 +1512,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[2.75rem] bg-black px-3 text-xs hover:bg-neutral-900"
+                                className={`${dashboardActionButtonClass} h-8 min-w-[2.75rem] px-3 text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void togglePin('note', note.id).catch((err) =>
@@ -1524,7 +1527,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.8rem] bg-black px-3 text-xs hover:bg-neutral-900"
+                                className={`${dashboardActionButtonClass} h-8 min-w-[3.8rem] px-3 text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void patchNote(note.id, 'softDelete').catch((err) =>
@@ -1941,7 +1944,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
+                                className={`${dashboardActionButtonClass} h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   startEditQuickLink(link);
@@ -1952,7 +1955,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
+                                className={`${dashboardActionButtonClass} h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   openInviteDialog('link', link.id);
@@ -1963,7 +1966,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
+                                className={`${dashboardActionButtonClass} h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void togglePin('link', link.id).catch((err) =>
@@ -1978,7 +1981,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-7 bg-black px-2 text-[11px] hover:bg-neutral-900 sm:h-8 sm:px-3 sm:text-xs"
+                                className={`${dashboardActionButtonClass} h-7 px-2 text-[11px] sm:h-8 sm:px-3 sm:text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void removeQuickLinkHandler(link.id).catch((err) =>
@@ -2395,7 +2398,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[3.8rem] bg-black px-3 text-xs hover:bg-neutral-900"
+                                className={`${dashboardActionButtonClass} h-8 min-w-[3.8rem] px-3 text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void patchNote(note.id, 'restore').catch((err) =>
@@ -2410,7 +2413,7 @@ export function UserDashboard() {
                               <Button
                                 type="button"
                                 variant="default"
-                                className="h-8 min-w-[8.5rem] whitespace-nowrap bg-black px-3 text-xs hover:bg-neutral-900"
+                                className={`${dashboardActionButtonClass} h-8 min-w-[8.5rem] whitespace-nowrap px-3 text-xs`}
                                 onClick={(event) => {
                                   event.stopPropagation();
                                   void patchNote(note.id, 'permanentDelete').catch((err) =>
