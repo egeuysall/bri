@@ -5,10 +5,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import ReactMarkdown from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import { toast } from 'sonner';
 import { AppSidebar, type DashboardPanel } from '@/components/app-sidebar';
 import { CodeBlock } from '@/components/markdown/code-block';
+import { MathBlock } from '@/components/markdown/math-block';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -179,7 +182,8 @@ function stripLeadingHeading(content: string, title: string): string {
 function DashboardMarkdownPreview({ content }: { content: string }) {
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[[rehypeKatex, { strict: 'warn', throwOnError: false, trust: false }]]}
       components={{
         pre: ({ children }) => <>{children}</>,
         code: ({ className, children, ...props }) => {
@@ -196,6 +200,16 @@ function DashboardMarkdownPreview({ content }: { content: string }) {
             );
           }
           const language = className?.replace(/^language-/, '') || 'text';
+          const normalizedLanguage = language.toLowerCase();
+
+          if (
+            normalizedLanguage === 'math' ||
+            normalizedLanguage === 'tex' ||
+            normalizedLanguage === 'latex'
+          ) {
+            return <MathBlock>{normalizedContent}</MathBlock>;
+          }
+
           return <CodeBlock language={language}>{normalizedContent.replace(/\n$/, '')}</CodeBlock>;
         },
         input: ({ type, checked }) =>

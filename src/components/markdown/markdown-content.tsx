@@ -1,8 +1,11 @@
 import { MarkdownAsync } from 'react-markdown';
+import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import {
   CodeBlock,
   InlineCode,
+  MathBlock,
   MarkdownImage,
   MarkdownTable,
   MarkdownTableHead,
@@ -21,7 +24,8 @@ interface MarkdownContentProps {
 export async function MarkdownContent({ postId, content }: MarkdownContentProps) {
   return (
     <MarkdownAsync
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[[rehypeKatex, { strict: 'warn', throwOnError: false, trust: false }]]}
       components={{
         pre: ({ children }) => <>{children}</>,
         code: ({ className, children, ...props }) => {
@@ -34,6 +38,15 @@ export async function MarkdownContent({ postId, content }: MarkdownContentProps)
           }
 
           const language = className?.replace(/^language-/, '') || 'text';
+          const normalizedLanguage = language.toLowerCase();
+
+          if (
+            normalizedLanguage === 'math' ||
+            normalizedLanguage === 'tex' ||
+            normalizedLanguage === 'latex'
+          ) {
+            return <MathBlock>{normalizedContent}</MathBlock>;
+          }
 
           return <CodeBlock language={language}>{normalizedContent.replace(/\n$/, '')}</CodeBlock>;
         },

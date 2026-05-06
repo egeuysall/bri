@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import 'katex/dist/katex.min.css';
 @plugin '@tailwindcss/typography';
 
 :root {
@@ -462,4 +463,46 @@ code[data-theme*=' '] span {
 .code-block code {
   font-size: inherit !important;
   line-height: inherit !important;
+}
+
+.math-block {
+  width: 100%;
+  margin: 1.1rem 0;
+  overflow-x: auto;
+  padding: 0.15rem 0;
+  color: var(--fg);
+}
+
+.math-block .katex-display {
+  margin: 0;
+}
+
+.math-block .katex {
+  color: inherit;
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.prose .katex .katex-mathml,
+.math-block .katex .katex-mathml {
+  display: none !important;
+}
+
+.prose > .katex-display,
+.prose p > .katex-display {
+  width: 100%;
+  margin: 1.1rem 0;
+  overflow-x: auto;
+  padding: 0.15rem 0;
+  color: var(--fg);
+}
+
+.prose > .katex-display > .katex,
+.prose p > .katex-display > .katex {
+  font-size: 1.25rem;
+}
+
+.math-block .katex-error {
+  color: var(--fg);
+  font-family: inherit;
 }

@@ -183,12 +183,13 @@ export function CliMotionPreview() {
             <button
               key={panel.id}
               type="button"
+              aria-pressed={activePanelIndex === index}
               onClick={() => {
                 setActivePanelIndex(index);
                 setActiveRowIndex(0);
               }}
               className={cn(
-                'rounded-sm border px-3 py-2.5 text-left transition-colors',
+                'rounded-sm border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fg)]',
                 activePanelIndex === index
                   ? 'border-neutral-600 bg-neutral-900 text-neutral-100'
                   : 'border-neutral-900 text-neutral-500 hover:border-neutral-700 hover:text-neutral-300'
@@ -214,9 +215,10 @@ export function CliMotionPreview() {
               <button
                 key={row.id}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => setActiveRowIndex(index)}
                 className={cn(
-                  'flex w-full items-start justify-between gap-3 rounded-sm border px-3 py-1.5 text-left transition-all',
+                  'flex w-full items-start justify-between gap-3 rounded-sm border px-3 py-1.5 text-left transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fg)]',
                   isActive
                     ? 'border-neutral-600 bg-neutral-900 text-neutral-100'
                     : 'border-neutral-900 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
@@ -236,8 +238,11 @@ export function CliMotionPreview() {
           })}
         </div>
 
-        <div className="mt-3 rounded-sm border border-neutral-900 bg-black/40 p-2.5 font-mono text-[11px] leading-5 text-neutral-300">
-          <p className="text-neutral-500">$ bri cli monitor --live</p>
+        <div
+          className="mt-3 rounded-sm border border-neutral-900 bg-neutral-950 p-2.5 font-mono text-[11px] leading-5 text-neutral-200"
+          aria-label="CLI output preview"
+        >
+          <p className="text-neutral-400">$ bri cli monitor --live</p>
           <div className="mt-1.5 space-y-0.5">
             {activePanel.terminal.slice(0, 2).map((line) => (
               <p key={line}>{line}</p>

@@ -1,4 +1,5 @@
 export { CodeBlock, InlineCode } from './code-block';
+export { MathBlock } from './math-block';
 export { MarkdownImage } from './markdown-image';
 export {
   MarkdownTable,
