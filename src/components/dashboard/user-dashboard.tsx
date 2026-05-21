@@ -46,6 +46,7 @@ import {
 } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
+import { formatQuickLinkTitle } from '@/lib/quick-link-display';
 import { getInstallCommand } from '@/lib/site-url';
 
 type NoteRecord = {
@@ -1936,22 +1937,19 @@ export function UserDashboard() {
                                 className="line-clamp-2 break-all text-sm text-foreground hover:text-foreground hover:underline"
                                 onClick={(event) => event.stopPropagation()}
                               >
-                                {link.label || link.key} {'>'} {link.targetUrl}
+                                {formatQuickLinkTitle(link.label, link.key)}
                               </Link>
+                              <p className="mt-1 truncate text-[11px] text-neutral-500">
+                                {link.targetUrl}
+                              </p>
                               <p className="mt-1 text-[11px] text-neutral-500">
-                                {link.label || 'quick link'} &middot; views {link.clicks}
+                                views {link.clicks}
                                 {link.lastClickedAt
                                   ? ` · last ${formatDate(link.lastClickedAt)}`
                                   : ''}
                               </p>
                               <p className="mt-1 text-[11px] text-neutral-500">
                                 invited {inviteInfo.invitedCount}
-                              </p>
-                              <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-400">
-                                {excerpt(
-                                  link.label ? `${link.label} ${link.targetUrl}` : link.targetUrl,
-                                  220
-                                )}
                               </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
@@ -1990,7 +1988,7 @@ export function UserDashboard() {
                                   );
                                 }}
                               >
-                                {pinnedLinkIds.has(link.id) ? '<' : '>'}
+                                {pinnedLinkIds.has(link.id) ? 'Unpin' : 'Pin'}
                               </Button>
                               <Button
                                 type="button"
@@ -2021,22 +2019,14 @@ export function UserDashboard() {
                       {selectedLink ? (
                         <div className="mt-2 max-h-[calc(100vh-12rem)] space-y-2 overflow-auto">
                           <p className="text-sm text-neutral-100">
-                            {selectedLink.label || selectedLink.key}
+                            {formatQuickLinkTitle(selectedLink.label, selectedLink.key)}
                           </p>
-                          <p className="text-[11px] text-neutral-500 break-all">
+                          <p className="break-all text-[11px] text-neutral-500">
                             {selectedLink.targetUrl}
                           </p>
                           <p className="text-[11px] text-neutral-500">
                             edited {formatDate(selectedLink.updatedAt)} &middot; views{' '}
                             {selectedLink.clicks}
-                          </p>
-                          <p className="text-xs text-neutral-400">
-                            {excerpt(
-                              selectedLink.label
-                                ? `${selectedLink.label} ${selectedLink.targetUrl}`
-                                : selectedLink.targetUrl,
-                              280
-                            )}
                           </p>
                           <p className="text-[11px] text-neutral-500">
                             invitees:{' '}

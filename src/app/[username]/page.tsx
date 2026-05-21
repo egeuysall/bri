@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { UserDashboard } from '@/components/dashboard/user-dashboard';
 import { PublicProfileAvatar } from '@/components/public-profile-avatar';
+import { formatQuickLinkTitle } from '@/lib/quick-link-display';
 import {
   getMyUserProfile,
   getPublicUserProfileByUsername,
@@ -177,12 +178,9 @@ export default async function DashboardPage({
                 href={`/${link.username}/${link.key}`}
                 className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
               >
-                <p className="truncate text-sm text-neutral-100">
-                  {link.label || link.key} &gt; {link.targetUrl}
-                </p>
-                <p className="mt-1 text-[11px] text-neutral-500">
-                  {link.label || 'quick link'} &middot; {link.clicks} views
-                </p>
+                <p className="truncate text-sm text-neutral-100">{formatQuickLinkTitle(link.label, link.key)}</p>
+                <p className="mt-1 truncate text-[11px] text-neutral-500">{link.targetUrl}</p>
+                <p className="mt-1 text-[11px] text-neutral-500">{link.clicks} views</p>
               </a>
             ))
           )}
