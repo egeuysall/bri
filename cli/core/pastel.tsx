@@ -15,9 +15,26 @@ type RunCommandProps = {
   label?: string;
   quiet?: boolean;
   json?: boolean;
+  streaming?: boolean;
   updateCheck?: boolean;
   skipUpdateCheck?: boolean;
 };
+
+type SpinnerRenderState = {
+  quiet?: boolean;
+  json?: boolean;
+  complete?: boolean;
+  streaming?: boolean;
+};
+
+export function shouldRenderSpinner({
+  quiet = false,
+  json = false,
+  complete = false,
+  streaming = false,
+}: SpinnerRenderState): boolean {
+  return !(quiet || json || complete || streaming);
+}
 
 function toFlagName(key: string): string {
   return key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`);
@@ -41,6 +58,7 @@ export function RunCommand({
   label = 'Running',
   quiet = false,
   json = false,
+  streaming = false,
   updateCheck = true,
   skipUpdateCheck = false,
 }: RunCommandProps) {
@@ -81,7 +99,7 @@ export function RunCommand({
     })();
   }, [action, app, json, quiet, skipUpdateCheck, updateCheck]);
 
-  if (quiet || json || complete) {
+  if (!shouldRenderSpinner({ quiet, json, complete, streaming })) {
     return null;
   }
 

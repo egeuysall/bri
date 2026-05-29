@@ -26,6 +26,7 @@ export default function NotesAsk({ args: parsedArgs, options: parsedOptions }: P
     <RunCommand
       label="Asking AI"
       json={parsedOptions.json}
+      streaming={!parsedOptions.json}
       updateCheck={parsedOptions.updateCheck}
       action={(command) => runNotesAsk(parsedArgs[0], parsedArgs[1], parsedOptions as NotesAskOptions, command)}
     />
