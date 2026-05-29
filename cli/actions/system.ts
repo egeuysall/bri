@@ -23,6 +23,7 @@ import {
   parseOptionalBoolean,
   parseOptionalPositiveInt,
   parsePositiveInt,
+  printJson,
   readMarkdownFile,
   readMarkdownStdin,
   validateUrl,
@@ -109,7 +110,7 @@ export async function runSlug(options: SlugOptions, command: CommandLike): Promi
   const slug = generateSlug(sourcePath, content);
 
   if (options.json) {
-    console.log(JSON.stringify({ slug, source: sourcePath }, null, 2));
+    printJson({ slug, source: sourcePath }, color);
   } else {
     renderPanel({
       title: 'bri slug',
@@ -209,7 +210,7 @@ export async function runDoctor(options: DoctorOptions, command: CommandLike): P
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ checks }, null, 2));
+    printJson({ checks }, color);
     return;
   }
 
@@ -237,7 +238,7 @@ export async function runSelfUpdate(options: SelfUpdateOptions, command: Command
   });
 
   if (options.json) {
-    console.log(JSON.stringify(result, null, 2));
+    printJson(result, color);
     return;
   }
 
@@ -263,7 +264,7 @@ export async function runConfigList(options: ConfigOptions): Promise<void> {
   const config = await loadConfig();
 
   if (options.json) {
-    console.log(JSON.stringify(config, null, 2));
+    printJson(config);
     return;
   }
 

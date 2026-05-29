@@ -17,6 +17,7 @@ import {
   parseOptionalPositiveInt,
   parseTitleFromMarkdown,
   parseVisibility,
+  printJson,
   readMarkdownFile,
   readMarkdownStdin,
   renderPublishOutput,
@@ -162,19 +163,16 @@ export async function runPublish(options: PublishOptions, command: CommandLike):
       const dryRunUrl = new URL(dryRunPath, siteUrl).toString();
 
       if (options.json) {
-        console.log(
-          JSON.stringify(
-            {
-              dryRun: true,
-              title,
-              visibility,
-              expiresInDays,
-              url: dryRunUrl,
-              source: sourcePath,
-            },
-            null,
-            2
-          )
+        printJson(
+          {
+            dryRun: true,
+            title,
+            visibility,
+            expiresInDays,
+            url: dryRunUrl,
+            source: sourcePath,
+          },
+          color
         );
       } else {
         renderPublishOutput({
@@ -205,19 +203,16 @@ export async function runPublish(options: PublishOptions, command: CommandLike):
     const postUrl = new URL(`/${username}/${normalizedSlug}`, siteUrl).toString();
 
     if (options.json) {
-      console.log(
-        JSON.stringify(
-          {
-            dryRun: false,
-            username,
-            slug: normalizedSlug,
-            url: postUrl,
-            elapsedMs: published.elapsedMs,
-            statusCode: published.statusCode,
-          },
-          null,
-          2
-        )
+      printJson(
+        {
+          dryRun: false,
+          username,
+          slug: normalizedSlug,
+          url: postUrl,
+          elapsedMs: published.elapsedMs,
+          statusCode: published.statusCode,
+        },
+        color
       );
     } else {
       renderPublishOutput({

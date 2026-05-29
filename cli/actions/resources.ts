@@ -24,6 +24,7 @@ import {
   parsePositiveInt,
   parseTitleFromMarkdown,
   parseVisibility,
+  printJson,
   readMarkdownFile,
   readMarkdownStdin,
   validateUrl,
@@ -49,7 +50,7 @@ export async function runNotesList(options: NotesListOptions, command: CommandLi
 
   const data = (await fetchWithApiKey({ endpoint, apiKey })) as Array<Record<string, unknown>>;
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 
@@ -109,7 +110,7 @@ export async function runNotesRead(
   if (!response.ok) throw new Error(parsed.error || `request failed (${response.status})`);
 
   if (options.json) {
-    console.log(JSON.stringify(parsed.data ?? {}, null, 2));
+    printJson(parsed.data ?? {}, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 
@@ -196,7 +197,10 @@ export async function runNotesAsk(
     }
 
     if (options.json) {
-      console.log(JSON.stringify({ data: { answer } }, null, 2));
+      printJson(
+        { data: { answer } },
+        optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      );
     } else {
       process.stdout.write('\n');
     }
@@ -257,7 +261,7 @@ export async function runNotesUpdate(id: string, options: NotesUpdateOptions, co
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
   renderPanel({
@@ -292,7 +296,7 @@ export async function runNotesDelete(id: string, options: NotesDeleteOptions, co
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
   renderPanel({
@@ -320,7 +324,7 @@ export async function runLinksList(options: LinksListOptions, command: CommandLi
 
   const data = (await fetchWithApiKey({ endpoint, apiKey })) as Array<Record<string, unknown>>;
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 
@@ -395,7 +399,7 @@ export async function runLinksCreate(options: LinksCreateOptions, command: Comma
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
   renderPanel({
@@ -441,7 +445,7 @@ export async function runLinksUpdate(id: string, options: LinksUpdateOptions, co
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
   renderPanel({
@@ -473,7 +477,7 @@ export async function runLinksDelete(id: string, options: LinksDeleteOptions, co
   const data = await fetchWithApiKey({ endpoint, apiKey, method: 'DELETE' });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 
@@ -523,7 +527,7 @@ export async function runInvite(
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
   renderPanel({
@@ -568,7 +572,7 @@ export async function runNotificationsList(
   };
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 
@@ -637,7 +641,7 @@ export async function runNotificationsOpen(
   const href = typeof data?.href === 'string' ? data.href : null;
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 
@@ -693,7 +697,7 @@ export async function runNotificationsDismiss(
   });
 
   if (options.json) {
-    console.log(JSON.stringify({ data }, null, 2));
+    printJson({ data }, optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY);
     return;
   }
 

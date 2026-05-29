@@ -194,6 +194,41 @@ export function colorize(text: string, code: string, enabled: boolean): string {
   return `${code}${text}${ansi.reset}`;
 }
 
+export function formatJson(value: unknown): string {
+  return JSON.stringify(value, null, 2);
+}
+
+export function highlightJson(json: string, enableColor: boolean): string {
+  if (!enableColor) {
+    return json;
+  }
+
+  return json.replace(
+    /("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/g,
+    (match, quoted: string | undefined, keySuffix: string | undefined) => {
+      if (quoted) {
+        return keySuffix
+          ? `${colorize(quoted, ansi.cyan, true)}${keySuffix}`
+          : colorize(quoted, ansi.green, true);
+      }
+
+      if (match === 'true' || match === 'false') {
+        return colorize(match, ansi.blue, true);
+      }
+
+      if (match === 'null') {
+        return colorize(match, ansi.gray, true);
+      }
+
+      return colorize(match, ansi.yellow, true);
+    }
+  );
+}
+
+export function printJson(value: unknown, enableColor = process.stdout.isTTY): void {
+  console.log(highlightJson(formatJson(value), enableColor));
+}
+
 export function createPrinter(enableColor: boolean, quiet: boolean): Printer {
   const infoPrefix = colorize('[info]', ansi.blue, enableColor);
   const okPrefix = colorize('[ok]', ansi.green, enableColor);
