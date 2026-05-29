@@ -29,6 +29,7 @@
     "clsx": "^2.1.1",
     "convex": "^1.36.0",
     "facehash": "^0.1.0",
+    "find-up-simple": "^1.0.1",
     "ink": "^7.0.1",
     "katex": "^0.16.45",
     "lucide-react": "^1.8.0",
