@@ -13,6 +13,24 @@ interface CodeBlockProps {
   className?: string;
 }
 
+function isAppLightMode(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const rootStyles = window.getComputedStyle(document.documentElement);
+  const colorScheme = rootStyles.colorScheme.toLowerCase();
+  const background = rootStyles.getPropertyValue('--bg').trim().toLowerCase();
+
+  return (
+    colorScheme.includes('light') ||
+    background === '#fff' ||
+    background === '#ffffff' ||
+    background === 'white' ||
+    background === 'rgb(255, 255, 255)'
+  );
+}
+
 export function CodeBlock({ children, language = 'text', className }: CodeBlockProps) {
   const normalized = String(children);
   const [html, setHtml] = useState<string>('');
@@ -46,7 +64,7 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
     }
 
     const media = window.matchMedia('(prefers-color-scheme: light)');
-    const update = () => setIsLightMode(media.matches);
+    const update = () => setIsLightMode(isAppLightMode());
     update();
 
     if (typeof media.addEventListener === 'function') {

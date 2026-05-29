@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'katex/dist/katex.min.css';
 @plugin '@tailwindcss/typography';
+@source "../../node_modules/streamdown/dist/*.js";
 
 :root {
   --bg: #050505;
@@ -182,6 +183,24 @@ body {
   outline: none;
   border-color: var(--fg);
   box-shadow: 0 0 0 1px var(--fg);
+}
+
+.ai-note-input,
+.ai-note-input:focus,
+.ai-note-input:focus-visible {
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.ai-note-message-user .prose,
+.ai-note-message-user .prose p {
+  margin: 0 !important;
+  line-height: 1rem;
+}
+
+.ai-note-message-user .prose .katex {
+  font-size: 1em;
 }
 
 ::selection {

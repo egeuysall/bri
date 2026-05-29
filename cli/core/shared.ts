@@ -91,6 +91,14 @@ export type NotesReadOptions = {
   color: boolean;
 };
 
+export type NotesAskOptions = {
+  question?: string;
+  stdin?: boolean;
+  endpoint?: string;
+  json?: boolean;
+  color: boolean;
+};
+
 export type NotesUpdateOptions = {
   path?: string;
   stdin?: boolean;

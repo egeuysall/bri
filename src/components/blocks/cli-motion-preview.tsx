@@ -192,7 +192,7 @@ export function CliMotionPreview() {
                 'rounded-sm border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fg)]',
                 activePanelIndex === index
                   ? 'border-neutral-600 bg-neutral-900 text-neutral-100'
-                  : 'border-neutral-900 text-neutral-500 hover:border-neutral-700 hover:text-neutral-300'
+                  : 'border-neutral-800 text-neutral-500 hover:border-neutral-700 hover:text-neutral-300'
               )}
             >
               <p className="text-sm leading-none">{panel.title}</p>
@@ -201,7 +201,7 @@ export function CliMotionPreview() {
           ))}
         </nav>
 
-        <p className="mt-2 rounded-sm border border-neutral-900 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-300">
+        <p className="mt-2 rounded-sm border border-neutral-800 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-300">
           {activePanel.path}
         </p>
 
@@ -221,7 +221,7 @@ export function CliMotionPreview() {
                   'flex w-full items-start justify-between gap-3 rounded-sm border px-3 py-1.5 text-left transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[var(--fg)]',
                   isActive
                     ? 'border-neutral-600 bg-neutral-900 text-neutral-100'
-                    : 'border-neutral-900 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
+                    : 'border-neutral-800 text-neutral-400 hover:border-neutral-700 hover:text-neutral-200'
                 )}
               >
                 <span>
@@ -239,7 +239,7 @@ export function CliMotionPreview() {
         </div>
 
         <div
-          className="mt-3 rounded-sm border border-neutral-900 bg-neutral-950 p-2.5 font-mono text-[11px] leading-5 text-neutral-200"
+          className="mt-3 rounded-sm border border-neutral-800 bg-neutral-950 p-2.5 font-mono text-[11px] leading-5 text-neutral-200"
           aria-label="CLI output preview"
         >
           <p className="text-neutral-400">$ bri cli monitor --live</p>

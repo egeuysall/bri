@@ -74,8 +74,8 @@ export function AppSidebar({
   };
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-neutral-900" {...props}>
-      <SidebarHeader className="border-b border-neutral-900 px-3 py-2">
+    <Sidebar collapsible="icon" className="border-r border-neutral-800" {...props}>
+      <SidebarHeader className="border-b border-neutral-800 px-3 py-2">
         <div className="flex items-center justify-start">
           <SidebarSlashToggle />
         </div>
@@ -83,7 +83,7 @@ export function AppSidebar({
 
       <SidebarContent className="px-2 py-3">
         <SidebarMenu>
-          {panelItems.map(item => (
+          {panelItems.map((item) => (
             <SidebarMenuItem key={item.id}>
               <SidebarMenuButton
                 isActive={panel === item.id}
@@ -105,7 +105,7 @@ export function AppSidebar({
         </SidebarMenu>
 
         {!isCollapsed ? (
-          <div className="mt-4 border-t border-neutral-900 pt-3">
+          <div className="mt-4 border-t border-neutral-800 pt-3">
             <p className="px-2 pb-2 text-[11px] text-neutral-500">pinned</p>
             {pinnedItems.length === 0 ? (
               <p className="px-2 text-[11px] text-neutral-500">none</p>
@@ -130,7 +130,7 @@ export function AppSidebar({
         ) : null}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-neutral-900 p-2">
+      <SidebarFooter className="border-t border-neutral-800 p-2">
         <NavUser />
       </SidebarFooter>
     </Sidebar>

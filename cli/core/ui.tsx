@@ -249,6 +249,7 @@ export function renderCliHelp(enableColor: boolean, version: string): void {
     { command: 'bri slug --path <file>', description: 'Preview generated slug', group: 'publish' },
     { command: 'bri notes list', description: 'List your notes', group: 'library' },
     { command: 'bri notes read <user> <slug>', description: 'Read note content', group: 'library' },
+    { command: 'bri notes ask <user> <slug> --question <q>', description: 'Ask AI about a note', group: 'library' },
     { command: 'bri links list', description: 'List quick links', group: 'library' },
     { command: 'bri links create --key <key>', description: 'Create quick link', group: 'library' },
     { command: 'bri notifications list', description: 'Show invites and alerts', group: 'account' },

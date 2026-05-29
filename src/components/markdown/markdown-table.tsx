@@ -21,7 +21,7 @@ export function MarkdownTableBody({ children }: MarkdownTableProps) {
 }
 
 export function MarkdownTableRow({ children }: MarkdownTableProps) {
-  return <tr className="border-b border-neutral-900">{children}</tr>;
+  return <tr className="border-b border-neutral-800">{children}</tr>;
 }
 
 export function MarkdownTableHeaderCell({ children }: MarkdownTableProps) {

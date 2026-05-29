@@ -4,6 +4,7 @@ import {
   DEFAULT_API_ENDPOINT,
   DEFAULT_MAX_BYTES,
   DEFAULT_SITE_URL,
+  VERSION,
   type InviteOptions,
   type LinksCreateOptions,
   type LinksDeleteOptions,
@@ -12,6 +13,7 @@ import {
   type NotesDeleteOptions,
   type NotesListOptions,
   type NotesReadOptions,
+  type NotesAskOptions,
   type NotesUpdateOptions,
   type NotificationsActionOptions,
   type NotificationsListOptions,
@@ -115,6 +117,92 @@ export async function runNotesRead(
   console.log(data.title || `${username}/${slug}`);
   console.log('');
   console.log(data.content || '');
+}
+
+export async function runNotesAsk(
+  username: string,
+  slug: string,
+  options: NotesAskOptions,
+  command: CommandLike
+): Promise<void> {
+  const config = await loadConfig();
+  const siteRaw = optionProvidedByCli(command, 'endpoint')
+    ? options.endpoint ?? DEFAULT_SITE_URL
+    : (process.env.BRI_SITE_URL ?? config.siteUrl ?? DEFAULT_SITE_URL);
+  const base = validateUrl(siteRaw, 'site-url');
+  const endpoint = new URL(
+    `/api/notes/${encodeURIComponent(username)}/${encodeURIComponent(slug)}/ask`,
+    base
+  );
+  const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
+  const question = options.stdin
+    ? (await readMarkdownStdin(4_096)).trim()
+    : (options.question ?? '').trim();
+
+  if (!question) {
+    throw new Error('missing question. pass --question or --stdin');
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60_000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': `bri/${VERSION}`,
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+      },
+      body: JSON.stringify({ question }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok || !response.body) {
+      const raw = await response.text();
+      let message = `request failed (${response.status})`;
+      try {
+        const parsed = raw ? (JSON.parse(raw) as { error?: string }) : {};
+        message = parsed.error || message;
+      } catch {
+        if (raw.trim()) {
+          message = raw.trim();
+        }
+      }
+      throw new Error(message);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let answer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      answer += chunk;
+      if (!options.json) {
+        process.stdout.write(chunk);
+      }
+    }
+
+    const finalChunk = decoder.decode();
+    if (finalChunk) {
+      answer += finalChunk;
+      if (!options.json) {
+        process.stdout.write(finalChunk);
+      }
+    }
+
+    if (options.json) {
+      console.log(JSON.stringify({ data: { answer } }, null, 2));
+    } else {
+      process.stdout.write('\n');
+    }
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function runNotesUpdate(id: string, options: NotesUpdateOptions, command: CommandLike): Promise<void> {

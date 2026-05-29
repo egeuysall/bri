@@ -129,7 +129,7 @@ export default async function DashboardPage({
               <Link
                 key={note.id}
                 href={`/${note.username}/${note.slug}`}
-                className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
+                className="block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
               >
                 <p className="text-sm text-neutral-100">{note.title}</p>
                 <p className="mt-1 text-[11px] text-neutral-500">
@@ -176,9 +176,11 @@ export default async function DashboardPage({
               <a
                 key={link.id}
                 href={`/${link.username}/${link.key}`}
-                className="block rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
+                className="block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
               >
-                <p className="truncate text-sm text-neutral-100">{formatQuickLinkTitle(link.label, link.key)}</p>
+                <p className="truncate text-sm text-neutral-100">
+                  {formatQuickLinkTitle(link.label, link.key)}
+                </p>
                 <p className="mt-1 truncate text-[11px] text-neutral-500">{link.targetUrl}</p>
                 <p className="mt-1 text-[11px] text-neutral-500">{link.clicks} views</p>
               </a>

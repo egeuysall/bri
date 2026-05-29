@@ -1271,7 +1271,7 @@ export function UserDashboard() {
     <SidebarProvider defaultOpen>
       <AppSidebar panel={panel} pinnedItems={pinnedSidebarItems} onPanelChange={setPanel} />
       <SidebarInset className="min-h-screen bg-bg">
-        <header className="flex h-14 items-center gap-2 border-b border-neutral-900 px-4 md:hidden">
+        <header className="flex h-14 items-center gap-2 border-b border-neutral-800 px-4 md:hidden">
           <MobileSidebarTrigger />
         </header>
         <section className="w-full px-4 py-5 md:px-8 xl:pr-24 2xl:pr-28">
@@ -1366,7 +1366,7 @@ export function UserDashboard() {
                         return (
                           <article
                             key={note.id}
-                            className={`space-y-3 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
+                            className={`space-y-3 rounded-sm border border-neutral-800 p-3 ${desktopSpanClass}`}
                           >
                             <div className="grid gap-2 md:grid-cols-2">
                               <input
@@ -1467,7 +1467,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={note.id}
-                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] overflow-hidden rounded-sm border border-neutral-800 px-3 py-2.5 transition-colors hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -1561,7 +1561,7 @@ export function UserDashboard() {
                     })}
                   </div>
                   <aside className="hidden self-start xl:block">
-                    <div className="sticky top-20 h-fit max-h-[64rem] overflow-hidden rounded-sm border border-neutral-900 bg-neutral-950 dark:bg-neutral-900/90 p-3">
+                    <div className="sticky top-20 h-fit max-h-[64rem] overflow-hidden rounded-sm border border-neutral-800 bg-neutral-950 dark:bg-neutral-900/90 p-3">
                       <p className="text-xs text-neutral-500">Selected note</p>
                       {selectedNote ? (
                         <div className="mt-2 flex flex-col space-y-2">
@@ -1575,7 +1575,7 @@ export function UserDashboard() {
                               .join(', ') || 'none'}
                           </p>
                           <div className="max-h-[calc(64rem-4.5rem)] overflow-auto">
-                            <div className="prose prose-neutral prose-invert max-w-none break-words prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[0.95rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.9rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.85rem]! prose-h3:leading-5! prose-h3:font-medium! prose-h4:text-[0.8rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-900 prose-pre:border prose-pre:border-neutral-800">
+                            <div className="prose prose-neutral prose-invert max-w-none break-words prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[0.95rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.9rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.85rem]! prose-h3:leading-5! prose-h3:font-medium! prose-h4:text-[0.8rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-800 prose-pre:border prose-pre:border-neutral-800">
                               <DashboardMarkdownPreview
                                 content={stripLeadingHeading(
                                   selectedNote.content,
@@ -1804,7 +1804,7 @@ export function UserDashboard() {
                   </div>
                 </div>
 
-                <div className="rounded-sm border border-neutral-900 p-3">
+                <div className="rounded-sm border border-neutral-800 p-3">
                   <div className="grid gap-2 md:grid-cols-4">
                     <input
                       value={quickLinkKey}
@@ -1862,7 +1862,7 @@ export function UserDashboard() {
                         return (
                           <article
                             key={link.id}
-                            className={`space-y-2 rounded-sm border border-neutral-900 p-3 ${desktopSpanClass}`}
+                            className={`space-y-2 rounded-sm border border-neutral-800 p-3 ${desktopSpanClass}`}
                           >
                             <div className="grid gap-2 md:grid-cols-4">
                               <input
@@ -1917,7 +1917,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={link.id}
-                          className={`group relative h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
@@ -2014,7 +2014,7 @@ export function UserDashboard() {
                     })}
                   </div>
                   <aside className="hidden self-start xl:block">
-                    <div className="sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-hidden rounded-sm border border-neutral-900 p-3">
+                    <div className="sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-hidden rounded-sm border border-neutral-800 p-3">
                       <p className="text-xs text-neutral-500">Selected link</p>
                       {selectedLink ? (
                         <div className="mt-2 max-h-[calc(100vh-12rem)] space-y-2 overflow-auto">
@@ -2073,7 +2073,7 @@ export function UserDashboard() {
             {!isInitializing && panel === 'profile' ? (
               <div className="space-y-4">
                 <h1 className="text-sm text-neutral-200">Profile</h1>
-                <div className="rounded-sm border border-neutral-900 p-3">
+                <div className="rounded-sm border border-neutral-800 p-3">
                   <p className="text-xs text-neutral-500">Public profile URL</p>
                   <CodeBlock className="mt-2" language="text">
                     {publicProfileUrl || 'Unavailable'}
@@ -2106,7 +2106,7 @@ export function UserDashboard() {
                   </div>
                 </div>
 
-                <div className="rounded-sm border border-neutral-900 p-3">
+                <div className="rounded-sm border border-neutral-800 p-3">
                   <p className="text-xs text-neutral-500">Profile summary</p>
                   <p className="mt-2 text-xs text-neutral-300">
                     @{profileHandle || 'unknown'} &middot; {notes.length} notes &middot;{' '}
@@ -2123,14 +2123,14 @@ export function UserDashboard() {
               <div className="space-y-4">
                 <h1 className="text-sm text-neutral-200">Settings</h1>
 
-                <div className="rounded-sm border border-neutral-900 p-3">
+                <div className="rounded-sm border border-neutral-800 p-3">
                   <p className="text-xs text-neutral-500">CLI install command</p>
                   <CodeBlock className="mt-2" language="bash">
                     {cliInstallCommand}
                   </CodeBlock>
                 </div>
 
-                <div className="rounded-sm border border-neutral-900 p-3">
+                <div className="rounded-sm border border-neutral-800 p-3">
                   <p className="text-xs text-neutral-500">Generate API key</p>
                   <div className="mt-3 flex flex-wrap items-end gap-3">
                     <label className="flex flex-col gap-1">
@@ -2187,7 +2187,7 @@ export function UserDashboard() {
                   </div>
 
                   {generatedApiKey ? (
-                    <div className="mt-3 rounded-sm border border-neutral-900 p-2">
+                    <div className="mt-3 rounded-sm border border-neutral-800 p-2">
                       <p className="text-[11px] text-neutral-300">Save now. shown once:</p>
                       <CodeBlock className="mt-1" language="text">
                         {generatedApiKey}
@@ -2196,7 +2196,7 @@ export function UserDashboard() {
                   ) : null}
                 </div>
 
-                <div className="rounded-sm border border-neutral-900 p-3">
+                <div className="rounded-sm border border-neutral-800 p-3">
                   <p className="text-xs text-neutral-500">Your API keys</p>
                   <div className="mt-2 space-y-2">
                     {apiKeys.length === 0 ? (
@@ -2205,7 +2205,7 @@ export function UserDashboard() {
                     {apiKeys.map((key) => (
                       <div
                         key={key.id}
-                        className="flex items-center justify-between gap-2 rounded-sm border border-neutral-900 px-2 py-2"
+                        className="flex items-center justify-between gap-2 rounded-sm border border-neutral-800 px-2 py-2"
                       >
                         <div className="min-w-0">
                           <p className="truncate text-xs text-neutral-200">
@@ -2236,8 +2236,8 @@ export function UserDashboard() {
                 </div>
 
                 {analytics ? (
-                  <Card className="w-full rounded-sm border border-neutral-900 bg-transparent py-0 ring-0">
-                    <CardHeader className="border-b border-neutral-900 px-4 py-3">
+                  <Card className="w-full rounded-sm border border-neutral-800 bg-transparent py-0 ring-0">
+                    <CardHeader className="border-b border-neutral-800 px-4 py-3">
                       <CardTitle className="text-sm text-neutral-200">
                         Analytics ({analytics.days}d)
                       </CardTitle>
@@ -2375,7 +2375,7 @@ export function UserDashboard() {
                       return (
                         <article
                           key={note.id}
-                          className={`group relative h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-900 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
+                          className={`group relative h-auto min-h-[8.25rem] cursor-pointer overflow-hidden rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-200/60 hover:bg-neutral-800/60 md:min-h-[8.25rem] ${desktopSpanClass}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => setSelectedDeletedId(note.id)}
@@ -2438,7 +2438,7 @@ export function UserDashboard() {
                     })}
                   </div>
                   <aside className="hidden self-start xl:block">
-                    <div className="sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-hidden rounded-sm border border-neutral-900 p-3">
+                    <div className="sticky top-20 h-fit max-h-[calc(100vh-6rem)] overflow-hidden rounded-sm border border-neutral-800 p-3">
                       <p className="text-xs text-neutral-500">Selected deleted note</p>
                       {selectedDeletedNote ? (
                         <div className="mt-2 max-h-[calc(100vh-12rem)] space-y-2 overflow-auto">
@@ -2504,7 +2504,7 @@ export function UserDashboard() {
             }
           }}
         >
-          <DialogContent className="max-w-md border border-neutral-900 bg-bg text-neutral-100 ring-0">
+          <DialogContent className="max-w-md border border-neutral-800 bg-bg text-neutral-100 ring-0">
             <DialogHeader>
               <DialogTitle className="text-sm text-neutral-100">Share with user</DialogTitle>
               <DialogDescription className="text-xs text-neutral-400">
@@ -2568,7 +2568,7 @@ export function UserDashboard() {
               ...
             </Button>
             {notificationsPanelOpen ? (
-              <aside className="absolute right-0 top-full w-80 rounded-sm border border-neutral-900 bg-bg p-3 shadow-lg">
+              <aside className="absolute right-0 top-full w-80 rounded-sm border border-neutral-800 bg-bg p-3 shadow-lg">
                 <div className="space-y-4">
                   <section className="space-y-1">
                     <h2 className="text-xs text-neutral-400">invitations</h2>

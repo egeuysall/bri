@@ -40,7 +40,11 @@ CONVEX_DEPLOYMENT=
 NEXT_PUBLIC_CONVEX_URL=
 NEXT_PUBLIC_CONVEX_SITE_URL=
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+AI_GATEWAY_API_KEY=vck_...
+AI_GATEWAY_MODEL=openai/gpt-oss-20b
 ```
+
+`AI_GATEWAY_API_KEY` is server-only. Do not expose it with a `NEXT_PUBLIC_` prefix.
 
 ## License
 

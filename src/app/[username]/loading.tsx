@@ -4,7 +4,7 @@ export default function UsernameLoading() {
   return (
     <div className="min-h-screen bg-bg">
       <div className="grid min-h-screen grid-cols-[13rem_1fr]">
-        <aside className="border-r border-neutral-900 p-3">
+        <aside className="border-r border-neutral-800 p-3">
           <Skeleton className="h-8 w-full rounded-sm bg-neutral-900" />
           <div className="mt-4 space-y-2">
             <Skeleton className="h-8 rounded-sm bg-neutral-900" />

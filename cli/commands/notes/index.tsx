@@ -13,7 +13,7 @@ export default function Notes() {
           title: 'bri notes',
           enableColor: process.stdout.isTTY,
           rows: [
-            { label: 'commands', value: 'list, read, update, delete, invite', tone: 'info' },
+            { label: 'commands', value: 'list, read, ask, update, delete, invite', tone: 'info' },
             { label: 'help', value: 'bri notes --help', tone: 'muted' },
           ],
         })
