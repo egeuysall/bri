@@ -883,13 +883,28 @@ export const restore = mutation({
     const note = await ctx.db.get(args.noteId);
     if (!note) throw new Error("Note not found");
     if (note.ownerTokenIdentifier !== identity.tokenIdentifier) throw new Error("Forbidden");
-    if (note.state === "active") return { restored: true };
+
+    const now = Date.now();
+    const expiresAt =
+      typeof note.expiresAt === "number" && note.expiresAt > now ? note.expiresAt : null;
+
+    if (note.state === "active") {
+      if (note.expiresAt === expiresAt) return { restored: true };
+
+      await ctx.db.patch(note._id, {
+        expiresAt,
+        updatedAt: now,
+      });
+
+      return { restored: true };
+    }
 
     await ctx.db.patch(note._id, {
       state: "active",
       deletedAt: null,
       purgeAt: null,
-      updatedAt: Date.now(),
+      expiresAt,
+      updatedAt: now,
     });
 
     return { restored: true };
