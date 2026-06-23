@@ -203,6 +203,108 @@ body {
   font-size: 1em;
 }
 
+.bri-tiptap-editor .ProseMirror {
+  min-height: inherit;
+  outline: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.bri-tiptap-editor .ProseMirror > * + * {
+  margin-top: 0.75rem;
+}
+
+.bri-tiptap-editor .ProseMirror p {
+  color: var(--fg);
+  line-height: 1.65;
+}
+
+.bri-tiptap-editor .ProseMirror h1,
+.bri-tiptap-editor .ProseMirror h2,
+.bri-tiptap-editor .ProseMirror h3 {
+  color: var(--fg);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.bri-tiptap-editor .ProseMirror h1 {
+  font-size: 1.3rem;
+}
+
+.bri-tiptap-editor .ProseMirror h2 {
+  font-size: 1.1rem;
+}
+
+.bri-tiptap-editor .ProseMirror h3 {
+  font-size: 1rem;
+}
+
+.bri-tiptap-editor .ProseMirror ul,
+.bri-tiptap-editor .ProseMirror ol {
+  padding-left: 1.25rem;
+}
+
+.bri-tiptap-editor .ProseMirror ul {
+  list-style: disc;
+}
+
+.bri-tiptap-editor .ProseMirror ol {
+  list-style: decimal;
+}
+
+.bri-tiptap-editor .ProseMirror ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.bri-tiptap-editor .ProseMirror li {
+  margin-top: 0.35rem;
+}
+
+.bri-tiptap-editor .ProseMirror li[data-type='taskItem'] {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bri-tiptap-editor .ProseMirror li[data-type='taskItem'] > label {
+  padding-top: 0.1rem;
+}
+
+.bri-tiptap-editor .ProseMirror a {
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--muted);
+  text-underline-offset: 0.2rem;
+}
+
+.bri-tiptap-editor .ProseMirror code {
+  border: 1px solid var(--inline-code-border);
+  border-radius: var(--radius-sm);
+  background: var(--inline-code-bg);
+  padding: 0.08rem 0.25rem;
+}
+
+.bri-tiptap-editor .ProseMirror pre {
+  overflow-x: auto;
+  border: 1px solid var(--code-block-border);
+  background: var(--code-block-bg);
+  padding: 0.75rem;
+}
+
+.bri-tiptap-editor .ProseMirror pre code {
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.bri-tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--muted);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
 ::selection {
   background: var(--selection-bg);
   color: var(--selection-fg);

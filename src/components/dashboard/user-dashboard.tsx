@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import ReactMarkdown from 'react-markdown';
@@ -10,6 +10,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import { toast } from 'sonner';
 import { AppSidebar, type DashboardPanel } from '@/components/app-sidebar';
+import { BriTiptapEditor } from '@/components/dashboard/tiptap-note-editor';
 import { CodeBlock } from '@/components/markdown/code-block';
 import { MathBlock } from '@/components/markdown/math-block';
 import { Button } from '@/components/ui/button';
@@ -398,8 +399,6 @@ export function UserDashboard() {
   const [dismissedAchievementIds, setDismissedAchievementIds] = useState<string[]>([]);
   const [dismissedNoticeIds, setDismissedNoticeIds] = useState<string[]>([]);
   const dashboardPageSize = isDesktop ? DESKTOP_PAGE_SIZE : MOBILE_PAGE_SIZE;
-
-  const editorRef = useRef<HTMLTextAreaElement>(null);
 
   const cliInstallCommand = useMemo(() => {
     return getInstallCommand();
@@ -898,42 +897,6 @@ export function UserDashboard() {
     }
   }, [selectedDeletedId, visibleDeletedNotes]);
 
-  function wrapSelection(prefix: string, suffix = prefix) {
-    const textarea = editorRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = textarea.value.slice(start, end);
-    const next = `${textarea.value.slice(0, start)}${prefix}${selected}${suffix}${textarea.value.slice(end)}`;
-
-    setContent(next);
-    queueMicrotask(() => {
-      textarea.focus();
-      const cursorStart = start + prefix.length;
-      const cursorEnd = cursorStart + selected.length;
-      textarea.setSelectionRange(cursorStart, cursorEnd);
-    });
-  }
-
-  function insertHeading() {
-    const textarea = editorRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selected = textarea.value.slice(start, end);
-    const next = `${textarea.value.slice(0, start)}# ${selected}${textarea.value.slice(end)}`;
-
-    setContent(next);
-    queueMicrotask(() => {
-      textarea.focus();
-      const cursorStart = start + 2;
-      const cursorEnd = cursorStart + selected.length;
-      textarea.setSelectionRange(cursorStart, cursorEnd);
-    });
-  }
-
   async function createNote() {
     const title = noteTitle.trim();
     if (!title) {
@@ -1403,10 +1366,11 @@ export function UserDashboard() {
                               </Combobox>
                             </div>
 
-                            <textarea
+                            <BriTiptapEditor
                               value={editingNoteContent}
-                              onChange={(event) => setEditingNoteContent(event.target.value)}
-                              className="min-h-[14rem] w-full rounded-sm border border-neutral-800 bg-transparent p-2 text-xs text-neutral-200"
+                              onChange={setEditingNoteContent}
+                              placeholder="Edit note content..."
+                              minHeightClassName="min-h-[14rem]"
                             />
 
                             <div className="flex flex-wrap items-center gap-2">
@@ -1635,55 +1599,11 @@ export function UserDashboard() {
                   </label>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 border border-neutral-800 text-xs"
-                    onClick={insertHeading}
-                  >
-                    H1
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 border border-neutral-800 text-xs"
-                    onClick={() => wrapSelection('**', '**')}
-                  >
-                    Bold
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 border border-neutral-800 text-xs"
-                    onClick={() => wrapSelection('*', '*')}
-                  >
-                    Italic
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 border border-neutral-800 text-xs"
-                    onClick={() => wrapSelection('`', '`')}
-                  >
-                    Inline Code
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    className="h-7 border border-neutral-800 text-xs"
-                    onClick={() => wrapSelection('\n```md\n', '\n```\n')}
-                  >
-                    Code Block
-                  </Button>
-                </div>
-
-                <textarea
-                  ref={editorRef}
+                <BriTiptapEditor
                   value={content}
-                  onChange={(event) => setContent(event.target.value)}
-                  className="min-h-[22rem] w-full rounded-sm border border-neutral-800 bg-transparent p-3 text-sm text-neutral-200 outline-none focus:border-neutral-600"
-                  placeholder="Write markdown content..."
+                  onChange={setContent}
+                  placeholder="Write note content..."
+                  minHeightClassName="min-h-[22rem]"
                 />
 
                 <div className="grid gap-3 text-xs md:grid-cols-[max-content_max-content_1fr] md:items-end">
