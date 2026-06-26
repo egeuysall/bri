@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getNoteByUsernameAndSlug } from '@/lib/notes';
 import { readBridgeApiKeyFromRequest } from '@/lib/request-security';
+import { normalizeMarkdownTables } from '@/lib/tiptap-markdown';
 
 export async function GET(
   request: Request,
@@ -20,7 +21,7 @@ export async function GET(
         username: note.username,
         slug: note.slug,
         title: note.title,
-        content: note.content,
+        content: normalizeMarkdownTables(note.content),
         visibility: note.visibility,
         createdAt: note.createdAt,
         updatedAt: note.updatedAt,

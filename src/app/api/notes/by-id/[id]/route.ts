@@ -15,12 +15,14 @@ import {
   readBridgeApiKeyFromRequest,
   rejectCrossOriginMutation,
 } from '@/lib/request-security';
+import { normalizeMarkdownTables } from '@/lib/tiptap-markdown';
 
 function normalizeVisibility(value: unknown): NoteVisibility {
   return value === 'private' ? 'private' : 'public';
 }
 
 function normalizeExpiresInDays(value: unknown): number | null {
+  if (value === null) return null;
   if (typeof value !== 'number') return 30;
   if (!Number.isFinite(value) || value <= 0) return 30;
   return Math.min(30, value);
@@ -98,7 +100,8 @@ export async function PATCH(
     }
 
     const title = normalizeTitle(payload.title);
-    const content = typeof payload.content === 'string' ? payload.content : '';
+    const content =
+      typeof payload.content === 'string' ? normalizeMarkdownTables(payload.content) : '';
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }

@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import { getNoteByUsernameAndSlug } from '@/lib/notes';
 import { getMarkdownAlias } from '@/lib/post-slugs';
 import { readBridgeApiKeyFromRequest } from '@/lib/request-security';
+import { normalizeMarkdownTables } from '@/lib/tiptap-markdown';
 
 function getFilename(username: string, slug: string): string {
   const safe = `${username}-${getMarkdownAlias(slug)}`.replace(/[^a-zA-Z0-9._-]/g, '-');
@@ -29,7 +30,7 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  return new Response(note.content, {
+  return new Response(normalizeMarkdownTables(note.content), {
     status: 200,
     headers: {
       'Content-Type': 'text/markdown; charset=utf-8',

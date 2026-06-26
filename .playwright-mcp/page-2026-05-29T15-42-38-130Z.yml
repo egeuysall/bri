@@ -1,0 +1,141 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "Ege Uysal" [ref=e6] [cursor=pointer]:
+        - /url: /
+      - navigation [ref=e7]:
+        - link "Home" [ref=e8] [cursor=pointer]:
+          - /url: /
+        - link "Blog" [ref=e9] [cursor=pointer]:
+          - /url: /blog
+        - link "Diary" [ref=e10] [cursor=pointer]:
+          - /url: /diary
+        - link "Photo" [ref=e11] [cursor=pointer]:
+          - /url: /photo
+  - main [ref=e12]:
+    - article [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Context in AI" [level=1] [ref=e15]
+        - paragraph [ref=e16]: May 16, 2026
+      - paragraph [ref=e17]: Most people think the future of AI will be determined by model intelligence. Bigger models, better reasoning, more agents, more benchmarks, more parameters. I increasingly think they are looking at the wrong variable entirely.
+      - paragraph [ref=e18]: The most important layer in AI is context.
+      - paragraph [ref=e19]: "Not context windows in the technical sense, but accumulated operational context: memory, continuity, unfinished loops, behavioral patterns, project history, execution state, preferences, and momentum preserved over long periods of time. The difference between an AI that feels impressive for five minutes and one that becomes genuinely useful for months or years is almost entirely determined by whether it can preserve state across time instead of constantly resetting itself."
+      - paragraph
+      - figure [ref=e20]:
+        - img "Screenshot 2026-05-16" [ref=e21]
+      - paragraph
+      - paragraph [ref=e22]: Most AI systems today are stateless in a way humans are not. You open a chat, explain your situation, get a decent answer, close the tab, and everything disappears. The next interaction starts from zero again as if none of the previous work ever happened. The AI may be intelligent, but it has no continuity. It does not remember what mattered yesterday, what failed last week, which users churned, what architecture decisions already exist, or what direction your life is actually moving in.
+      - paragraph [ref=e23]: Humans operate almost entirely through accumulated context. A good friend remembers what stresses you out before you mention it. A strong founder remembers failed positioning experiments from months ago. Great employees remember previous meetings without needing everything reconstructed from scratch every morning. Real intelligence is deeply tied to memory and continuity.
+      - paragraph [ref=e24]: That realization completely changed the way I build products and even the way I structure my own life.
+      - paragraph [ref=e25]: "Over the last few months, I accidentally started building my own context infrastructure without initially realizing that was what I was doing. I began keeping structured operational logs instead of vague journals. Priority splits, open effort, execution density, unresolved loops, momentum shifts, output quality, behavioral patterns, and project state. Eventually I noticed something strange: the logs were becoming more useful than my own memory."
+      - paragraph [ref=e26]: Patterns became visible that I would have otherwise missed entirely. I could see how heavy study periods affected product velocity, how unfinished tasks quietly created cognitive pressure over time, how momentum compounds when context remains intact across days instead of resetting constantly, and how execution quality degraded before metrics reflected it.
+      - paragraph [ref=e27]: This eventually expanded into IBX and later into a personal MCP server connecting my projects, blogs, execution history, notes, systems, product context, and operational state into something AI systems could actually reason over coherently. Not because I wanted a cool AI demo, but because I got tired of re-explaining my life to my tools every single day.
+      - paragraph
+      - figure [ref=e28]:
+        - img "Screenshot 2026-05-16" [ref=e29]
+      - paragraph
+      - paragraph [ref=e30]: "Once you work deeply with AI every day, you notice something frustrating very quickly: most prompts are not actually prompts. They are reconstruction attempts."
+      - paragraph [ref=e31]: You explain your product again. Your users again. Your architecture again. Your goals again. Your previous failures again. Your preferences again. Eventually, you realize the bottleneck is not generation quality anymore.
+      - paragraph [ref=e32]: The real bottleneck is context loss and the constant cost of rebuilding state from scratch.
+      - paragraph [ref=e33]: A lot of people now talk about “AI agents,” but most definitions are vague or incomplete. To me, an AI agent is not just a chatbot with tools attached to it. An agent is a system capable of understanding state, reasoning about goals, using tools, executing actions, evaluating outcomes, preserving memory, and continuing autonomously across loops without constantly depending on human reconstruction.
+      - paragraph [ref=e34]: The important part is not the model itself.
+      - paragraph [ref=e35]: It is the loop surrounding the model.
+      - paragraph [ref=e36]: Modern agents are really layered systems combining reasoning, tooling, memory, execution, orchestration, and feedback into a continuous operational cycle where every iteration updates future behavior.
+      - paragraph [ref=e37]: "A simplified version looks something like this:"
+      - code [ref=e39]:
+        - generic [ref=e40]: "while (goalNotComplete) {"
+        - generic [ref=e41]: observeEnvironment();
+        - generic [ref=e42]: retrieveRelevantContext();
+        - generic [ref=e43]: reasonAboutNextAction();
+        - generic [ref=e44]: executeTool();
+        - generic [ref=e45]: evaluateOutcome();
+        - generic [ref=e46]: updateMemory();
+        - generic [ref=e47]: "}"
+      - paragraph [ref=e48]: That loop is what creates autonomy. The model itself is only one layer in a much larger system.
+      - paragraph [ref=e49]: Tools matter just as much as intelligence. A model with terminal access, browser access, code execution, retrieval pipelines, MCP tooling, memory systems, and persistent operational state becomes dramatically more capable than an isolated frontier model trapped inside a blank chat window.
+      - paragraph [ref=e50]: "This is why I think tooling is massively underrated right now. People obsess over benchmarks while ignoring the surrounding infrastructure:"
+      - list [ref=e51]:
+        - listitem [ref=e52]: memory systems
+        - listitem [ref=e53]: execution environments
+        - listitem [ref=e54]: orchestration layers
+        - listitem [ref=e55]: retrieval pipelines
+        - listitem [ref=e56]: agent loops
+        - listitem [ref=e57]: tool ecosystems
+        - listitem [ref=e58]: persistent state
+        - listitem [ref=e59]: operational continuity
+      - paragraph [ref=e60]: That surrounding infrastructure often matters more than raw model intelligence itself.
+      - paragraph [ref=e61]: One of the simplest examples is execution. Without execution, the model can only describe solutions. With execution, it can actually test, verify, debug, iterate, and operate against reality.
+      - code [ref=e63]:
+        - generic [ref=e64]: "import { Sandbox } from \"@e2b/code-interpreter\";"
+        - generic [ref=e65]: const sandbox = await Sandbox.create();
+        - generic [ref=e66]: "const execution = await sandbox.runCode(`"
+        - generic [ref=e67]: x = 10
+        - generic [ref=e68]: y = 20
+        - generic [ref=e69]: print(x + y)
+        - generic [ref=e70]: "`);"
+        - generic [ref=e71]: console.log(execution.text);
+        - generic [ref=e72]: await sandbox.close();
+      - paragraph [ref=e73]: The same thing applies to memory systems. Most people think RAG solves memory, but RAG is really just retrieval. It fetches relevant chunks and injects them back into context. That helps, but it is not true continuity.
+      - paragraph [ref=e74]: "A basic RAG pipeline usually looks something like this:"
+      - code [ref=e76]:
+        - generic [ref=e77]: const matches = vectorDatabase.search(query);
+        - generic [ref=e78]: "const prompt = `"
+        - generic [ref=e79]: "Use this retrieved context:"
+        - generic [ref=e80]: "${matches}"
+        - generic [ref=e81]: Answer the user question.
+        - generic [ref=e82]: "`;"
+      - paragraph [ref=e83]: Useful, but fundamentally incomplete.
+      - paragraph [ref=e84]: RAG retrieves information statically, while humans operate dynamically through evolving state. Real operational memory includes behavioral patterns, failed attempts, evolving goals, unfinished loops, execution history, momentum shifts, emotional context, and long-term continuity.
+      - paragraph [ref=e85]: That is why memory systems are becoming so important.
+      - code [ref=e87]:
+        - generic [ref=e88]: "import { MemoryClient } from \"@mem0/mem0ai\";"
+        - generic [ref=e89]: "const client = new MemoryClient({"
+        - generic [ref=e90]: "apiKey: process.env.MEM0_API_KEY,"
+        - generic [ref=e91]: "});"
+        - generic [ref=e92]: "await client.add(chatHistory, {"
+        - generic [ref=e93]: "userId: \"ege\","
+        - generic [ref=e94]: "});"
+        - generic [ref=e95]: "const memories = await client.search(\"What projects is he building?\", {"
+        - generic [ref=e96]: "userId: \"ege\","
+        - generic [ref=e97]: "});"
+      - paragraph [ref=e98]: The important shift is that AI stops responding only to prompts and starts operating against accumulated state over time.
+      - paragraph [ref=e99]: I also think subagents are going to become a massive part of the future AI stack. Instead of one giant overloaded context window, systems will delegate work into isolated workers with their own reasoning spaces, tools, temporary memory, and operational scope. One agent researches, another executes, another validates, another summarizes, and another orchestrates the entire workflow while maintaining high-level continuity.
+      - code [ref=e101]:
+        - generic [ref=e102]: "const researchSubagent = new ToolLoopAgent({"
+        - generic [ref=e103]: "model: openai(\"gpt-4o\"),"
+        - generic [ref=e104]: "instructions: `"
+        - generic [ref=e105]: Research deeply and summarize findings clearly.
+        - generic [ref=e106]: "`,"
+        - generic [ref=e107]: "tools: {"
+        - generic [ref=e108]: search,
+        - generic [ref=e109]: readFiles,
+        - generic [ref=e110]: analyze,
+        - generic [ref=e111]: "},"
+        - generic [ref=e112]: "});"
+      - paragraph [ref=e113]: This architecture matters because context is expensive. Once a context window becomes overloaded, coherence degrades. Subagents allow systems to offload exploration while preserving clean high-level operational state and long-term continuity.
+      - paragraph [ref=e114]: I think this is also why “second runs” became such a big concept for me recently. The first pass creates output, but the second pass creates depth, refinement, and compounding improvements. However, second passes only work if the system remembers the first one properly. Without context retention, every iteration collapses back into shallow regeneration instead of true continuation.
+      - paragraph [ref=e115]: The same thing happens in human life. Most people are not actually losing motivation as often as they think they are. They are losing context and constantly paying reconstruction costs every time their state resets through school, meetings, notifications, feeds, switching projects, or switching environments. Deep work feels powerful because you stop paying those reconstruction costs and remain inside the same operational state long enough for real compounding to begin.
+      - paragraph [ref=e116]: I increasingly believe the future of AI will not feel like chatting with isolated tools. It will feel like operating alongside persistent systems that deeply understand your goals, projects, workflows, behavioral patterns, momentum, execution history, weaknesses, and unfinished loops over long periods of time.
+      - paragraph [ref=e117]: Not because the AI became conscious, but because the context became persistent enough for continuity to emerge naturally.
+      - paragraph [ref=e118]: The winning AI systems will not just answer questions better. They will maintain operational continuity, preserve long-term memory, coordinate tools, manage workflows, adapt over time, execute autonomously, and become deeply personalized execution layers around individuals and teams.
+      - paragraph [ref=e119]: I do not think the future belongs to AI systems with the largest context windows alone. I think it belongs to systems capable of preserving the right context over long periods of time while continuously updating operational state as reality changes.
+      - paragraph [ref=e120]: Raw information is no longer the hard part.
+      - paragraph
+      - figure [ref=e121]:
+        - img "Screenshot 2026-05-16" [ref=e122]
+      - paragraph
+      - paragraph [ref=e123]: The hard part is preserving continuity deeply enough for intelligence to compound instead of constantly resetting itself.
+      - paragraph [ref=e124]: Intelligence without context feels impressive temporarily, but context is what makes AI genuinely useful once the novelty disappears and real long-term work begins.
+  - contentinfo [ref=e125]:
+    - generic [ref=e126]:
+      - generic [ref=e127]:
+        - link "GitHub" [ref=e128] [cursor=pointer]:
+          - /url: https://github.com/egeuysall
+        - link "X (Twitter)" [ref=e129] [cursor=pointer]:
+          - /url: https://x.com/egewrk
+          - text: X
+        - link "LinkedIn" [ref=e130] [cursor=pointer]:
+          - /url: https://www.linkedin.com/in/egeuysall
+        - link "Contact" [ref=e131] [cursor=pointer]:
+          - /url: mailto:hi@egeuysal.com
+      - paragraph [ref=e132]: © 2026

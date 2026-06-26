@@ -13,6 +13,7 @@ import { AppSidebar, type DashboardPanel } from '@/components/app-sidebar';
 import { BriTiptapEditor } from '@/components/dashboard/tiptap-note-editor';
 import { CodeBlock } from '@/components/markdown/code-block';
 import { MathBlock } from '@/components/markdown/math-block';
+import { markdownUrlTransform } from '@/components/markdown/url-transform';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -49,6 +50,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { formatQuickLinkTitle } from '@/lib/quick-link-display';
 import { getInstallCommand } from '@/lib/site-url';
+import { normalizeMarkdownTables } from '@/lib/tiptap-markdown';
 
 type NoteRecord = {
   id: string;
@@ -186,6 +188,7 @@ function DashboardMarkdownPreview({ content }: { content: string }) {
     <ReactMarkdown
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[[rehypeKatex, { strict: 'warn', throwOnError: false, trust: false }]]}
+      urlTransform={markdownUrlTransform}
       components={{
         pre: ({ children }) => <>{children}</>,
         code: ({ className, children, ...props }) => {
@@ -225,9 +228,27 @@ function DashboardMarkdownPreview({ content }: { content: string }) {
           ) : (
             <input type={type} readOnly />
           ),
+        img: ({ alt, src }) =>
+          typeof src === 'string' && (src.startsWith('http') || src.startsWith('data:image/')) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={src}
+              alt={alt ?? 'note image'}
+              className="my-3 max-h-[28rem] max-w-full rounded-md border border-neutral-800 object-contain"
+            />
+          ) : null,
+        table: ({ children }) => (
+          <div className="not-prose bri-markdown-table max-w-full overflow-x-auto">
+            <table>{children}</table>
+          </div>
+        ),
+        thead: ({ children }) => <thead>{children}</thead>,
+        tr: ({ children }) => <tr>{children}</tr>,
+        th: ({ children }) => <th>{children}</th>,
+        td: ({ children }) => <td>{children}</td>,
       }}
     >
-      {content}
+      {normalizeMarkdownTables(content)}
     </ReactMarkdown>
   );
 }
@@ -909,7 +930,7 @@ export function UserDashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title,
-        content,
+        content: normalizeMarkdownTables(content),
         visibility,
         expiresInDays:
           expirationOptions.find((option) => option.value === expirationValue)?.days ?? 30,
@@ -932,6 +953,9 @@ export function UserDashboard() {
     await refreshData();
     await refreshPins();
     toast.success('Note published');
+    if (json.data?.username && json.data.slug) {
+      router.push(`/${json.data.username}/${json.data.slug}`);
+    }
   }
 
   function startEditNote(note: NoteRecord) {
@@ -969,7 +993,7 @@ export function UserDashboard() {
       body: JSON.stringify({
         action: 'update',
         title,
-        content: editingNoteContent,
+        content: normalizeMarkdownTables(editingNoteContent),
         visibility: editingNoteVisibility,
         expiresInDays:
           expirationOptions.find((option) => option.value === editingNoteExpirationValue)?.days ??
@@ -1435,12 +1459,12 @@ export function UserDashboard() {
                           role="button"
                           tabIndex={0}
                           onClick={() => {
-                            setSelectedNoteId(note.id);
+                            router.push(`/${note.username}/${note.slug}`);
                           }}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter' || event.key === ' ') {
                               event.preventDefault();
-                              setSelectedNoteId(note.id);
+                              router.push(`/${note.username}/${note.slug}`);
                             }
                           }}
                         >
@@ -1541,10 +1565,11 @@ export function UserDashboard() {
                           <div className="max-h-[calc(64rem-4.5rem)] overflow-auto">
                             <div className="prose prose-neutral prose-invert max-w-none break-words prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[0.95rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.9rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.85rem]! prose-h3:leading-5! prose-h3:font-medium! prose-h4:text-[0.8rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-800 prose-pre:border prose-pre:border-neutral-800">
                               <DashboardMarkdownPreview
-                                content={stripLeadingHeading(
-                                  selectedNote.content,
-                                  selectedNote.title
-                                )}
+                                content={
+                                  editingNoteId === selectedNote.id
+                                    ? normalizeMarkdownTables(editingNoteContent)
+                                    : stripLeadingHeading(selectedNote.content, selectedNote.title)
+                                }
                               />
                             </div>
                           </div>

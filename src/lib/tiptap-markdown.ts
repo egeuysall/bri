@@ -3,6 +3,7 @@ import type { JSONContent } from '@tiptap/core';
 type ListKind = 'bulletList' | 'orderedList' | 'taskList';
 
 const EMPTY_DOC: JSONContent = { type: 'doc', content: [] };
+const MARKDOWN_SEPARATOR_ROW = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/;
 
 function textNode(text: string, marks?: JSONContent['marks']): JSONContent {
   return marks?.length ? { type: 'text', text, marks } : { type: 'text', text };
@@ -12,6 +13,90 @@ function paragraph(text: string): JSONContent {
   return text.trim()
     ? { type: 'paragraph', content: parseInlineMarkdown(text.trim()) }
     : { type: 'paragraph' };
+}
+
+function expandMarkdownTableLines(line: string) {
+  const rowParts = line.split(/\|\s+\|/);
+  if (rowParts.length >= 2) {
+    return rowParts
+      .map((part, index) => {
+        const prefix = index === 0 ? '' : '|';
+        const suffix = index === rowParts.length - 1 ? '' : '|';
+        return `${prefix}${part}${suffix}`.trim();
+      })
+      .filter((row) => row.includes('|'));
+  }
+
+  return [line.trim()];
+}
+
+export function normalizeMarkdownTables(markdown: string): string {
+  return markdown
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .flatMap((line) => {
+      if (!line.includes('|')) return [line];
+      return expandMarkdownTableLines(line);
+    })
+    .join('\n');
+}
+
+function parseMarkdownTableLines(lines: string[]): JSONContent | null {
+  const normalizedLines = lines
+    .flatMap(expandMarkdownTableLines)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const headerIndex = normalizedLines.findIndex(
+    (line, index) =>
+      index < normalizedLines.length - 1 &&
+      line.includes('|') &&
+      MARKDOWN_SEPARATOR_ROW.test(normalizedLines[index + 1] ?? '')
+  );
+
+  if (headerIndex < 0) return null;
+
+  const tableLines = normalizedLines.slice(headerIndex).filter((line) => line.includes('|'));
+  const rows = tableLines
+    .filter((_, index) => index !== 1)
+    .map((line) =>
+      line
+        .replace(/^\|/, '')
+        .replace(/\|$/, '')
+        .split('|')
+        .map((cell) => cell.trim())
+    );
+  const columnCount = Math.max(...rows.map((row) => row.length));
+  if (rows.length < 2 || columnCount < 2) return null;
+
+  return {
+    type: 'table',
+    content: rows.map((row, rowIndex) => ({
+      type: 'tableRow',
+      content: Array.from({ length: columnCount }, (_, index) => ({
+        type: rowIndex === 0 ? 'tableHeader' : 'tableCell',
+        content: [paragraph(row[index] ?? '')],
+      })),
+    })),
+  };
+}
+
+function imageBlock(alt: string, src: string, title?: string): JSONContent {
+  return {
+    type: 'image',
+    attrs: {
+      src,
+      alt: alt.trim() || 'image',
+      title: title?.trim() || null,
+    },
+  };
+}
+
+function isSafeImageSrc(value: string): boolean {
+  return (
+    value.startsWith('http://') ||
+    value.startsWith('https://') ||
+    value.startsWith('data:image/')
+  );
 }
 
 function listItem(kind: ListKind, text: string, checked = false): JSONContent {
@@ -75,14 +160,15 @@ function flushList(kind: ListKind | null, items: JSONContent[], blocks: JSONCont
 }
 
 export function markdownToTiptapDocument(markdown: string): JSONContent {
-  const lines = markdown.replace(/\r\n/g, '\n').split('\n');
+  const lines = normalizeMarkdownTables(markdown).split('\n');
   const blocks: JSONContent[] = [];
   const paragraphBuffer: string[] = [];
   const listItems: JSONContent[] = [];
   let listKind: ListKind | null = null;
   let codeFence: { language: string | null; lines: string[] } | null = null;
 
-  for (const line of lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
     const fenceMatch = line.match(/^```([a-zA-Z0-9_-]+)?\s*$/);
     if (fenceMatch) {
       if (codeFence) {
@@ -123,6 +209,33 @@ export function markdownToTiptapDocument(markdown: string): JSONContent {
         attrs: { level: headingMatch[1].length },
         content: parseInlineMarkdown(headingMatch[2]),
       });
+      continue;
+    }
+
+    if (line.includes('|')) {
+      const tableCandidate = [line];
+      let nextIndex = index + 1;
+      while (nextIndex < lines.length && lines[nextIndex]?.includes('|')) {
+        tableCandidate.push(lines[nextIndex] ?? '');
+        nextIndex += 1;
+      }
+      const table = parseMarkdownTableLines(tableCandidate);
+      if (table) {
+        flushParagraph(paragraphBuffer, blocks);
+        flushList(listKind, listItems, blocks);
+        listKind = null;
+        blocks.push(table);
+        index = nextIndex - 1;
+        continue;
+      }
+    }
+
+    const imageMatch = line.match(/^!\[([^\]]*)\]\((\S+?)(?:\s+"([^"]+)")?\)$/);
+    if (imageMatch?.[2] && isSafeImageSrc(imageMatch[2])) {
+      flushParagraph(paragraphBuffer, blocks);
+      flushList(listKind, listItems, blocks);
+      listKind = null;
+      blocks.push(imageBlock(imageMatch[1] ?? 'image', imageMatch[2], imageMatch[3]));
       continue;
     }
 
@@ -214,6 +327,31 @@ function nodeToMarkdown(node: JSONContent, index = 0): string {
     return (node.content ?? [])
       .map((item) => `- [${item.attrs?.checked ? 'x' : ' '}] ${inlineMarkdown(item)}`)
       .join('\n');
+  }
+  if (node.type === 'table') {
+    const rows = (node.content ?? []).filter((row) => row.type === 'tableRow');
+    const tableRows = rows.map((row) => row.content ?? []);
+    const columnCount = Math.max(0, ...tableRows.map((row) => row.length));
+    if (rows.length === 0 || columnCount === 0) return '';
+    const cells = tableRows.map((row) =>
+      Array.from({ length: columnCount }, (_, cellIndex) =>
+        inlineMarkdown(row[cellIndex] ?? {}).replace(/\|/g, '\\|').replace(/\n+/g, ' ').trim()
+      )
+    );
+    const header = cells[0] ?? [];
+    const separator = Array.from({ length: columnCount }, () => '---');
+    const toLine = (lineCells: string[]) => `| ${lineCells.join(' | ')} |`;
+    return [toLine(header), toLine(separator), ...cells.slice(1).map(toLine)].join('\n');
+  }
+  if (node.type === 'image') {
+    const src = typeof node.attrs?.src === 'string' ? node.attrs.src.trim() : '';
+    if (!src) return '';
+    const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt.replace(/[\[\]\n]/g, ' ') : 'image';
+    const title =
+      typeof node.attrs?.title === 'string' && node.attrs.title.trim()
+        ? ` "${node.attrs.title.trim().replace(/"/g, '\\"')}"`
+        : '';
+    return `![${alt}](${src}${title})`;
   }
   if (node.type === 'listItem' || node.type === 'taskItem') return text;
   return index >= 0 ? text : '';

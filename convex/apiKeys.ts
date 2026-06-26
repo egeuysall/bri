@@ -103,3 +103,33 @@ export const revokeMine = mutation({
     return { revoked: true };
   },
 });
+
+export const verifyHashed = query({
+  args: {
+    prefix: v.string(),
+    keyHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const prefix = args.prefix.trim();
+    const keyHash = args.keyHash.trim().toLowerCase();
+    if (!prefix.startsWith("bri_") || !/^[a-f0-9]{64}$/.test(keyHash)) {
+      return null;
+    }
+
+    const record = await ctx.db
+      .query("apiKeys")
+      .withIndex("by_prefix", (q) => q.eq("prefix", prefix))
+      .unique();
+
+    if (!record || record.revokedAt !== null || record.keyHash !== keyHash) {
+      return null;
+    }
+
+    return {
+      prefix: record.prefix,
+      permissions: record.permissions,
+      label: record.label,
+      username: record.username,
+    };
+  },
+});

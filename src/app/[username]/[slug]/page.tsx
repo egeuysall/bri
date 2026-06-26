@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { NoteAiOverlay } from '@/components/ai/note-ai-overlay';
 import { MarkdownContent } from '@/components/markdown';
 import {
@@ -10,7 +10,11 @@ import {
   trackNotePageView,
   trackQuickLinkClick,
 } from '@/lib/notes';
-import { isPublicResourcePath, isPublicUsernamePath } from '@/lib/user-handle';
+import {
+  isPublicResourcePath,
+  isPublicUsernamePath,
+  resolveUserHandleFromUser,
+} from '@/lib/user-handle';
 
 function normalizeHeading(value: string): string {
   return value
@@ -56,6 +60,8 @@ export default async function NotePage({
 
   const { getToken } = await auth();
   const token = (await getToken({ template: 'convex' })) ?? (await getToken()) ?? null;
+  const user = await currentUser();
+  const canEdit = resolveUserHandleFromUser(user) === username;
 
   const note = await getNoteByUsernameAndSlug({
     username,
@@ -88,7 +94,17 @@ export default async function NotePage({
         style={{ '--delay': '40ms' } as CSSProperties}
       >
         <article className="mx-auto w-full max-w-155">
-          <h1 className="text-base font-semibold text-neutral-100">{note.title}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-base font-semibold text-neutral-100">{note.title}</h1>
+            {canEdit ? (
+              <Link
+                href={`/${note.username}/${note.slug}/edit`}
+                className="shrink-0 rounded-sm border border-neutral-700 bg-neutral-950 px-3 py-1.5 text-xs font-medium text-neutral-100 transition-colors hover:bg-neutral-900"
+              >
+                edit page
+              </Link>
+            ) : null}
+          </div>
           <p className="mt-2 text-xs text-neutral-400">
             <Link href={`/${note.username}`} className="transition-colors hover:text-neutral-100">
               @{note.username}

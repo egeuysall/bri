@@ -297,6 +297,51 @@ body {
   padding: 0;
 }
 
+.bri-tiptap-editor .ProseMirror .tableWrapper {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 0.875rem 0;
+  border-radius: var(--radius-sm);
+}
+
+.bri-tiptap-editor .ProseMirror table {
+  width: auto;
+  min-width: min(100%, 24rem);
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-neutral-800);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-neutral-950) 72%, transparent);
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.bri-tiptap-editor .ProseMirror th,
+.bri-tiptap-editor .ProseMirror td {
+  min-width: 7rem;
+  border: 1px solid var(--color-neutral-800);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+  word-break: break-word;
+  font-size: 0.72rem;
+  line-height: 1.25rem;
+}
+
+.bri-tiptap-editor .ProseMirror th {
+  background: var(--color-neutral-900);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.bri-tiptap-editor .ProseMirror img {
+  max-width: min(100%, 42rem);
+  height: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--color-neutral-800);
+  border-radius: var(--radius);
+  object-fit: contain;
+}
+
 .bri-tiptap-editor .ProseMirror p.is-editor-empty:first-child::before {
   color: var(--muted);
   content: attr(data-placeholder);
@@ -498,12 +543,11 @@ a {
 }
 
 .prose table {
-  width: 100%;
+  width: auto;
   margin: 1rem 0;
   border-collapse: collapse;
-  display: block;
+  display: table;
   max-width: 100%;
-  overflow-x: auto;
 }
 
 .prose :where(thead, tbody tr, thead th, tbody td) {
@@ -514,6 +558,61 @@ a {
 .prose td {
   padding: 0.5rem;
   text-align: left;
+}
+
+.prose .bri-markdown-table {
+  margin: 1.35rem 0 1.75rem;
+  border-radius: 0;
+}
+
+.prose .bri-markdown-table table {
+  display: table;
+  width: max-content;
+  min-width: min(100%, 24rem);
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-collapse: collapse;
+  background: transparent;
+  table-layout: auto;
+}
+
+.prose .bri-markdown-table thead {
+  background: transparent;
+}
+
+.prose .bri-markdown-table tr {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-neutral-800) 72%, transparent);
+}
+
+.prose .bri-markdown-table th,
+.prose .bri-markdown-table td {
+  min-width: 0;
+  max-width: 24rem;
+  border-right: 0;
+  padding: 0.78rem 1.45rem 0.78rem 0;
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: normal;
+  word-break: normal;
+  font-size: 0.95rem;
+  line-height: 1.55rem;
+}
+
+.prose .bri-markdown-table th {
+  color: var(--color-neutral-100);
+  font-weight: 700;
+}
+
+.prose .bri-markdown-table td {
+  color: var(--color-neutral-200);
+  font-weight: 400;
+}
+
+.prose .bri-markdown-table th:last-child,
+.prose .bri-markdown-table td:last-child {
+  padding-right: 0;
 }
 
 code[data-theme*=' '],

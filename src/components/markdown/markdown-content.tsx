@@ -2,6 +2,7 @@ import { MarkdownAsync } from 'react-markdown';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+import { normalizeMarkdownTables } from '@/lib/tiptap-markdown';
 import {
   CodeBlock,
   InlineCode,
@@ -15,6 +16,7 @@ import {
   MarkdownTableDataCell,
   MarkdownCheckbox,
 } from './index';
+import { markdownUrlTransform } from './url-transform';
 
 interface MarkdownContentProps {
   postId: string;
@@ -26,6 +28,7 @@ export async function MarkdownContent({ postId, content }: MarkdownContentProps)
     <MarkdownAsync
       remarkPlugins={[remarkGfm, remarkMath]}
       rehypePlugins={[[rehypeKatex, { strict: 'warn', throwOnError: false, trust: false }]]}
+      urlTransform={markdownUrlTransform}
       components={{
         pre: ({ children }) => <>{children}</>,
         code: ({ className, children, ...props }) => {
@@ -73,7 +76,7 @@ export async function MarkdownContent({ postId, content }: MarkdownContentProps)
         },
       }}
     >
-      {content}
+      {normalizeMarkdownTables(content)}
     </MarkdownAsync>
   );
 }

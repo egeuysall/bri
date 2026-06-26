@@ -1,0 +1,139 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Ege Uysal" [ref=e6] [cursor=pointer]:
+          - /url: /
+        - navigation [ref=e7]:
+          - link "Home" [ref=e8] [cursor=pointer]:
+            - /url: /
+          - link "Blog" [ref=e9] [cursor=pointer]:
+            - /url: /blog
+          - link "Diary" [ref=e10] [cursor=pointer]:
+            - /url: /diary
+          - link "Photo" [ref=e11] [cursor=pointer]:
+            - /url: /photo
+    - main [ref=e12]:
+      - generic [ref=e13]:
+        - paragraph [ref=e14]: I'm a founder building SaaS products at 16.
+        - paragraph [ref=e15]: Based in Chicago, building Ryva.
+      - generic [ref=e16]:
+        - heading "Projects" [level=2] [ref=e17]
+        - list [ref=e18]:
+          - listitem [ref=e19]:
+            - link "Bri Publish anything. bri.fyi" [ref=e20] [cursor=pointer]:
+              - /url: https://bri.fyi
+              - generic [ref=e21]:
+                - generic [ref=e22]:
+                  - paragraph [ref=e23]: Bri
+                  - paragraph [ref=e24]: Publish anything.
+                - paragraph [ref=e25]: bri.fyi
+          - listitem [ref=e26]:
+            - link "Ryva Kill your standups. ryva.dev" [ref=e27] [cursor=pointer]:
+              - /url: https://ryva.dev
+              - generic [ref=e28]:
+                - generic [ref=e29]:
+                  - paragraph [ref=e30]: Ryva
+                  - paragraph [ref=e31]: Kill your standups.
+                - paragraph [ref=e32]: ryva.dev
+          - listitem [ref=e33]:
+            - link "Huesly Generate beautiful brands. huesly.app" [ref=e34] [cursor=pointer]:
+              - /url: https://huesly.app
+              - generic [ref=e35]:
+                - generic [ref=e36]:
+                  - paragraph [ref=e37]: Huesly
+                  - paragraph [ref=e38]: Generate beautiful brands.
+                - paragraph [ref=e39]: huesly.app
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - heading "Latest Blog" [level=2] [ref=e42]
+          - link "See all blog posts" [ref=e43] [cursor=pointer]:
+            - /url: /blog
+            - text: See all
+        - list [ref=e44]:
+          - listitem [ref=e45]:
+            - link "The Internet and Geography May 27, 2026" [ref=e46] [cursor=pointer]:
+              - /url: /blog/the-internet-and-geography/
+              - generic [ref=e47]:
+                - paragraph [ref=e48]: The Internet and Geography
+                - paragraph [ref=e49]: May 27, 2026
+          - listitem [ref=e50]:
+            - link "San Francisco May 26, 2026" [ref=e51] [cursor=pointer]:
+              - /url: /blog/sf/
+              - generic [ref=e52]:
+                - paragraph [ref=e53]: San Francisco
+                - paragraph [ref=e54]: May 26, 2026
+          - listitem [ref=e55]:
+            - link "Touching Reality May 19, 2026" [ref=e56] [cursor=pointer]:
+              - /url: /blog/touching-reality/
+              - generic [ref=e57]:
+                - paragraph [ref=e58]: Touching Reality
+                - paragraph [ref=e59]: May 19, 2026
+          - listitem [ref=e60]:
+            - link "Context in AI May 16, 2026" [ref=e61] [cursor=pointer]:
+              - /url: /blog/context-in-ai/
+              - generic [ref=e62]:
+                - paragraph [ref=e63]: Context in AI
+                - paragraph [ref=e64]: May 16, 2026
+          - listitem [ref=e65]:
+            - link "200 Workouts Later May 9, 2026" [ref=e66] [cursor=pointer]:
+              - /url: /blog/200-workouts-later/
+              - generic [ref=e67]:
+                - paragraph [ref=e68]: 200 Workouts Later
+                - paragraph [ref=e69]: May 9, 2026
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - heading "Recent Diary" [level=2] [ref=e72]
+          - link "See all diary entries" [ref=e73] [cursor=pointer]:
+            - /url: /diary
+            - text: See all
+        - list [ref=e74]:
+          - listitem [ref=e75]:
+            - link "Relaxed day with light output Day 82" [ref=e76] [cursor=pointer]:
+              - /url: /diary/2026-05-27/
+              - generic [ref=e77]:
+                - paragraph [ref=e78]: Relaxed day with light output
+                - paragraph [ref=e79]: Day 82
+          - listitem [ref=e80]:
+            - link "Back from SF. Published the San Francisco essay. Full reset. Day 81" [ref=e81] [cursor=pointer]:
+              - /url: /diary/2026-05-26/
+              - generic [ref=e82]:
+                - paragraph [ref=e83]: Back from SF. Published the San Francisco essay. Full reset.
+                - paragraph [ref=e84]: Day 81
+          - listitem [ref=e85]:
+            - link "Flew back from SF. Everything shifted. Day 80" [ref=e86] [cursor=pointer]:
+              - /url: /diary/2026-05-25/
+              - generic [ref=e87]:
+                - paragraph [ref=e88]: Flew back from SF. Everything shifted.
+                - paragraph [ref=e89]: Day 80
+          - listitem [ref=e90]:
+            - link "Stanford, Apple Park, Alcatraz, and the divide Day 79" [ref=e91] [cursor=pointer]:
+              - /url: /diary/2026-05-24/
+              - generic [ref=e92]:
+                - paragraph [ref=e93]: Stanford, Apple Park, Alcatraz, and the divide
+                - paragraph [ref=e94]: Day 79
+          - listitem [ref=e95]:
+            - link "Google I/O hackathon day 1. The city felt unreal. Day 78" [ref=e96] [cursor=pointer]:
+              - /url: /diary/2026-05-23/
+              - generic [ref=e97]:
+                - paragraph [ref=e98]: Google I/O hackathon day 1. The city felt unreal.
+                - paragraph [ref=e99]: Day 78
+    - contentinfo [ref=e100]:
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - link "GitHub" [ref=e103] [cursor=pointer]:
+            - /url: https://github.com/egeuysall
+          - link "X (Twitter)" [ref=e104] [cursor=pointer]:
+            - /url: https://x.com/egewrk
+            - text: X
+          - link "LinkedIn" [ref=e105] [cursor=pointer]:
+            - /url: https://www.linkedin.com/in/egeuysall
+          - link "Contact" [ref=e106] [cursor=pointer]:
+            - /url: mailto:hi@egeuysal.com
+        - paragraph [ref=e107]: © 2026
+  - generic:
+    - region "Notifications alt+T"
+  - generic [ref=e111]:
+    - textbox "Ask AI about this page" [ref=e112]:
+      - /placeholder: Ask AI
+    - button "Send question" [disabled] [ref=e113]: ">"
