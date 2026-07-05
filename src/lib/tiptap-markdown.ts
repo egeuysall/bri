@@ -116,7 +116,7 @@ function listBlock(kind: ListKind, items: JSONContent[]): JSONContent {
 
 function parseInlineMarkdown(input: string): JSONContent[] {
   const nodes: JSONContent[] = [];
-  const pattern = /(\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g;
+  const pattern = /(\$([^$\n]+)\$|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`)/g;
   let lastIndex = 0;
   let match: RegExpExecArray | null;
 
@@ -125,16 +125,18 @@ function parseInlineMarkdown(input: string): JSONContent[] {
       nodes.push(textNode(input.slice(lastIndex, match.index)));
     }
 
-    if (match[2] && match[3]) {
+    if (match[2]) {
+      nodes.push({ type: 'inlineMath', attrs: { latex: match[2] } });
+    } else if (match[3] && match[4]) {
       nodes.push(
-        textNode(match[2], [{ type: 'link', attrs: { href: match[3], target: '_blank' } }]),
+        textNode(match[3], [{ type: 'link', attrs: { href: match[4], target: '_blank' } }]),
       );
-    } else if (match[4]) {
-      nodes.push(textNode(match[4], [{ type: 'bold' }]));
     } else if (match[5]) {
-      nodes.push(textNode(match[5], [{ type: 'italic' }]));
+      nodes.push(textNode(match[5], [{ type: 'bold' }]));
     } else if (match[6]) {
-      nodes.push(textNode(match[6], [{ type: 'code' }]));
+      nodes.push(textNode(match[6], [{ type: 'italic' }]));
+    } else if (match[7]) {
+      nodes.push(textNode(match[7], [{ type: 'code' }]));
     }
 
     lastIndex = pattern.lastIndex;
@@ -197,6 +199,27 @@ export function markdownToTiptapDocument(markdown: string): JSONContent {
       flushList(listKind, listItems, blocks);
       listKind = null;
       continue;
+    }
+
+    if (line.trim().startsWith('$$')) {
+      const mathLines = [line.trim().slice(2)];
+      let nextIndex = index;
+      while (!mathLines.at(-1)?.endsWith('$$') && nextIndex + 1 < lines.length) {
+        nextIndex += 1;
+        mathLines.push(lines[nextIndex] ?? '');
+      }
+      if (mathLines.at(-1)?.endsWith('$$')) {
+        flushParagraph(paragraphBuffer, blocks);
+        flushList(listKind, listItems, blocks);
+        listKind = null;
+        mathLines[mathLines.length - 1] = mathLines.at(-1)?.slice(0, -2) ?? '';
+        blocks.push({
+          type: 'blockMath',
+          attrs: { latex: mathLines.join('\n').trim() },
+        });
+        index = nextIndex;
+        continue;
+      }
     }
 
     const headingMatch = line.match(/^(#{1,3})\s+(.+)$/);
@@ -306,6 +329,7 @@ function markText(text: string, marks: JSONContent['marks']) {
 
 function inlineMarkdown(node: JSONContent): string {
   if (node.type === 'text') return markText(node.text ?? '', node.marks);
+  if (node.type === 'inlineMath') return `$${String(node.attrs?.latex ?? '')}$`;
   return (node.content ?? []).map(inlineMarkdown).join('');
 }
 
@@ -316,6 +340,7 @@ function nodeToMarkdown(node: JSONContent, index = 0): string {
     return `${'#'.repeat(level)} ${text}`;
   }
   if (node.type === 'paragraph') return text;
+  if (node.type === 'blockMath') return `$$${String(node.attrs?.latex ?? '')}$$`;
   if (node.type === 'codeBlock') return `\`\`\`${node.attrs?.language ?? ''}\n${text}\n\`\`\``;
   if (node.type === 'bulletList') {
     return (node.content ?? []).map((item) => `- ${inlineMarkdown(item)}`).join('\n');

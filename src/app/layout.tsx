@@ -8,7 +8,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Fonts
-import { geistMono, notoSansMath } from '@/lib/fonts';
+import { geistMono } from '@/lib/fonts';
 import { getSiteUrl } from '@/lib/site-url';
 
 // Internal Components
@@ -232,7 +232,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistMono.variable} ${notoSansMath.variable} h-full bg-bg`}
+      className={`${geistMono.variable} h-full bg-bg`}
     >
       <head>
         <script

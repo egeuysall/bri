@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'katex/dist/katex.min.css';
+@import '@ibm/plex-math/css/ibm-plex-math-default.css';
 @plugin '@tailwindcss/typography';
 @source "../../node_modules/streamdown/dist/*.js";
 
@@ -691,6 +692,19 @@ code[data-theme*=' '] span {
   overflow-x: auto;
   padding: 0.15rem 0;
   color: var(--fg);
+}
+
+.katex,
+.katex math,
+.tiptap-mathematics-render,
+.tiptap-mathematics-render math {
+  font-family: 'IBM Plex Math', serif;
+}
+
+.bri-tiptap-editor .tiptap-mathematics-render[data-type='block-math'] {
+  margin: 1rem 0;
+  overflow-x: auto;
+  text-align: center;
 }
 
 .math-block .katex-display {

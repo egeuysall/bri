@@ -37,6 +37,7 @@ export function MathBlock({ children, latex, className }: MathBlockProps) {
       throwOnError: false,
       strict: 'warn',
       trust: false,
+      output: 'mathml',
     });
 
     return (

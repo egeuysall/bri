@@ -37,7 +37,10 @@ const streamdownMathPlugin: MathPlugin = {
   name: 'katex',
   type: 'math',
   remarkPlugin: remarkMath,
-  rehypePlugin: [rehypeKatex, { strict: 'warn', throwOnError: false, trust: false }],
+  rehypePlugin: [
+    rehypeKatex,
+    { strict: 'warn', throwOnError: false, trust: false, output: 'mathml' },
+  ],
 };
 
 const looseMathPattern = /\(([^()\n]*(?:\\[a-zA-Z]+|[_^{}=+\-*/]|[∫√π∞])[^()\n]*)\)/g;

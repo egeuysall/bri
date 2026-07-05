@@ -11,6 +11,7 @@ import { Table } from '@tiptap/extension-table';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableRow } from '@tiptap/extension-table-row';
+import { Mathematics } from '@tiptap/extension-mathematics';
 import {
   Bold,
   Code2,
@@ -143,7 +144,8 @@ export function BriTiptapEditor({
         if (!text) return false;
         const normalized = normalizeMarkdownTables(text);
         const table = parseMarkdownTable(normalized);
-        if (!table && normalized === text) return false;
+        const hasMath = /\$[^$\n]+\$|\$\$/.test(normalized);
+        if (!table && !hasMath && normalized === text) return false;
         event.preventDefault();
         const doc = markdownToTiptapDocument(normalized);
         editorRef.current?.chain().focus().insertContent(doc.content ?? []).run();
@@ -163,6 +165,9 @@ export function BriTiptapEditor({
       TableRow,
       TableHeader,
       TableCell,
+      Mathematics.configure({
+        katexOptions: { output: 'mathml', throwOnError: false },
+      }),
       Image,
       Placeholder.configure({ placeholder }),
     ],

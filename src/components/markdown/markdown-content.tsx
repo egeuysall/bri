@@ -27,7 +27,7 @@ export async function MarkdownContent({ postId, content }: MarkdownContentProps)
   return (
     <MarkdownAsync
       remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[[rehypeKatex, { strict: 'warn', throwOnError: false, trust: false }]]}
+      rehypePlugins={[[rehypeKatex, { strict: 'warn', throwOnError: false, trust: false, output: 'mathml' }]]}
       urlTransform={markdownUrlTransform}
       components={{
         pre: ({ children }) => <>{children}</>,
