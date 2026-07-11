@@ -13,29 +13,10 @@ interface CodeBlockProps {
   className?: string;
 }
 
-function isAppLightMode(): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const rootStyles = window.getComputedStyle(document.documentElement);
-  const colorScheme = rootStyles.colorScheme.toLowerCase();
-  const background = rootStyles.getPropertyValue('--bg').trim().toLowerCase();
-
-  return (
-    colorScheme.includes('light') ||
-    background === '#fff' ||
-    background === '#ffffff' ||
-    background === 'white' ||
-    background === 'rgb(255, 255, 255)'
-  );
-}
-
 export function CodeBlock({ children, language = 'text', className }: CodeBlockProps) {
   const normalized = String(children);
   const [html, setHtml] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isLightMode, setIsLightMode] = useState<boolean>(false);
 
   const handleCopyBlock = async (event: MouseEvent<HTMLDivElement>) => {
     const selection = window.getSelection();
@@ -59,31 +40,14 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const media = window.matchMedia('(prefers-color-scheme: light)');
-    const update = () => setIsLightMode(isAppLightMode());
-    update();
-
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', update);
-      return () => media.removeEventListener('change', update);
-    }
-
-    media.addListener(update);
-    return () => media.removeListener(update);
-  }, []);
-
-  useEffect(() => {
     async function highlight() {
       setIsLoading(true);
 
       try {
         const highlighted = await codeToHtml(normalized, {
           lang: language,
-          theme: isLightMode ? githubLight : vesper,
+          themes: { light: githubLight, dark: vesper },
+          defaultColor: false,
         });
         setHtml(highlighted);
       } catch {
@@ -98,12 +62,13 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
     }
 
     highlight();
-  }, [normalized, language, isLightMode]);
+  }, [normalized, language]);
 
   if (isLoading) {
     return (
       <div
         className={cn('code-block my-2 cursor-copy', className)}
+        data-code-block-status="loading"
         onClick={handleCopyBlock}
         title="Click to copy"
       >
@@ -120,6 +85,7 @@ export function CodeBlock({ children, language = 'text', className }: CodeBlockP
         'code-block my-2 cursor-copy [&_pre]:overflow-x-auto [&_pre]:border [&_pre]:border-neutral-800 [&_pre]:px-2.5 [&_pre]:py-2 [&_pre]:text-xs [&_pre]:leading-5',
         className
       )}
+      data-code-block-status="ready"
       onClick={handleCopyBlock}
       title="Click to copy"
       dangerouslySetInnerHTML={{ __html: html }}

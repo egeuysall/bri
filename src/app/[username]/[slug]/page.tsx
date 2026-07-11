@@ -94,11 +94,11 @@ export default async function NotePage({
       <section
         className={`${geist.variable} w-full animate-enter px-4 py-5 md:px-8 md:py-8`}
         style={{ '--delay': '40ms' } as CSSProperties}
-        data-note-print-root
+        data-note-export-root
       >
         <article className="mx-auto w-full max-w-155">
           <div className="flex items-start justify-between gap-3">
-            <h1 className="text-base font-semibold text-neutral-100" data-note-print-title>
+            <h1 className="text-base font-semibold text-neutral-100" data-note-export-title>
               {note.title}
             </h1>
             <div className="flex shrink-0 items-center gap-2" data-note-export-actions>
@@ -113,14 +113,14 @@ export default async function NotePage({
               ) : null}
             </div>
           </div>
-          <p className="mt-2 text-xs text-neutral-400" data-note-print-meta>
+          <p className="mt-2 text-xs text-neutral-400" data-note-export-meta>
             <Link href={`/${note.username}`} className="transition-colors hover:text-neutral-100">
               @{note.username}
             </Link>{' '}
             &middot; {formatDate(note.createdAt)}
           </p>
 
-          <div className="px-0 py-6 md:py-7" data-note-print-content>
+          <div className="px-0 py-6 md:py-7" data-note-export-content>
             <div className="prose prose-neutral prose-invert max-w-none prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[1rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.95rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.88rem]! prose-h3:leading-6! prose-h3:font-medium! prose-h4:text-[0.82rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-800 prose-pre:border prose-pre:border-neutral-800">
               <MarkdownContent postId={note.id} content={contentWithoutHeading} />
             </div>

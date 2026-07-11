@@ -43,6 +43,7 @@
     "convex": "^1.42.0",
     "facehash": "^0.1.0",
     "find-up-simple": "^1.0.1",
+    "html2pdf.js": "^0.14.0",
     "ink": "^7.1.0",
     "katex": "^0.17.0",
     "lucide-react": "^1.21.0",

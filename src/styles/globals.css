@@ -741,159 +741,79 @@ code[data-theme*=' '] span {
   font-family: inherit;
 }
 
-@media print {
-  @page {
-    size: A4;
-    margin: 18mm 20mm 20mm;
-  }
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  background-color: var(--shiki-light-bg, transparent);
+}
 
-  html,
-  body {
-    background: #fff !important;
-    color-scheme: light;
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark);
+    background-color: var(--shiki-dark-bg, transparent);
   }
+}
 
-  body * {
-    visibility: hidden;
-  }
+.pdf-export-stage {
+  position: fixed;
+  top: 0;
+  left: -100000px;
+  width: 178mm;
+  background: #fff;
+  pointer-events: none;
+}
 
-  [data-note-print-root],
-  [data-note-print-root] * {
-    visibility: visible;
-  }
+.pdf-export-document {
+  --bg: #fff;
+  --fg: #09090b;
+  --muted: #3f3f46;
+  --line: #a1a1aa;
+  --accent: #171717;
+  --inline-code-bg: #e4e4e7;
+  --inline-code-border: #a1a1aa;
+  --code-block-bg: #ededf0;
+  --code-block-border: #a1a1aa;
+  --color-neutral-50: #0a0a0a;
+  --color-neutral-100: #171717;
+  --color-neutral-200: #262626;
+  --color-neutral-300: #404040;
+  --color-neutral-400: #525252;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #a3a3a3;
+  --color-neutral-700: #a1a1aa;
+  --color-neutral-800: #d4d4d8;
+  --color-neutral-900: #e4e4e7;
+  --color-neutral-950: #f4f4f5;
+  width: 100% !important;
+  background: #fff !important;
+  color: var(--fg) !important;
+  color-scheme: light;
+  font-family: var(--font-geist), Arial, sans-serif !important;
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
 
-  [data-note-print-root] {
-    width: 100%;
-    margin: 0;
-    padding: 0 !important;
-    background: #fff !important;
-    color: #27272a !important;
-    font-family: var(--font-geist), Arial, sans-serif !important;
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    print-color-adjust: exact;
-  }
+.pdf-export-document,
+.pdf-export-document * {
+  font-family: var(--font-geist), Arial, sans-serif !important;
+}
 
-  [data-note-print-root] article {
-    max-width: none !important;
-  }
+.pdf-export-document :where(h1, h2, h3, h4) {
+  break-after: avoid-page;
+}
 
-  [data-note-export-actions] {
-    display: none !important;
-  }
+.pdf-export-document .prose :where(pre, blockquote, table, figure) {
+  break-inside: avoid-page;
+}
 
-  [data-note-print-title] {
-    color: #09090b !important;
-    font-family: var(--font-geist), Arial, sans-serif !important;
-    font-size: 26pt !important;
-    font-weight: 650 !important;
-    line-height: 1.15 !important;
-    letter-spacing: -0.025em;
-  }
+.pdf-export-document .shiki,
+.pdf-export-document .shiki span {
+  color: var(--shiki-light) !important;
+  background-color: var(--shiki-light-bg, transparent) !important;
+}
 
-  [data-note-print-meta] {
-    margin-top: 3mm !important;
-    color: #71717a !important;
-    font-family: var(--font-geist), Arial, sans-serif !important;
-    font-size: 9pt !important;
-  }
-
-  [data-note-print-meta] a {
-    color: inherit !important;
-    text-decoration: none !important;
-  }
-
-  [data-note-print-content] {
-    padding: 8mm 0 0 !important;
-  }
-
-  [data-note-print-root] .prose {
-    max-width: none !important;
-    color: #27272a !important;
-    font-family: var(--font-geist), Arial, sans-serif !important;
-    font-size: 11pt !important;
-    line-height: 1.65 !important;
-  }
-
-  [data-note-print-root] .prose :where(p, li, strong, em, del, blockquote, th, td, a),
-  [data-note-print-root] .prose :where(h1, h2, h3, h4),
-  [data-note-print-root] .prose :where(code, pre, pre *) {
-    color: #27272a !important;
-    font-family: var(--font-geist), Arial, sans-serif !important;
-  }
-
-  [data-note-print-root] .prose :where(h1, h2, h3, h4) {
-    break-after: avoid;
-    color: #09090b !important;
-    font-weight: 650 !important;
-  }
-
-  [data-note-print-root] .prose h1 {
-    font-size: 18pt !important;
-  }
-
-  [data-note-print-root] .prose h2 {
-    font-size: 15pt !important;
-  }
-
-  [data-note-print-root] .prose h3 {
-    font-size: 12.5pt !important;
-  }
-
-  [data-note-print-root] .prose h4 {
-    font-size: 11pt !important;
-  }
-
-  [data-note-print-root] .prose a {
-    color: #18181b !important;
-    text-decoration-color: #a1a1aa !important;
-  }
-
-  [data-note-print-root] .prose :where(pre, blockquote, table, figure, img) {
-    break-inside: avoid;
-  }
-
-  [data-note-print-root] .prose :where(pre, :not(pre) > code) {
-    border-color: #d4d4d8 !important;
-    background: #f4f4f5 !important;
-  }
-
-  [data-note-print-root] .prose pre {
-    overflow: visible !important;
-    white-space: pre-wrap !important;
-    overflow-wrap: anywhere;
-  }
-
-  [data-note-print-root] .prose table,
-  [data-note-print-root] .prose th,
-  [data-note-print-root] .prose td {
-    border-color: #d4d4d8 !important;
-  }
-
-  [data-note-print-root] .prose figure {
-    height: auto !important;
-    aspect-ratio: auto !important;
-    overflow: visible !important;
-    border-color: #d4d4d8 !important;
-    background: transparent !important;
-    padding: 0 !important;
-  }
-
-  [data-note-print-root] .prose figure > div {
-    height: auto !important;
-  }
-
-  [data-note-print-root] .prose figure img {
-    width: 100% !important;
-    height: auto !important;
-    max-height: 220mm;
-    transform: none !important;
-    filter: none !important;
-    object-fit: contain !important;
-  }
-
-  [data-note-print-root] :where(.katex, .katex *, math) {
-    font-family: 'IBM Plex Math', serif !important;
-  }
+.pdf-export-document :where(.katex, .katex *, math) {
+  font-family: 'IBM Plex Math', serif !important;
 }
