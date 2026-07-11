@@ -7,7 +7,7 @@ test('exports the rendered note as a light Geist PDF', async ({ page }, testInfo
   const notePath = process.env.E2E_NOTE_PATH;
   expect(notePath, 'Set E2E_NOTE_PATH to a readable note path.').toBeTruthy();
 
-  await page.goto(notePath!, { waitUntil: 'domcontentloaded' });
+  await page.goto(notePath!, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
 
   const title = (await page.locator('[data-note-export-title]').textContent())?.trim();
@@ -36,6 +36,8 @@ test('exports the rendered note as a light Geist PDF', async ({ page }, testInfo
     figure.append(imageFrame);
     content.append(figure);
   });
+  await expect(page.locator('[data-e2e-code]')).toHaveCount(1);
+  await expect(page.locator('[data-e2e-image]')).toHaveCount(1);
   const sourceStyles = await page.locator('[data-note-export-root]').evaluate((root) => {
     const title = root.querySelector<HTMLElement>('[data-note-export-title]');
     const image = root.querySelector<HTMLElement>('[data-e2e-image]');
