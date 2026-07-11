@@ -12,6 +12,7 @@
     "lint": "eslint src --ext ts,tsx",
     "lint:fix": "eslint src --ext ts,tsx --fix",
     "start": "next start",
+    "test:e2e": "playwright test",
     "cli": "NODE_ENV=development bun run ./cli/bri.ts",
     "cli:version:sync": "node scripts/sync-cli-version.mjs"
   },
@@ -64,6 +65,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.9",
+    "@playwright/test": "^1.55.0",
     "@sentry/nextjs": "^10.61.0",
     "@tailwindcss/postcss": "^4.3.1",
     "@tailwindcss/typography": "^0.5.20",

@@ -32,6 +32,7 @@ web_modules/
 # Build output and generated files
 build/
 out/
+/output/pdf/
 .next/
 .nuxt/
 .vuepress/dist/

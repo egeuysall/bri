@@ -740,3 +740,160 @@ code[data-theme*=' '] span {
   color: var(--fg);
   font-family: inherit;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 20mm 20mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color-scheme: light;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  [data-note-print-root],
+  [data-note-print-root] * {
+    visibility: visible;
+  }
+
+  [data-note-print-root] {
+    width: 100%;
+    margin: 0;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #27272a !important;
+    font-family: var(--font-geist), Arial, sans-serif !important;
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    print-color-adjust: exact;
+  }
+
+  [data-note-print-root] article {
+    max-width: none !important;
+  }
+
+  [data-note-export-actions] {
+    display: none !important;
+  }
+
+  [data-note-print-title] {
+    color: #09090b !important;
+    font-family: var(--font-geist), Arial, sans-serif !important;
+    font-size: 26pt !important;
+    font-weight: 650 !important;
+    line-height: 1.15 !important;
+    letter-spacing: -0.025em;
+  }
+
+  [data-note-print-meta] {
+    margin-top: 3mm !important;
+    color: #71717a !important;
+    font-family: var(--font-geist), Arial, sans-serif !important;
+    font-size: 9pt !important;
+  }
+
+  [data-note-print-meta] a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+
+  [data-note-print-content] {
+    padding: 8mm 0 0 !important;
+  }
+
+  [data-note-print-root] .prose {
+    max-width: none !important;
+    color: #27272a !important;
+    font-family: var(--font-geist), Arial, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.65 !important;
+  }
+
+  [data-note-print-root] .prose :where(p, li, strong, em, del, blockquote, th, td, a),
+  [data-note-print-root] .prose :where(h1, h2, h3, h4),
+  [data-note-print-root] .prose :where(code, pre, pre *) {
+    color: #27272a !important;
+    font-family: var(--font-geist), Arial, sans-serif !important;
+  }
+
+  [data-note-print-root] .prose :where(h1, h2, h3, h4) {
+    break-after: avoid;
+    color: #09090b !important;
+    font-weight: 650 !important;
+  }
+
+  [data-note-print-root] .prose h1 {
+    font-size: 18pt !important;
+  }
+
+  [data-note-print-root] .prose h2 {
+    font-size: 15pt !important;
+  }
+
+  [data-note-print-root] .prose h3 {
+    font-size: 12.5pt !important;
+  }
+
+  [data-note-print-root] .prose h4 {
+    font-size: 11pt !important;
+  }
+
+  [data-note-print-root] .prose a {
+    color: #18181b !important;
+    text-decoration-color: #a1a1aa !important;
+  }
+
+  [data-note-print-root] .prose :where(pre, blockquote, table, figure, img) {
+    break-inside: avoid;
+  }
+
+  [data-note-print-root] .prose :where(pre, :not(pre) > code) {
+    border-color: #d4d4d8 !important;
+    background: #f4f4f5 !important;
+  }
+
+  [data-note-print-root] .prose pre {
+    overflow: visible !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere;
+  }
+
+  [data-note-print-root] .prose table,
+  [data-note-print-root] .prose th,
+  [data-note-print-root] .prose td {
+    border-color: #d4d4d8 !important;
+  }
+
+  [data-note-print-root] .prose figure {
+    height: auto !important;
+    aspect-ratio: auto !important;
+    overflow: visible !important;
+    border-color: #d4d4d8 !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  [data-note-print-root] .prose figure > div {
+    height: auto !important;
+  }
+
+  [data-note-print-root] .prose figure img {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 220mm;
+    transform: none !important;
+    filter: none !important;
+    object-fit: contain !important;
+  }
+
+  [data-note-print-root] :where(.katex, .katex *, math) {
+    font-family: 'IBM Plex Math', serif !important;
+  }
+}
