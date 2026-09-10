@@ -21,5 +21,7 @@
   },
   "menuColor": "default",
   "menuAccent": "subtle",
-  "registries": {}
+  "registries": {
+    "@pdfcn": "https://pdfcn.dev/r/{name}.json"
+  }
 }

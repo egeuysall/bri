@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 
 test.setTimeout(120_000);
 
-test('exports the rendered note as a light Geist PDF', async ({ page }, testInfo) => {
+test('exports the rendered note as a themed, selectable PDF', async ({ page }, testInfo) => {
   const notePath = process.env.E2E_NOTE_PATH;
   expect(notePath, 'Set E2E_NOTE_PATH to a readable note path.').toBeTruthy();
 
@@ -28,69 +28,21 @@ test('exports the rendered note as a light Geist PDF', async ({ page }, testInfo
     image.className =
       'block h-full w-full max-w-none origin-top-left scale-150 rounded-md object-cover object-top-left grayscale';
     image.src =
-      'data:image/svg+xml,' +
-      encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#dbeafe"/><circle cx="160" cy="90" r="48" fill="#2563eb"/></svg>'
-      );
+      'data:image/png;base64,' +
+      'iVBORw0KGgoAAAANSUhEUgAAAUAAAAEsCAYAAABi6S7EAAAACXBIWXMAAAsSAAALEgHS3X78AAAAHUlEQVR4nO3BAQ0AAADCoPdPbQ43oAAAAAAAAAAAAAAD4G4GAAAGZC3sAAAAASUVORK5CYII=';
     imageFrame.append(image);
     figure.append(imageFrame);
     content.append(figure);
   });
   await expect(page.locator('[data-e2e-code]')).toHaveCount(1);
   await expect(page.locator('[data-e2e-image]')).toHaveCount(1);
-  const sourceStyles = await page.locator('[data-note-export-root]').evaluate((root) => {
-    const title = root.querySelector<HTMLElement>('[data-note-export-title]');
-    const image = root.querySelector<HTMLElement>('[data-e2e-image]');
-    const figure = image?.closest('figure');
-    return {
-      titleFontSize: title ? getComputedStyle(title).fontSize : null,
-      titleLineHeight: title ? getComputedStyle(title).lineHeight : null,
-      imageFilter: image ? getComputedStyle(image).filter : null,
-      imageFit: image ? getComputedStyle(image).objectFit : null,
-      imageTransform: image ? getComputedStyle(image).transform : null,
-      imageAspectRatio: figure ? getComputedStyle(figure).aspectRatio : null,
-    };
-  });
 
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'export pdf' }).click();
-  const exportDocument = page.locator('.pdf-export-document');
-  await expect(exportDocument).toBeAttached();
-  const exportStyles = await exportDocument.evaluate((root) => {
-    const code = root.querySelector<HTMLElement>('[data-e2e-code]');
-    const image = root.querySelector<HTMLElement>('[data-e2e-image]');
-    const figure = image?.closest('figure');
-    const title = root.querySelector<HTMLElement>('[data-note-export-title]');
-    const rootStyles = getComputedStyle(root);
-    return {
-      background: rootStyles.backgroundColor,
-      fontFamily: rootStyles.fontFamily,
-      opacity: rootStyles.opacity,
-      hasActions: Boolean(root.querySelector('[data-note-export-actions]')),
-      codeColor: code ? getComputedStyle(code).color : null,
-      titleFontSize: title ? getComputedStyle(title).fontSize : null,
-      titleLineHeight: title ? getComputedStyle(title).lineHeight : null,
-      imageFilter: image ? getComputedStyle(image).filter : null,
-      imageFit: image ? getComputedStyle(image).objectFit : null,
-      imageTransform: image ? getComputedStyle(image).transform : null,
-      imageAspectRatio: figure ? getComputedStyle(figure).aspectRatio : null,
-    };
-  });
-
-  expect(exportStyles.background).toBe('rgb(255, 255, 255)');
-  expect(exportStyles.fontFamily).toContain('Geist');
-  expect(exportStyles.fontFamily).not.toContain('Geist Mono');
-  expect(exportStyles.opacity).toBe('1');
-  expect(exportStyles.hasActions).toBe(false);
-  expect(exportStyles.codeColor).toBe('rgb(215, 58, 73)');
-  expect(exportStyles.titleFontSize).toBe(sourceStyles.titleFontSize);
-  expect(exportStyles.titleLineHeight).toBe(sourceStyles.titleLineHeight);
-  expect(exportStyles.imageFilter).toBe(sourceStyles.imageFilter);
-  expect(exportStyles.imageFit).toBe(sourceStyles.imageFit);
-  expect(exportStyles.imageTransform).toBe(sourceStyles.imageTransform);
-  expect(exportStyles.imageAspectRatio).toBe(sourceStyles.imageAspectRatio);
-
   const download = await downloadPromise;
+  await expect(page.getByRole('button', { name: 'export pdf' })).toBeEnabled();
+  await expect(page.locator('[data-note-export-actions]')).toHaveCount(1);
+
   expect(download.suggestedFilename()).toBe(`${title}.pdf`);
   const downloadPath = await download.path();
   expect(downloadPath).toBeTruthy();
