@@ -5,7 +5,7 @@ import type { Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extensions';
-import { Image } from '@tiptap/extension-image';
+import { Image as ImageExtension } from '@tiptap/extension-image';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import { Table } from '@tiptap/extension-table';
 import { TableCell } from '@tiptap/extension-table-cell';
@@ -26,6 +26,7 @@ import {
   Redo2,
   Undo2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
   markdownToTiptapDocument,
@@ -62,6 +63,77 @@ function editorMarkdown(editor: Editor) {
 }
 
 const MARKDOWN_SEPARATOR_ROW = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/;
+
+const MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024;
+// ponytail: keep images inline and under Convex's 1 MiB note value; use Convex Storage when originals are required.
+const MAX_INLINE_IMAGE_DATA_URL_BYTES = 700 * 1024;
+const MAX_COMPRESSED_IMAGE_DIMENSION = 2400;
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new Error('Failed to read image'));
+      }
+    };
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read image'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(url: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Failed to decode image'));
+    image.src = url;
+  });
+}
+
+async function imageFileToDataUrl(file: File) {
+  if (file.size <= MAX_INLINE_IMAGE_DATA_URL_BYTES) {
+    const original = await readFileAsDataUrl(file);
+    if (original.length <= MAX_INLINE_IMAGE_DATA_URL_BYTES) return original;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await loadImage(objectUrl);
+    const sourceWidth = image.naturalWidth;
+    const sourceHeight = image.naturalHeight;
+    if (!sourceWidth || !sourceHeight) throw new Error('Image has no dimensions');
+
+    let scale = Math.min(1, MAX_COMPRESSED_IMAGE_DIMENSION / Math.max(sourceWidth, sourceHeight));
+    let lastDataUrl = '';
+
+    for (let resizeAttempt = 0; resizeAttempt < 7; resizeAttempt += 1) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+      canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Image compression is unavailable');
+
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+      for (const quality of [0.82, 0.68, 0.54, 0.42]) {
+        lastDataUrl = canvas.toDataURL('image/jpeg', quality);
+        if (lastDataUrl.length <= MAX_INLINE_IMAGE_DATA_URL_BYTES) return lastDataUrl;
+      }
+
+      scale *= 0.8;
+    }
+
+    if (lastDataUrl.length <= MAX_INLINE_IMAGE_DATA_URL_BYTES) return lastDataUrl;
+    throw new Error('Image is too detailed to fit in a note');
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 function parseMarkdownTable(text: string): JSONContent | null {
   const lines = normalizeMarkdownTables(text)
@@ -168,7 +240,7 @@ export function BriTiptapEditor({
       Mathematics.configure({
         katexOptions: { output: 'mathml', throwOnError: false },
       }),
-      Image,
+      ImageExtension,
       Placeholder.configure({ placeholder }),
     ],
     content: initialContent,
@@ -232,16 +304,18 @@ export function BriTiptapEditor({
     event.target.value = '';
     if (!file) return;
     if (!file.type.startsWith('image/')) return;
-    if (file.size > 5 * 1024 * 1024) return;
+    if (file.size > MAX_IMAGE_FILE_BYTES) {
+      toast.error('Images must be 20 MB or smaller');
+      return;
+    }
 
-    const src = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
-      reader.onerror = () => reject(reader.error ?? new Error('Failed to read image'));
-      reader.readAsDataURL(file);
-    });
-    if (!src.startsWith('data:image/')) return;
-    editor.chain().focus().setImage({ src, alt: file.name }).run();
+    try {
+      const src = await imageFileToDataUrl(file);
+      if (!src.startsWith('data:image/')) return;
+      editor.chain().focus().setImage({ src, alt: file.name }).run();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to prepare image');
+    }
   };
 
   return (
