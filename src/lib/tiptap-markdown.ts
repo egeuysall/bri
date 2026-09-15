@@ -95,7 +95,8 @@ function isSafeImageSrc(value: string): boolean {
   return (
     value.startsWith('http://') ||
     value.startsWith('https://') ||
-    value.startsWith('data:image/')
+    value.startsWith('data:image/') ||
+    /^\/api\/files\/[A-Za-z0-9]+$/.test(value)
   );
 }
 

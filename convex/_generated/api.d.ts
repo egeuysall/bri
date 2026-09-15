@@ -9,6 +9,7 @@
  */
 
 import type * as apiKeys from "../apiKeys.js";
+import type * as files from "../files.js";
 import type * as notes from "../notes.js";
 import type * as notifications from "../notifications.js";
 import type * as pins from "../pins.js";
@@ -25,6 +26,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   apiKeys: typeof apiKeys;
+  files: typeof files;
   notes: typeof notes;
   notifications: typeof notifications;
   pins: typeof pins;

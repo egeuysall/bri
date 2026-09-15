@@ -38,6 +38,14 @@ export default defineSchema({
       "createdAt",
     ])
     .index("by_state_and_purgeAt", ["state", "purgeAt"]),
+  files: defineTable({
+    storageId: v.id("_storage"),
+    ownerTokenIdentifier: v.string(),
+    contentType: v.string(),
+    size: v.number(),
+    name: v.string(),
+    createdAt: v.number(),
+  }).index("by_storageId", ["storageId"]),
   noteVersions: defineTable({
     noteId: v.id("notes"),
     ownerTokenIdentifier: v.string(),

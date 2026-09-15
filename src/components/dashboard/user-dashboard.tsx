@@ -229,7 +229,10 @@ function DashboardMarkdownPreview({ content }: { content: string }) {
             <input type={type} readOnly />
           ),
         img: ({ alt, src }) =>
-          typeof src === 'string' && (src.startsWith('http') || src.startsWith('data:image/')) ? (
+          typeof src === 'string' &&
+          (src.startsWith('http') ||
+            src.startsWith('data:image/') ||
+            /^\/api\/files\/[A-Za-z0-9]+$/.test(src)) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={src}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useRef, type ChangeEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import type { Editor, JSONContent } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
+import { useMutation } from 'convex/react';
 import { StarterKit } from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extensions';
 import { Image as ImageExtension } from '@tiptap/extension-image';
@@ -27,6 +28,8 @@ import {
   Undo2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { api } from '../../../convex/_generated/api';
+import type { Id } from '../../../convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
 import {
   markdownToTiptapDocument,
@@ -65,75 +68,6 @@ function editorMarkdown(editor: Editor) {
 const MARKDOWN_SEPARATOR_ROW = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/;
 
 const MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024;
-// ponytail: keep images inline and under Convex's 1 MiB note value; use Convex Storage when originals are required.
-const MAX_INLINE_IMAGE_DATA_URL_BYTES = 700 * 1024;
-const MAX_COMPRESSED_IMAGE_DIMENSION = 2400;
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-      } else {
-        reject(new Error('Failed to read image'));
-      }
-    };
-    reader.onerror = () => reject(reader.error ?? new Error('Failed to read image'));
-    reader.readAsDataURL(file);
-  });
-}
-
-function loadImage(url: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('Failed to decode image'));
-    image.src = url;
-  });
-}
-
-async function imageFileToDataUrl(file: File) {
-  if (file.size <= MAX_INLINE_IMAGE_DATA_URL_BYTES) {
-    const original = await readFileAsDataUrl(file);
-    if (original.length <= MAX_INLINE_IMAGE_DATA_URL_BYTES) return original;
-  }
-
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const image = await loadImage(objectUrl);
-    const sourceWidth = image.naturalWidth;
-    const sourceHeight = image.naturalHeight;
-    if (!sourceWidth || !sourceHeight) throw new Error('Image has no dimensions');
-
-    let scale = Math.min(1, MAX_COMPRESSED_IMAGE_DIMENSION / Math.max(sourceWidth, sourceHeight));
-    let lastDataUrl = '';
-
-    for (let resizeAttempt = 0; resizeAttempt < 7; resizeAttempt += 1) {
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-      canvas.height = Math.max(1, Math.round(sourceHeight * scale));
-      const context = canvas.getContext('2d');
-      if (!context) throw new Error('Image compression is unavailable');
-
-      context.fillStyle = '#fff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-      for (const quality of [0.82, 0.68, 0.54, 0.42]) {
-        lastDataUrl = canvas.toDataURL('image/jpeg', quality);
-        if (lastDataUrl.length <= MAX_INLINE_IMAGE_DATA_URL_BYTES) return lastDataUrl;
-      }
-
-      scale *= 0.8;
-    }
-
-    if (lastDataUrl.length <= MAX_INLINE_IMAGE_DATA_URL_BYTES) return lastDataUrl;
-    throw new Error('Image is too detailed to fit in a note');
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-}
 
 function parseMarkdownTable(text: string): JSONContent | null {
   const lines = normalizeMarkdownTables(text)
@@ -206,6 +140,9 @@ export function BriTiptapEditor({
   const lastEmittedValueRef = useRef(value);
   const editorRef = useRef<Editor | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const completeUpload = useMutation(api.files.completeUpload);
   const initialContent = useMemo(() => markdownToTiptapDocument(value), []);
 
   const editor = useEditor({
@@ -309,12 +246,39 @@ export function BriTiptapEditor({
       return;
     }
 
+    setIsUploadingImage(true);
     try {
-      const src = await imageFileToDataUrl(file);
-      if (!src.startsWith('data:image/')) return;
-      editor.chain().focus().setImage({ src, alt: file.name }).run();
+      const uploadUrl = await generateUploadUrl({
+        contentType: file.type,
+        size: file.size,
+        name: file.name,
+      });
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
+      if (!uploadResponse.ok) throw new Error('Image upload failed');
+
+      const uploadResult = (await uploadResponse.json()) as { storageId?: string };
+      if (!uploadResult.storageId) throw new Error('Image upload returned no file id');
+
+      await completeUpload({
+        storageId: uploadResult.storageId as Id<'_storage'>,
+        contentType: file.type,
+        size: file.size,
+        name: file.name,
+      });
+
+      editor
+        .chain()
+        .focus()
+        .setImage({ src: `/api/files/${encodeURIComponent(uploadResult.storageId)}`, alt: file.name })
+        .run();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to prepare image');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload image');
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -361,8 +325,9 @@ export function BriTiptapEditor({
           icon={<ImageIcon className="h-3.5 w-3.5" />}
         />
         <ToolbarButton
-          label="Attach image"
+          label={isUploadingImage ? 'Uploading image' : 'Attach image'}
           active={editor.isActive('image')}
+          disabled={isUploadingImage}
           onClick={() => fileInputRef.current?.click()}
           icon={<Paperclip className="h-3.5 w-3.5" />}
         />
