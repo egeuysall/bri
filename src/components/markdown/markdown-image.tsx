@@ -27,7 +27,7 @@ export function MarkdownImage({ src, alt = '', className }: MarkdownImageProps) 
   return (
     <figure
       className={cn(
-        'not-prose my-6 aspect-video overflow-hidden rounded-md border border-neutral-800 p-6 md:p-8 bg-neutral-900',
+        'not-prose rounded-sm my-6 aspect-video overflow-hidden border border-neutral-800 p-6 md:p-8 bg-neutral-900',
         className
       )}
     >
@@ -38,7 +38,7 @@ export function MarkdownImage({ src, alt = '', className }: MarkdownImageProps) 
           alt={normalizedAlt}
           loading="lazy"
           decoding="async"
-          className="block h-full w-full max-w-none origin-top-left scale-150 rounded-md object-cover object-top-left grayscale shadow-[0_8px_16px_-12px_rgba(0,0,0,0.3)]"
+          className="block h-full w-full max-w-none origin-top-left scale-150 rounded-sm! object-cover object-top-left grayscale shadow-[0_8px_16px_-12px_rgba(0,0,0,0.3)]"
         />
       </div>
     </figure>
