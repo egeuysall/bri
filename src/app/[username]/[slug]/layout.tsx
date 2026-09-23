@@ -2,19 +2,8 @@ import type { Metadata } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import { getNoteByUsernameAndSlug } from '@/lib/notes';
 import { getSiteUrl } from '@/lib/site-url';
+import { noteDescription } from '@/lib/note-seo';
 import { isPublicResourcePath, isPublicUsernamePath } from '@/lib/user-handle';
-
-function shortDescription(text: string, maxLength = 165): string {
-  const cleaned = text
-    .replace(/[#*_~`>\[\]()]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  if (cleaned.length <= maxLength) return cleaned;
-  const trimmed = cleaned.slice(0, maxLength);
-  const lastSpace = trimmed.lastIndexOf(' ');
-  return `${trimmed.slice(0, lastSpace > 0 ? lastSpace : maxLength)}...`;
-}
 
 export async function generateMetadata({
   params,
@@ -47,16 +36,38 @@ export async function generateMetadata({
   }
 
   const canonical = `${getSiteUrl()}/${note.username}/${note.slug}`;
+  const description = noteDescription(note.content, 165, note.title);
+  const image = `${canonical}/opengraph-image`;
 
   return {
     title: note.title,
-    description: shortDescription(note.content),
+    description,
     alternates: { canonical },
     openGraph: {
       title: note.title,
-      description: shortDescription(note.content),
+      description,
       url: canonical,
       type: 'article',
+      siteName: 'bri',
+      locale: 'en_US',
+      publishedTime: new Date(note.createdAt).toISOString(),
+      modifiedTime: new Date(note.updatedAt).toISOString(),
+      authors: [`@${note.username}`],
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          type: 'image/png',
+          alt: `${note.title} on bri`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: note.title,
+      description,
+      images: [image],
     },
   };
 }
