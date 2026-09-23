@@ -57,7 +57,7 @@ export default async function Image({ params }: ImageProps) {
     ? noteDescription(note.content, 220, note.title)
     : 'publish anything.';
   const titleLines = wrapText(title, 28, 2);
-  const descriptionLines = wrapText(description, 57, 3);
+  const descriptionLines = wrapText(description, 33, 3);
   const notePath = note ? `${note.username}/${note.slug}` : 'share your markdown';
   const createdDate = note ? new Date(note.createdAt).toISOString().slice(0, 10) : '';
 
@@ -68,7 +68,7 @@ export default async function Image({ params }: ImageProps) {
           width: '100%',
           height: '100%',
           display: 'flex',
-          padding: '58px 72px 50px',
+          padding: '52px 64px 46px',
           background: '#050505',
           color: '#f5f5f5',
           fontFamily: 'Geist Mono',
@@ -86,7 +86,7 @@ export default async function Image({ params }: ImageProps) {
             style={{
               display: 'flex',
               justifyContent: 'space-between',
-              fontSize: 20,
+              fontSize: 22,
               color: '#737373',
             }}
           >
@@ -99,11 +99,12 @@ export default async function Image({ params }: ImageProps) {
               display: 'flex',
               flex: 1,
               alignItems: 'center',
+              gap: 32,
             }}
           >
             <div
               style={{
-                width: '100%',
+                width: '40%',
                 display: 'flex',
                 flexDirection: 'column',
               }}
@@ -112,32 +113,31 @@ export default async function Image({ params }: ImageProps) {
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  fontSize: 58,
-                  lineHeight: 1.05,
+                  fontSize: 70,
+                  lineHeight: 1,
                   fontWeight: 500,
-                  letterSpacing: -2,
+                  letterSpacing: -3,
                 }}
               >
                 {titleLines.map((line, index) => (
                   <div key={`${line}-${index}`}>{line}</div>
                 ))}
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  marginTop: 30,
-                  fontSize: 24,
-                  lineHeight: 1.4,
-                  color: '#a3a3a3',
-                }}
-              >
-                {descriptionLines.map((line, index) => (
-                  <div key={`${line}-${index}`}>{line}</div>
-                ))}
-              </div>
             </div>
-
+            <div
+              style={{
+                width: '54%',
+                display: 'flex',
+                flexDirection: 'column',
+                fontSize: 30,
+                lineHeight: 1.35,
+                color: '#a3a3a3',
+              }}
+            >
+              {descriptionLines.map((line, index) => (
+                <div key={`${line}-${index}`}>{line}</div>
+              ))}
+            </div>
           </div>
 
           <div
@@ -145,8 +145,8 @@ export default async function Image({ params }: ImageProps) {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              paddingTop: 22,
-              fontSize: 20,
+              paddingTop: 18,
+              fontSize: 22,
               color: '#737373',
             }}
           >
