@@ -21,10 +21,12 @@ function geometricMark(seed: string): string {
     '<polygon points="210,28 392,210 210,392 28,210" />',
     '<circle cx="210" cy="210" r="174" />',
   ];
-  const rotation = hash[1] % 360;
+  const byte = (index: number) => hash[index] ?? 0;
+  const shape = shapes[byte(3) % shapes.length] ?? '';
+  const rotation = byte(1) % 360;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420">
     <g transform="rotate(${rotation} 210 210)">
-      <g fill="#ffffff">${shapes[hash[3] % shapes.length]}</g>
+      <g fill="#ffffff">${shape}</g>
     </g>
   </svg>`;
 
