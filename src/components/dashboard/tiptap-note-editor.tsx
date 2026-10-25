@@ -509,8 +509,8 @@ export function BriTiptapEditor({
       {fileMention && <DropdownMenu open modal={false} onOpenChange={(open) => { if (!open) setFileMention(null); }}>
         <DropdownMenuTrigger render={<button type="button" tabIndex={-1} aria-hidden="true" className="pointer-events-none fixed h-px w-px opacity-0" style={{ left: fileMention.left, top: fileMention.top }} />} />
         <DropdownMenuContent align="start" side="bottom" sideOffset={4} className="w-80 max-h-64" finalFocus={() => editor.view.dom}>
-          <DropdownMenuLabel>public IBX files</DropdownMenuLabel>
           <DropdownMenuGroup>
+            <DropdownMenuLabel>public IBX files</DropdownMenuLabel>
             {!ibxUsername.trim() ? <DropdownMenuItem onMouseDown={(event) => event.preventDefault()} onClick={() => setIsIBXPickerOpen(true)}>set IBX username</DropdownMenuItem>
               : isLoadingIBXFiles ? <DropdownMenuItem disabled>loading files…</DropdownMenuItem>
                 : ibxError ? <DropdownMenuItem disabled>{ibxError}</DropdownMenuItem>
