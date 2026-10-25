@@ -237,11 +237,6 @@ export function BriTiptapEditor({
   });
 
   useEffect(() => {
-    if (!fileMention || !editor || editor.isFocused) return;
-    editor.commands.focus();
-  }, [editor, fileMention]);
-
-  useEffect(() => {
     editorRef.current = editor;
   }, [editor]);
 
@@ -508,7 +503,24 @@ export function BriTiptapEditor({
       </Dialog>
       {fileMention && <DropdownMenu open modal={false} onOpenChange={(open) => { if (!open) setFileMention(null); }}>
         <DropdownMenuTrigger render={<button type="button" tabIndex={-1} aria-hidden="true" className="pointer-events-none fixed h-px w-px opacity-0" style={{ left: fileMention.left, top: fileMention.top }} />} />
-        <DropdownMenuContent align="start" side="bottom" sideOffset={4} className="w-80 max-h-64" finalFocus={() => editor.view.dom}>
+        <DropdownMenuContent
+          align="start"
+          side="bottom"
+          sideOffset={4}
+          className="w-80 max-h-64"
+          finalFocus={() => editor.view.dom}
+          onKeyDown={(event) => {
+            if (event.key === 'Backspace') {
+              event.preventDefault();
+              const { from, to } = editor.state.selection;
+              if (from !== to) editor.chain().focus().deleteSelection().run();
+              else if (from > 1) editor.chain().focus().deleteRange({ from: from - 1, to: from }).run();
+            } else if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+              event.preventDefault();
+              editor.chain().focus().insertContent(event.key).run();
+            }
+          }}
+        >
           <DropdownMenuGroup>
             <DropdownMenuLabel>public IBX files</DropdownMenuLabel>
             {!ibxUsername.trim() ? <DropdownMenuItem onMouseDown={(event) => event.preventDefault()} onClick={() => setIsIBXPickerOpen(true)}>set IBX username</DropdownMenuItem>
