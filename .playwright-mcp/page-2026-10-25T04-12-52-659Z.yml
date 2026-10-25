@@ -1,0 +1,40 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - link [ref=e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e5]:
+        - link "sign in" [ref=e6] [cursor=pointer]:
+          - /url: /sign-in?redirect_url=/app
+        - button "start" [ref=e7]
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - heading "Turn loose thoughts into a live execution list." [level=1] [ref=e11]
+          - paragraph [ref=e12]: Capture tasks, generate plans, schedule work blocks, and keep a focused daily list synced across web, CLI, shortcuts, and iOS.
+        - generic [ref=e13]:
+          - button "create account" [ref=e14]
+          - link "sign in" [ref=e15] [cursor=pointer]:
+            - /url: /sign-in?redirect_url=/app
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: today
+          - generic [ref=e21]: online / synced
+        - generic [ref=e22]:
+          - paragraph [ref=e24]: "> schedule launch checklist after lunch and keep the evening clear"
+          - generic [ref=e27]:
+            - generic [ref=e28]:
+              - generic [ref=e29]: p1
+              - generic [ref=e30]: 2h / today
+            - paragraph [ref=e31]: Prepare onboarding path for first public users
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - generic [ref=e36]: p2
+              - generic [ref=e37]: 1h / today
+            - paragraph [ref=e38]: Review API key and mobile auth flows
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: p3
+              - generic [ref=e44]: 30m / today
+            - paragraph [ref=e45]: Archive completed shortcut captures
+  - alert [ref=e46]

@@ -1,0 +1,6 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e3]:
+    - heading "This page couldn’t load" [level=1] [ref=f3e6]
+    - paragraph [ref=f3e7]: A server error occurred. Reload to try again.
+    - button "Reload" [ref=f3e10] [cursor=pointer]
+  - paragraph [ref=f3e11]: ERROR 2530740979

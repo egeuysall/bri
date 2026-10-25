@@ -1,0 +1,67 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e2]:
+    - banner [ref=f2e3]:
+      - link "ibx" [ref=f2e4] [cursor=pointer]:
+        - /url: /
+      - link "your files" [ref=f2e5] [cursor=pointer]:
+        - /url: /files
+    - main [ref=f2e6]:
+      - generic [ref=f2e7]:
+        - heading "egeuysall" [level=1] [ref=f2e8]
+        - paragraph [ref=f2e9]: public files and notes
+      - region [ref=f2e10]:
+        - heading "files" [level=2] [ref=f2e11]
+        - table [ref=f2e13]:
+          - rowgroup [ref=f2e14]:
+            - row [ref=f2e15]:
+              - columnheader "name" [ref=f2e16]
+              - columnheader "type" [ref=f2e17]
+              - columnheader "size" [ref=f2e18]
+          - rowgroup [ref=f2e19]:
+            - row [ref=f2e20]:
+              - cell [ref=f2e21]:
+                - link "hatred.mp3" [ref=f2e22] [cursor=pointer]:
+                  - /url: /egeuysall/hatred.mp3
+              - cell "mpeg" [ref=f2e23]
+              - cell "3.2 MB" [ref=f2e24]
+            - row [ref=f2e25]:
+              - cell [ref=f2e26]:
+                - link "chapter-1-rhetorical-analysis-prompt.pdf" [ref=f2e27] [cursor=pointer]:
+                  - /url: /egeuysall/chapter-1-rhetorical-analysis-prompt.pdf
+              - cell "pdf" [ref=f2e28]
+              - cell "104 KB" [ref=f2e29]
+            - row [ref=f2e30]:
+              - cell [ref=f2e31]:
+                - link "research.pdf" [ref=f2e32] [cursor=pointer]:
+                  - /url: /egeuysall/research.pdf
+              - cell "pdf" [ref=f2e33]
+              - cell "62 KB" [ref=f2e34]
+            - row [ref=f2e35]:
+              - cell [ref=f2e36]:
+                - link "screenshot-2026-08-21-at-8-29-55-am.png" [ref=f2e37] [cursor=pointer]:
+                  - /url: /egeuysall/screenshot-2026-08-21-at-8-29-55-am.png
+              - cell "png" [ref=f2e38]
+              - cell "911 KB" [ref=f2e39]
+      - region [ref=f2e40]:
+        - heading "public notes on bri" [level=2] [ref=f2e41]
+        - link "check for sldl notes" [ref=f2e42] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/check-for-sldl-notes
+        - link "film lower sesh at old gym monday" [ref=f2e43] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/film-lower-sesh-at-old-gym-monday
+        - link "read this, check note below" [ref=f2e44] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/read-this-check-note-below
+        - link "fix bri note stretching issue, check description" [ref=f2e45] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/fix-bri-note-stretching-issue-check-description
+        - link "write english discussion notes to a paper to bring to school" [ref=f2e46] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/write-english-discussion-notes-to-a-paper-to-bring-to-school
+        - link "meet with joyonna, check pdf" [ref=f2e47] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/meet-with-joyonna-check-pdf
+        - link "Training" [ref=f2e48] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/training
+        - link "Cameras" [ref=f2e49] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/cameras
+        - link "Clarify what “try” means + pick next step" [ref=f2e50] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/clarify-what-try-means-pick-next-step-2
+        - link "Go grocery shopping" [ref=f2e51] [cursor=pointer]:
+          - /url: https://bri.fyi/egeuysall/go-grocery-shopping-2
+  - alert [ref=f2e52]
