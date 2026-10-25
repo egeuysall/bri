@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import { api } from '../../../convex/_generated/api';
 import type { Id } from '../../../convex/_generated/dataModel';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   markdownToTiptapDocument,
   normalizeMarkdownTables,
@@ -68,6 +70,7 @@ function editorMarkdown(editor: Editor) {
 const MARKDOWN_SEPARATOR_ROW = /^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/;
 
 const MAX_IMAGE_FILE_BYTES = 20 * 1024 * 1024;
+type IBXImage = { id: string; fileName: string; contentType: string; size: number; folderPath: string[]; url: string };
 
 function parseMarkdownTable(text: string): JSONContent | null {
   const lines = normalizeMarkdownTables(text)
@@ -141,6 +144,12 @@ export function BriTiptapEditor({
   const editorRef = useRef<Editor | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isIBXPickerOpen, setIsIBXPickerOpen] = useState(false);
+  const [ibxUsername, setIBXUsername] = useState('');
+  const [ibxImages, setIBXImages] = useState<IBXImage[]>([]);
+  const [ibxCursor, setIBXCursor] = useState<string | null>(null);
+  const [ibxError, setIBXError] = useState<string | null>(null);
+  const [isLoadingIBXImages, setIsLoadingIBXImages] = useState(false);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const completeUpload = useMutation(api.files.completeUpload);
   const initialContent = useMemo(() => markdownToTiptapDocument(value), []);
@@ -236,6 +245,43 @@ export function BriTiptapEditor({
     editor.chain().focus().setImage({ src }).run();
   };
 
+  const loadIBXImages = async (cursor?: string | null) => {
+    const username = ibxUsername.trim();
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(username)) {
+      setIBXError('Enter a valid IBX username.');
+      return;
+    }
+    setIsLoadingIBXImages(true);
+    setIBXError(null);
+    if (!cursor) {
+      setIBXImages([]);
+      setIBXCursor(null);
+    }
+    try {
+      const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : '';
+      const response = await fetch(`https://ibx.egeuysal.com/api/public/files/${encodeURIComponent(username)}${query}`, { cache: 'no-store' });
+      const result = (await response.json()) as { files?: IBXImage[]; cursor?: string | null; error?: string };
+      if (!response.ok) throw new Error(result.error || 'Could not load public IBX images.');
+      setIBXImages((current) => cursor ? [...current, ...(result.files ?? [])] : result.files ?? []);
+      setIBXCursor(result.cursor ?? null);
+    } catch (error) {
+      setIBXError(error instanceof Error ? error.message : 'Could not load public IBX images.');
+    } finally {
+      setIsLoadingIBXImages(false);
+    }
+  };
+
+  const insertIBXImage = (image: IBXImage) => {
+    try {
+      const url = new URL(image.url);
+      if (url.origin !== 'https://ibx.egeuysal.com') throw new Error('Invalid IBX image URL.');
+      editor.chain().focus().setImage({ src: url.href, alt: image.fileName }).run();
+      setIsIBXPickerOpen(false);
+    } catch (error) {
+      setIBXError(error instanceof Error ? error.message : 'Could not insert this image.');
+    }
+  };
+
   const attachImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
     event.target.value = '';
@@ -325,6 +371,11 @@ export function BriTiptapEditor({
           icon={<ImageIcon className="h-3.5 w-3.5" />}
         />
         <ToolbarButton
+          label="IBX images"
+          onClick={() => setIsIBXPickerOpen(true)}
+          icon={<span className="text-[9px] font-semibold">ibx</span>}
+        />
+        <ToolbarButton
           label={isUploadingImage ? 'Uploading image' : 'Attach image'}
           active={editor.isActive('image')}
           disabled={isUploadingImage}
@@ -376,6 +427,27 @@ export function BriTiptapEditor({
           icon={<Redo2 className="h-3.5 w-3.5" />}
         />
       </div>
+      <Dialog open={isIBXPickerOpen} onOpenChange={setIsIBXPickerOpen}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto border-neutral-800 bg-neutral-950 text-neutral-100 sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Public IBX images</DialogTitle>
+            <DialogDescription className="text-neutral-400">Choose an image already shared publicly in IBX. Private files are never listed.</DialogDescription>
+          </DialogHeader>
+          <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); void loadIBXImages(); }}>
+            <Input aria-label="IBX username" placeholder="IBX username" value={ibxUsername} onChange={(event) => { setIBXUsername(event.target.value); setIBXImages([]); setIBXCursor(null); setIBXError(null); }} maxLength={64} className="border-neutral-800" />
+            <Button type="submit" variant="outline" disabled={isLoadingIBXImages}>{isLoadingIBXImages ? 'loading' : 'load'}</Button>
+          </form>
+          {ibxError && <p role="alert" className="text-xs text-red-400">{ibxError}</p>}
+          <div className="flex flex-col divide-y divide-neutral-800">
+            {ibxImages.map((image) => <button key={image.id} type="button" className="flex min-w-0 items-center justify-between gap-4 py-3 text-left hover:bg-neutral-900" onClick={() => insertIBXImage(image)}>
+              <span className="min-w-0"><span className="block truncate text-sm">{image.fileName}</span><span className="block truncate text-xs text-neutral-500">{image.folderPath.join('/') || 'My Drive'} · {image.contentType}</span></span>
+              <span className="shrink-0 text-xs text-neutral-400">insert</span>
+            </button>)}
+          </div>
+          {!ibxImages.length && !isLoadingIBXImages && !ibxError && <p className="py-5 text-center text-xs text-neutral-500">Load a username to browse public images.</p>}
+          {ibxCursor && <Button type="button" variant="outline" disabled={isLoadingIBXImages} onClick={() => void loadIBXImages(ibxCursor)}>load more</Button>}
+        </DialogContent>
+      </Dialog>
       <EditorContent
         editor={editor}
         className={`bri-tiptap-editor ${minHeightClassName} p-3 text-sm text-neutral-200`}
