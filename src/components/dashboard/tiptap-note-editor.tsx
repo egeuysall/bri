@@ -155,6 +155,7 @@ export function BriTiptapEditor({
   const [ibxError, setIBXError] = useState<string | null>(null);
   const [isLoadingIBXFiles, setIsLoadingIBXFiles] = useState(false);
   const [fileMention, setFileMention] = useState<IBXFileMention | null>(null);
+  const fileMentionKeydownRef = useRef<{ first: IBXFile; insert: (file: IBXFile) => void } | null>(null);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const completeUpload = useMutation(api.files.completeUpload);
   const initialContent = useMemo(() => markdownToTiptapDocument(value), []);
@@ -204,6 +205,13 @@ export function BriTiptapEditor({
         event.preventDefault();
         const doc = markdownToTiptapDocument(normalized);
         editorRef.current?.chain().focus().insertContent(doc.content ?? []).run();
+        return true;
+      },
+      handleKeyDown: (_view, event) => {
+        const mention = fileMentionKeydownRef.current;
+        if (event.key !== 'Enter' || !mention) return false;
+        event.preventDefault();
+        mention.insert(mention.first);
         return true;
       },
     },
@@ -334,6 +342,9 @@ export function BriTiptapEditor({
   const matchingIBXFiles = ibxFiles
     .filter((file) => `${file.fileName} ${file.folderPath.join('/')}`.toLowerCase().includes(fileMention?.query.toLowerCase() ?? ''))
     .slice(0, 50);
+  fileMentionKeydownRef.current = fileMention && matchingIBXFiles[0]
+    ? { first: matchingIBXFiles[0], insert: insertIBXFile }
+    : null;
 
   const attachImage = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
