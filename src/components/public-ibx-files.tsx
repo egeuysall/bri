@@ -21,7 +21,7 @@ export function PublicIbxFiles({ files }: { files: PublicIbxFile[] }) {
       {folders.map((folder) => <button key={folder} type="button" className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition-colors hover:bg-neutral-900/85" onClick={() => setCurrentPath([...path, folder])}>
         <span aria-hidden="true" className="w-4 shrink-0 text-center font-mono">/</span><span>{folder}</span>
       </button>)}
-      {visibleFiles.map((file) => <PublicFileViewer key={file.url} fileName={file.fileName} contentType={file.contentType} href={file.url} className="flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition-colors hover:bg-neutral-900/85" />)}
+      {visibleFiles.map((file) => <PublicFileViewer key={file.url} fileName={file.fileName} contentType={file.contentType} href={file.url} className="px-3 py-3 text-sm transition-colors hover:bg-neutral-900/85" />)}
     </div>
   </section>;
 }
