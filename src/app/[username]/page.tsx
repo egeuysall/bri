@@ -4,6 +4,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
 import { UserDashboard } from '@/components/dashboard/user-dashboard';
 import { PublicProfileAvatar } from '@/components/public-profile-avatar';
+import { PublicIbxFiles } from '@/components/public-ibx-files';
 import { formatQuickLinkTitle } from '@/lib/quick-link-display';
 import {
   getMyUserProfile,
@@ -11,6 +12,7 @@ import {
   listPublicNotesByUsername,
   listQuickLinksByUsername,
 } from '@/lib/notes';
+import { listPublicIbxFiles } from '@/lib/public-ibx-files';
 import { getBridgeApiKeySessionFromRequest } from '@/lib/request-security';
 import {
   isPublicUsernamePath,
@@ -80,13 +82,14 @@ export default async function DashboardPage({
     return <UserDashboard apiKeySession={Boolean(apiKeySession)} />;
   }
 
-  const [profile, notes, links] = await Promise.all([
+  const [profile, notes, links, publicFiles] = await Promise.all([
     getPublicUserProfileByUsername({ username: normalizedPathHandle }),
     listPublicNotesByUsername({ username: normalizedPathHandle }),
     listQuickLinksByUsername({ username: normalizedPathHandle }),
+    listPublicIbxFiles(normalizedPathHandle),
   ]);
 
-  if (!profile && notes.length === 0 && links.length === 0) {
+  if (!profile && notes.length === 0 && links.length === 0 && publicFiles.length === 0) {
     notFound();
   }
 
@@ -177,6 +180,8 @@ export default async function DashboardPage({
             </div>
           ) : null}
         </div>
+
+        {publicFiles.length > 0 && <PublicIbxFiles files={publicFiles} />}
 
         <div className="space-y-3">
           <h2 className="text-xs text-neutral-500">Published links</h2>
