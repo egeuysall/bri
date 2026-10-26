@@ -518,7 +518,7 @@ export function BriTiptapEditor({
           align="start"
           side="bottom"
           sideOffset={4}
-          className="w-[min(42rem,calc(100vw-2rem))] [scrollbar-width:thin] [scrollbar-color:var(--muted-foreground)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/50"
+          className="w-[min(42rem,calc(100vw-2rem))] max-h-[min(60vh,24rem)] border border-neutral-800 ring-0 [scrollbar-width:thin] [scrollbar-color:var(--muted-foreground)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/50"
           finalFocus={() => editor.view.dom}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && matchingIBXFiles[0]) {
