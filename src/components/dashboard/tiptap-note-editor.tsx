@@ -518,7 +518,7 @@ export function BriTiptapEditor({
           align="start"
           side="bottom"
           sideOffset={4}
-          className="w-80 [scrollbar-width:thin] [scrollbar-color:var(--muted-foreground)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/50"
+          className="w-[min(42rem,calc(100vw-2rem))] [scrollbar-width:thin] [scrollbar-color:var(--muted-foreground)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted-foreground/50"
           finalFocus={() => editor.view.dom}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && matchingIBXFiles[0]) {
@@ -542,7 +542,7 @@ export function BriTiptapEditor({
                 : ibxError ? <DropdownMenuItem disabled>{ibxError}</DropdownMenuItem>
                   : !ibxFiles.length ? <DropdownMenuItem onMouseDown={(event) => event.preventDefault()} onClick={() => void loadIBXFiles()}>load public files</DropdownMenuItem>
                     : matchingIBXFiles.length ? matchingIBXFiles.map((file) => <DropdownMenuItem key={file.id} onMouseDown={(event) => event.preventDefault()} onClick={() => insertIBXFile(file)}>
-                <span className="min-w-0 flex-1 truncate">{file.fileName}</span><span className="max-w-32 truncate text-muted-foreground">{file.folderPath.join('/') || 'drive'}</span>
+                <span className="min-w-0 flex-1 whitespace-normal break-all">{file.fileName}</span><span className="max-w-[45%] shrink-0 whitespace-normal break-all text-right text-muted-foreground">{file.folderPath.join('/') || 'drive'}</span>
               </DropdownMenuItem>) : <DropdownMenuItem disabled>no matching public files</DropdownMenuItem>}
           </DropdownMenuGroup>
         </DropdownMenuContent>
