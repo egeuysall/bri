@@ -4,7 +4,7 @@ import '@/styles/globals.css';
 // External Libraries
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
-import { Analytics } from '@vercel/analytics/react';
+import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // Fonts
@@ -204,7 +204,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <SiteShell>{children}</SiteShell>
             </TooltipProvider>
             <Toaster />
-            {enableVercelTelemetry ? <Analytics /> : null}
+            <Analytics />
             {enableVercelTelemetry ? <SpeedInsights /> : null}
           </ConvexClerkProvider>
         </ClerkProvider>
