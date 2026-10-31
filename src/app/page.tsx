@@ -44,7 +44,7 @@ const Landing = async () => {
       <BriFeatureShowcase />
       <section
         className="mt-10 animate-enter pb-8"
-        style={{ '--delay': '1500ms' } as CSSProperties}
+        style={{ '--delay': '700ms' } as CSSProperties}
       >
         <CliSection />
       </section>
