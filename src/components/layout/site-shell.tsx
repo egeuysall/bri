@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { SignUpButton, useUser } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
@@ -44,9 +44,7 @@ function LandingSiteShell({ children }: { children: React.ReactNode }) {
 
           <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="account">
             <Link href="/sign-in" className="hover:text-foreground" prefetch={false}>sign in</Link>
-            <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
-              <button className="hover:text-foreground" type="button">sign up</button>
-            </SignUpButton>
+            <Link href="/sign-up" className="hover:text-foreground" prefetch={false}>sign up</Link>
           </nav>
         </div>
       </header>
