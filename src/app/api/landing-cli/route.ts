@@ -157,8 +157,11 @@ async function provisionDemoAccount(sessionId: string, authSessionId: string | n
     return { username, authUrl: task.url };
   }
 
-  const token = await clerk.sessions.getToken(authSessionId, 'convex', 300);
-  const convexToken = token.jwt;
+  // Agent Task sessions are valid Clerk auth contexts, but they are not
+  // persisted as regular Sessions that can be fetched through the Backend API.
+  // Mint the Convex template from the verified request context instead.
+  const convexToken = await auth().then((state) => state.getToken({ template: 'convex' }));
+  if (!convexToken) throw new Error('Could not create a Convex token for the demo session.');
   await syncMyUserProfile({ token: convexToken, username, displayName: 'bri demo', email: null });
 
   const prefix = `bri_${randomBytes(6).toString('base64url')}`;
