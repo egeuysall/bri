@@ -34,7 +34,7 @@ export async function BriFeatureShowcase() {
   const [notes, links] = await Promise.all([getPublicNotes(), getPublicLinks()]);
 
   return (
-    <section className="mt-10 space-y-6 pb-8" aria-labelledby="bri-showcase-title">
+    <section className="mt-10 space-y-6" aria-labelledby="bri-showcase-title">
       <header>
         <h2 id="bri-showcase-title" className="animate-enter text-sm font-semibold leading-5 text-neutral-100" style={{ '--delay': '120ms' } as CSSProperties}>
           write it once. keep it useful.
