@@ -26,7 +26,8 @@ const result = await Bun.build({
   outdir: outputDir,
   root: cliRoot,
   target: 'node',
-  packages: 'external',
+  packages: 'bundle',
+  splitting: true,
   naming: { entry: '[dir]/[name].js' },
 });
 
