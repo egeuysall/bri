@@ -237,7 +237,7 @@ export async function runLandingShellCommand(args: string[], home: string, origi
         }
         return output.join("\n").slice(0, MAX_CURL_BYTES);
       }
-      default: return `command not found: ${command}. use 'bri --help' for bri commands or 'help' for shell commands.`;
+      default: return "command not found. run bri --help to see available commands.";
     }
   } catch (error) {
     return error instanceof Error ? `${command}: ${error.message}` : `${command}: command failed`;

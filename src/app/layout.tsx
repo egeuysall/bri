@@ -38,7 +38,7 @@ export const image = '/logo.png';
  * A brief description of the site or application.
  * @type {string}
  */
-export const description = 'write and publish markdown notes and links. keep drafts private, share when ready, and manage everything with the cli, api, or dashboard.';
+export const description = 'notes and short links, public or private. publish from the dashboard, cli, or api. open source.';
 
 /**
  * The template string for dynamic page titles or metadata.

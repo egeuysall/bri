@@ -9,8 +9,8 @@ export default function OpenGraphImage() {
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 76, background: '#050505', color: '#f5f5f5', fontFamily: 'monospace' }}>
       <div style={{ fontSize: 26, letterSpacing: 2 }}>bri</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-        <div style={{ fontSize: 58, lineHeight: 1.2, maxWidth: 860 }}>write it once. keep it useful.</div>
-        <div style={{ fontSize: 25, lineHeight: 1.5, color: '#a3a3a3', maxWidth: 850 }}>private markdown notes and useful links, ready to share when you are.</div>
+        <div style={{ fontSize: 58, lineHeight: 1.2, maxWidth: 860 }}>publish markdown. share a link.</div>
+        <div style={{ fontSize: 25, lineHeight: 1.5, color: '#a3a3a3', maxWidth: 850 }}>notes and short links, public or private. publish from the dashboard, cli, or api. open source.</div>
       </div>
       <div style={{ fontSize: 18, color: '#737373' }}>bri.fyi</div>
     </div>,

@@ -64,7 +64,7 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
     <div className="bri-landing-notes flex flex-col gap-6">
       <section aria-labelledby="public-notes-title">
         <div className="mb-3 flex items-baseline justify-between gap-4">
-          <h2 id="public-notes-title" className="text-sm font-semibold text-foreground">notes</h2>
+          <h2 id="public-notes-title" className="text-sm font-semibold text-foreground">published notes</h2>
           <span className="text-[11px] text-muted-foreground">{notes.length.toString().padStart(2, '0')}</span>
         </div>
         <ol className="space-y-1 text-sm leading-5">
@@ -92,7 +92,7 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
 
       <section aria-labelledby="quick-links-title">
         <div className="mb-3 flex items-baseline justify-between gap-4">
-          <h2 id="quick-links-title" className="text-sm font-semibold text-foreground">links</h2>
+          <h2 id="quick-links-title" className="text-sm font-semibold text-foreground">short links</h2>
           <span className="text-[11px] text-muted-foreground">{links.length.toString().padStart(2, '0')}</span>
         </div>
         <ul className="space-y-1 text-sm leading-5">

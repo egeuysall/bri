@@ -426,13 +426,13 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
           <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4 font-mono text-xs">
             <div className="flex h-full items-stretch gap-5">
               <span className="flex items-center border-b border-foreground px-1 text-foreground">terminal</span>
-              <a className="flex items-center text-muted-foreground hover:text-foreground" href="/docs" target="_blank" rel="noreferrer">all commands</a>
+              <a className="flex items-center text-muted-foreground hover:text-foreground" href="/docs" target="_blank" rel="noreferrer">command reference</a>
             </div>
             <button className="text-muted-foreground hover:text-foreground" type="button" onClick={closeWorkspace} aria-label="close cli workspace">close</button>
           </header>
 
           <div ref={transcriptRef} className="flex-1 overflow-y-auto px-5 py-5 font-mono text-xs leading-5 sm:px-7" aria-live="polite">
-            <p className="mb-5 text-muted-foreground">bri · cli workspace</p>
+            <p className="mb-5 text-muted-foreground">bri · isolated demo account</p>
             {entries.length === 0 && <p className="text-muted-foreground">run any command from the current cli, starting with `bri`.</p>}
             <div className="space-y-4">
               {entries.map((entry, index) => (
