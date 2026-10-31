@@ -308,7 +308,11 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
       stdin = format.replace(/%[sdif]/g, () => values[valueIndex++] ?? '')
         .replace(/\\n/g, '\n').replace(/\\t/g, '\t').replace(/\\r/g, '\r');
     }
-    if (!commandArgs || (pipelineRight && (!leftArgs || stdin === undefined || !['echo', 'printf'].includes(leftArgs[0] ?? '') || commandArgs[0]?.toLowerCase() !== 'bri' || commandArgs[1]?.toLowerCase() !== 'notes' || commandArgs[2]?.toLowerCase() !== 'update' || !commandArgs.includes('--stdin')))) {
+    const supportsStdin = commandArgs?.[0]?.toLowerCase() === 'bri'
+      && ((commandArgs[1]?.toLowerCase() === 'notes' && commandArgs[2]?.toLowerCase() === 'update')
+        || commandArgs[1]?.toLowerCase() === 'publish')
+      && commandArgs.includes('--stdin');
+    if (!commandArgs || (pipelineRight && (!leftArgs || stdin === undefined || !['echo', 'printf'].includes(leftArgs[0] ?? '') || !supportsStdin))) {
       setEntries((current) => [...current.slice(-5), {
         command: normalized,
         output: 'enter a complete command. quotes group text; commands run in the demo environment.',

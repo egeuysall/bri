@@ -8,7 +8,7 @@ export const description = 'Create quick link';
 
 export const options = zod.object({
   key: zod.string().describe('Link key'),
-  target: zod.string().describe('Target URL'),
+  target: zod.string().optional().describe('Target URL (defaults to the Bri homepage in the public demo)'),
   label: zod.string().optional().describe('Optional label'),
   endpoint: endpointOption,
   ...jsonColorOptions,

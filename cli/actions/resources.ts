@@ -503,9 +503,9 @@ export async function runLinksCreate(
   if (!apiKey) throw new Error('missing api key. run `bri login --api-key <key>`');
 
   const key = options.key?.trim() || '';
-  const targetUrl = options.target?.trim() || '';
+  const targetUrl = options.target?.trim() || (process.env.BRI_DEMO_MODE === '1' ? DEFAULT_SITE_URL : '');
   if (!key) throw new Error('missing key');
-  if (!targetUrl) throw new Error('missing target url');
+  if (!targetUrl) throw new Error('missing target url. pass --target <url>');
 
   const endpointRaw = getStringSetting(
     command,
@@ -542,6 +542,7 @@ export async function runLinksCreate(
     rows: [
       { label: 'status', value: 'created', tone: 'ok' },
       { label: 'key', value: key, tone: 'info' },
+      { label: 'target', value: targetUrl, tone: 'muted' },
     ],
   });
 }

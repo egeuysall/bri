@@ -55,11 +55,11 @@ function publicDemoBlockReason(args: string[]) {
   if (args.some((arg) => /^--?(?:api[-_]?key|endpoint|site[-_]?url)(?:=|$)/i.test(arg))) {
     return 'api keys and custom endpoints are disabled in the public demo.';
   }
+  if (command === 'publish' && args.some((arg) => /^--?(?:open|copy)(?:=|$)/i.test(arg))) {
+    return 'opening links and clipboard access are disabled in the public demo.';
+  }
   if (containsOutsidePath(args)) {
     return 'file paths must stay inside the temporary cli workspace.';
-  }
-  if (command === 'publish' && !args.includes('--dry-run')) {
-    return 'publishing is disabled in the public demo. try --dry-run to preview a local markdown file.';
   }
   if (command === 'notes' && ['delete', 'restore', 'restore-version', 'invite'].includes(subcommand ?? '')) {
     return 'deleting, restoring, and inviting are disabled in the public demo.';
@@ -336,7 +336,7 @@ export async function POST(request: Request) {
   }
 
   const args = rawArgs as string[];
-  const stdin = (body as { stdin?: unknown }).stdin;
+  let stdin = (body as { stdin?: unknown }).stdin;
   const rawConvexToken = (body as { clerkToken?: unknown }).clerkToken;
   if (rawConvexToken !== undefined && (typeof rawConvexToken !== 'string' || rawConvexToken.length > 8_000)) {
     return Response.json({ error: 'Invalid demo session token.' }, { status: 400 });
@@ -345,8 +345,24 @@ export async function POST(request: Request) {
     return Response.json({ error: 'The piped input must be plain text under 16 kb.' }, { status: 400 });
   }
   const isBriCommand = args[0]?.toLowerCase() === 'bri';
-  const cliArgs = isBriCommand ? args.slice(1) : args;
+  let cliArgs = isBriCommand ? args.slice(1) : args;
   if (cliArgs.length === 0) cliArgs.push('--help');
+  if (stdin === undefined && cliArgs[0]?.toLowerCase() === 'publish') {
+    const stdinIndex = cliArgs.indexOf('--stdin');
+    if (stdinIndex >= 0) {
+      const tail = cliArgs.slice(stdinIndex + 1);
+      const optionIndex = tail.findIndex((arg) => arg.startsWith('-'));
+      const content = optionIndex < 0 ? tail : tail.slice(0, optionIndex);
+      if (content.length) {
+        const inlineContent = content.join(' ');
+        if (inlineContent.length > 16_000) {
+          return Response.json({ error: 'The piped input must be plain text under 16 kb.' }, { status: 413 });
+        }
+        stdin = inlineContent;
+        cliArgs = [...cliArgs.slice(0, stdinIndex + 1), ...tail.slice(content.length)];
+      }
+    }
+  }
 
   const requestedSession = request.headers.get('x-bri-demo-session');
   const sessionId = requestedSession && SESSION_PATTERN.test(requestedSession) ? requestedSession : randomBytes(24).toString('base64url');
@@ -376,8 +392,10 @@ export async function POST(request: Request) {
 
     const blockReason = publicDemoBlockReason(cliArgs);
     if (blockReason) return sendResult(request, sessionId, { output: blockReason });
-    if (stdin !== undefined && !(cliArgs[0]?.toLowerCase() === 'notes' && cliArgs[1]?.toLowerCase() === 'update' && cliArgs.includes('--stdin'))) {
-      return sendResult(request, sessionId, { output: 'piped input is enabled for bri notes update <id> --stdin.' });
+    const supportsStdin = (cliArgs[0]?.toLowerCase() === 'notes' && cliArgs[1]?.toLowerCase() === 'update' && cliArgs.includes('--stdin'))
+      || (cliArgs[0]?.toLowerCase() === 'publish' && cliArgs.includes('--stdin'));
+    if (stdin !== undefined && !supportsStdin) {
+      return sendResult(request, sessionId, { output: 'piped input is enabled for bri publish --stdin and bri notes update <id> --stdin.' });
     }
 
     let demoApiKey: string;
@@ -408,6 +426,7 @@ export async function POST(request: Request) {
       : ['run', cliEntry, ...cliArgs];
     const topLevelOnly = ['--help', '-h', 'help', '--version', '-v', '-V', 'version'];
     if (!topLevelOnly.includes(cliArgs[0] ?? '')) cliCommandArgs.push('--no-update-check');
+    if (cliArgs[0]?.toLowerCase() === 'publish') cliCommandArgs.push('--no-open', '--no-copy');
     const { output, code } = await runProcess(cliCommand, cliCommandArgs, home, {
       NODE_ENV: process.env.NODE_ENV ?? 'production',
       PATH: process.env.PATH ?? '',
@@ -418,6 +437,7 @@ export async function POST(request: Request) {
       BRI_SITE_URL: siteUrl,
       BRI_ENDPOINT: `${siteUrl}/api/notes`,
       BRI_API_KEY: demoApiKey,
+      BRI_DEMO_MODE: '1',
     }, typeof stdin === 'string' ? stdin : '');
     return sendResult(request, sessionId, { output: output || (code === 0 ? 'command completed.' : 'command exited without output.') });
   } catch {

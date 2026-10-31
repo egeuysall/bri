@@ -18,7 +18,7 @@ export const cliHelpRows: CommandRow[] = [
   { command: 'bri notes restore-version <id> <version>', description: 'Restore a note version', group: 'library' },
   { command: 'bri notes ask <user> <slug> --question <q>', description: 'Ask AI about a note', group: 'library' },
   { command: 'bri links list', description: 'List quick links', group: 'library' },
-  { command: 'bri links create --key <key>', description: 'Create quick link', group: 'library' },
+  { command: 'bri links create --key <key> [--target <url>]', description: 'Create quick link', group: 'library' },
   { command: 'bri links update <id>', description: 'Update a quick link', group: 'library' },
   { command: 'bri links delete <id>', description: 'Delete a quick link', group: 'library' },
   { command: 'bri links invite <id>', description: 'Invite a user to a private link', group: 'library' },
