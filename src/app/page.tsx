@@ -33,10 +33,10 @@ const Landing = async () => {
   return (
     <>
       <section className="animate-enter" style={{ '--delay': '40ms' } as CSSProperties}>
-        <h1 className="text-[13px] font-medium leading-relaxed text-neutral-200">
+        <h1 className="text-sm font-medium leading-5 text-neutral-200">
           open-source publishing for notes and links.
         </h1>
-        <p className="mt-2 text-xs text-neutral-400">
+        <p className="mt-2 text-[13px] leading-5 text-neutral-400">
           dashboard, api-first cli, private or public notes, built for fast sharing.
         </p>
       </section>
