@@ -151,7 +151,7 @@ async function provisionDemoAccount(sessionId: string, authSessionId: string | n
       permissions: '*',
       agentName: 'bri-public-terminal',
       taskDescription: 'Start an isolated bri public cli demo session',
-      redirectUrl: siteUrl,
+      redirectUrl: `${siteUrl}/?bri_demo=1`,
       sessionMaxDurationInSeconds: 60 * 60,
     });
     return { username, authUrl: task.url };

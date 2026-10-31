@@ -16,7 +16,7 @@ export default clerkMiddleware(async (auth, request) => {
         ((await auth()).sessionClaims as Record<string, unknown> | null | undefined)
       );
 
-  if (pathname === '/' && userHandle) {
+  if (pathname === '/' && userHandle && request.nextUrl.searchParams.get('bri_demo') !== '1') {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = `/${userHandle}`;
     return NextResponse.redirect(redirectUrl);
