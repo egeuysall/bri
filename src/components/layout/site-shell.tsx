@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -9,22 +9,29 @@ import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  if (pathname !== '/') {
+    return <div className="min-h-screen bg-bg">{children}</div>;
+  }
+
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg">{children}</div>}>
+      <LandingSiteShell>{children}</LandingSiteShell>
+    </Suspense>
+  );
+}
+
+function LandingSiteShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isLoaded, isSignedIn, user } = useUser();
-  const isLandingRoute = pathname === '/';
   const ownHandle = resolveUserHandleFromUser(user) ?? '';
   const isLandingDemo = searchParams.get('bri_demo') === '1';
-  const shouldRedirectHomeToDashboard = isSignedIn && isLandingRoute && !isLandingDemo && ownHandle.length > 0;
+  const shouldRedirectHomeToDashboard = isSignedIn && !isLandingDemo && ownHandle.length > 0;
 
   useEffect(() => {
     if (!isLoaded || !shouldRedirectHomeToDashboard) return;
     router.replace(`/${ownHandle}`);
   }, [isLoaded, ownHandle, router, shouldRedirectHomeToDashboard]);
-
-  if (!isLandingRoute) {
-    return <div className="min-h-screen bg-bg">{children}</div>;
-  }
 
   if (shouldRedirectHomeToDashboard) {
     return <div className="min-h-screen bg-bg" />;
