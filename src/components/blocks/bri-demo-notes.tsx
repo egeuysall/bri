@@ -9,8 +9,8 @@ type LandingLink = { title: string; href: string; target?: string };
 
 export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: NotePreview[]; initialLinks: LandingLink[] }) {
   const { getToken } = useAuth();
-  const [notes, setNotes] = useState(initialNotes.slice(0, 10));
-  const [links, setLinks] = useState(initialLinks.slice(0, 10));
+  const [notes, setNotes] = useState(initialNotes.slice(0, 3));
+  const [links, setLinks] = useState(initialLinks.slice(0, 3));
 
   useEffect(() => {
     let active = true;
@@ -24,8 +24,8 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
         .then(async (response) => response.ok ? await response.json() as { notes?: NotePreview[]; links?: LandingLink[] } : null)
         .then((payload) => {
           if (!active || !payload) return;
-          if (payload.notes) setNotes(payload.notes.slice(0, 10));
-          if (payload.links) setLinks(payload.links.slice(0, 10));
+          if (payload.notes) setNotes(payload.notes.slice(0, 3));
+          if (payload.links) setLinks(payload.links.slice(0, 3));
         })
         .catch(() => undefined);
     };

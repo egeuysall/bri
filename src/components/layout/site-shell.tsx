@@ -2,9 +2,8 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
+import { SignUpButton, useUser } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
@@ -43,21 +42,13 @@ function LandingSiteShell({ children }: { children: React.ReactNode }) {
             bri
           </Link>
 
-          {isLoaded && !isSignedIn ? (
-            <div className="flex items-center">
-              <SignInButton mode="redirect">
-                <Button type="button" variant="ghost" className="h-8 text-xs">
-                  sign in
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="redirect">
-                <Button type="button" variant="ghost" className="h-8 border text-xs">
-                  sign up
-                </Button>
+          {!isSignedIn && (
+            <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="account">
+              <Link href="/sign-in" className="hover:text-foreground" prefetch={false}>sign in</Link>
+              <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
+                <button className="hover:text-foreground" type="button">sign up</button>
               </SignUpButton>
-            </div>
-          ) : (
-            <div className="h-8 w-[132px]" aria-hidden />
+            </nav>
           )}
         </div>
       </header>

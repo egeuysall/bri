@@ -12,7 +12,7 @@ async function getPublicNotes(): Promise<LandingNote[]> {
     const payload = await response.json() as { data?: Array<{ username?: unknown; slug?: unknown; title?: unknown }> };
     return (payload.data ?? []).flatMap((note) => typeof note.username === 'string' && typeof note.slug === 'string' && typeof note.title === 'string'
       ? [{ username: note.username, slug: note.slug, title: note.title, href: `https://bri.fyi/${encodeURIComponent(note.username)}/${encodeURIComponent(note.slug)}` }]
-      : []).slice(0, 10);
+      : []).slice(0, 3);
   } catch { return []; }
 }
 
@@ -26,7 +26,7 @@ async function getPublicLinks(): Promise<LandingLink[]> {
           ? [{ title: row.label || row.key, href: `https://bri.fyi/${encodeURIComponent(row.username)}/${encodeURIComponent(row.key)}`, target: target.toString() }]
           : [];
       } catch { return []; }
-    }).slice(0, 10);
+    }).slice(0, 3);
   } catch { return []; }
 }
 
