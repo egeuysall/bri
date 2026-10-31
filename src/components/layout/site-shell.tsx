@@ -3,17 +3,19 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLoaded, isSignedIn, user } = useUser();
   const isLandingRoute = pathname === '/';
   const ownHandle = resolveUserHandleFromUser(user) ?? '';
-  const shouldRedirectHomeToDashboard = isSignedIn && isLandingRoute && ownHandle.length > 0;
+  const isLandingDemo = searchParams.get('bri_demo') === '1';
+  const shouldRedirectHomeToDashboard = isSignedIn && isLandingRoute && !isLandingDemo && ownHandle.length > 0;
 
   useEffect(() => {
     if (!isLoaded || !shouldRedirectHomeToDashboard) return;

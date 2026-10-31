@@ -819,6 +819,7 @@ body {
   will-change: transform;
 }
 .cli-workspace-panel[data-open="true"] { transform: translateX(0); }
+.cli-workspace-panel[data-ready="false"] { transition: none; }
 .cli-workspace-panel:has(.cli-workspace-resizer:hover),
 .cli-workspace-panel:has(.cli-workspace-resizer:focus-visible) {
   border-left-color: var(--fg);

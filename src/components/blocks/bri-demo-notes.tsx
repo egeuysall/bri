@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useAuth } from '@clerk/nextjs';
 
 type NotePreview = { username: string; slug: string; title: string; href?: string; content?: string; temporary?: boolean };
@@ -44,7 +45,7 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
         </div>
         <ol className="divide-y divide-border text-[13px] leading-5">
           {notes.map((note, index) => (
-            <li key={`${note.username}/${note.slug}`} className="py-2.5">
+            <li key={`${note.username}/${note.slug}`} className="animate-enter py-2.5" style={{ '--delay': `${300 + index * 55}ms` } as CSSProperties}>
               <div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-baseline gap-2">
                 <span className="text-[11px] text-muted-foreground">{String(index + 1).padStart(2, '0')}</span>
                 {note.temporary ? (
@@ -72,7 +73,7 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
         </div>
         <ul className="divide-y divide-border text-[13px] leading-5">
           {links.map((item, index) => (
-            <li key={`${item.href}-${index}`}>
+            <li key={`${item.href}-${index}`} className="animate-enter" style={{ '--delay': `${300 + notes.length * 55 + index * 55}ms` } as CSSProperties}>
               <a href={item.href} className="grid grid-cols-[2rem_minmax(0,1fr)] items-baseline gap-2 py-2.5 text-foreground hover:underline">
                 <span className="text-[11px] text-muted-foreground">{String(index + 1).padStart(2, '0')}</span>
                 <span className="min-w-0">

@@ -43,8 +43,7 @@ describe('AI overlay rate limit', () => {
     }
 
     const limited = checkAiOverlayRateLimit(key, now + 1);
-    expect(limited.allowed).toBe(false);
-    expect(limited.retryAfterSeconds).toBe(60);
+    expect(limited).toEqual({ allowed: false, retryAfterSeconds: 60 });
   });
 
   test('resets the bucket after the window expires', () => {

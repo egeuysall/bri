@@ -45,7 +45,7 @@ const Landing = async ({ searchParams }: { searchParams: Promise<{ bri_demo?: st
       <BriFeatureShowcase />
       <section
         className="mt-10 animate-enter pb-8"
-        style={{ '--delay': '360ms' } as CSSProperties}
+        style={{ '--delay': '1500ms' } as CSSProperties}
       >
         <CliSection />
       </section>
