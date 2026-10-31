@@ -71,7 +71,7 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
   const canonical = `${getSiteUrl()}/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
   const description = getNoteDescription(note.content) || `a public markdown note by ${username}.`;
   return {
-    title: `${note.title} | bri`,
+    title: `${note.title}: bri`,
     description,
     alternates: { canonical },
     openGraph: {

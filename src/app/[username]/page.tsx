@@ -44,7 +44,7 @@ export async function generateMetadata({ params, searchParams }: {
     return { title: 'profile not found', robots: { index: false, follow: false } };
   }
 
-  const title = `${profile?.displayName || `@${handle}`} — public notes and links`;
+  const title = `${profile?.displayName || `@${handle}`}: public notes and links`;
   const description = `public notes and quick links from ${profile?.displayName || `@${handle}`}.`;
   const canonicalQuery = new URLSearchParams();
   const notePage = parsePage(singleQueryParam(query.notePage));

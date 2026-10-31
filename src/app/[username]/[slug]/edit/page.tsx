@@ -10,7 +10,7 @@ import { resolveUserHandleFromUser } from '@/lib/user-handle';
 import { isPublicResourcePath, isPublicUsernamePath } from '@/lib/user-handle';
 
 export const metadata: Metadata = {
-  title: 'edit note | bri',
+  title: 'edit note: bri',
   robots: { index: false, follow: false },
 };
 

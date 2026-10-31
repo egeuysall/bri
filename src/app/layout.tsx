@@ -97,7 +97,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: {
       default: pageTitle,
-      template: `%s | ${template}`,
+      template: `%s: ${template}`,
     },
     description: lowercaseDescription,
     metadataBase: new URL(siteUrl),
