@@ -79,7 +79,7 @@ export default async function DashboardPage({
 
   const normalizedPathHandle = normalizePathHandle(username);
   if (!normalizedPathHandle) notFound();
-  if (normalizedPathHandle.startsWith('bri_demo_') && !forcePublicProfile) redirect('/?bri_demo=1');
+  if (normalizedPathHandle.startsWith('bri_demo_') && !forcePublicProfile) redirect('/');
 
   const { sessionClaims, userId, getToken } = await auth();
   let userHandle = resolveUserHandle(sessionClaims as Record<string, unknown> | null | undefined);

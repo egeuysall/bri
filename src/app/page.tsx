@@ -7,11 +7,10 @@ import { BriFeatureShowcase } from '@/components/blocks/bri-feature-showcase';
 import { getBridgeApiKeySessionFromRequest } from '@/lib/request-security';
 import { resolveUserHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
 
-const Landing = async ({ searchParams }: { searchParams: Promise<{ bri_demo?: string }> }) => {
-  const params = await searchParams;
+const Landing = async () => {
   const { userId, sessionClaims } = await auth();
 
-  if (userId && params.bri_demo !== '1') {
+  if (userId) {
     const user = await currentUser();
     const isLandingDemo = user?.publicMetadata.briLandingDemo === true || user?.username?.startsWith('bri_demo_') === true;
     if (!isLandingDemo) {

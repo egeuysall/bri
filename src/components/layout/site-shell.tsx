@@ -1,9 +1,9 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 
@@ -13,19 +13,14 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     return <div className="min-h-screen bg-bg">{children}</div>;
   }
 
-  return (
-    <Suspense fallback={<div className="min-h-screen bg-bg">{children}</div>}>
-      <LandingSiteShell>{children}</LandingSiteShell>
-    </Suspense>
-  );
+  return <LandingSiteShell>{children}</LandingSiteShell>;
 }
 
 function LandingSiteShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { isLoaded, isSignedIn, user } = useUser();
   const ownHandle = resolveUserHandleFromUser(user) ?? '';
-  const isLandingDemo = searchParams.get('bri_demo') === '1';
+  const isLandingDemo = user?.publicMetadata.briLandingDemo === true || user?.username?.startsWith('bri_demo_') === true;
   const shouldRedirectHomeToDashboard = isSignedIn && !isLandingDemo && ownHandle.length > 0;
 
   useEffect(() => {
