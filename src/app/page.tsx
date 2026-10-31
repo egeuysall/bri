@@ -12,7 +12,8 @@ const Landing = async () => {
 
   if (userId) {
     const user = await currentUser();
-    if (user?.publicMetadata.briLandingDemo !== true) {
+    const isLandingDemo = user?.publicMetadata.briLandingDemo === true || user?.username?.startsWith('bri_demo_') === true;
+    if (!isLandingDemo) {
       const handleFromClaims = resolveUserHandle(
         sessionClaims as Record<string, unknown> | null | undefined
       );
