@@ -42,14 +42,12 @@ function LandingSiteShell({ children }: { children: React.ReactNode }) {
             bri
           </Link>
 
-          {!isSignedIn && (
-            <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="account">
-              <Link href="/sign-in" className="hover:text-foreground" prefetch={false}>sign in</Link>
-              <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
-                <button className="hover:text-foreground" type="button">sign up</button>
-              </SignUpButton>
-            </nav>
-          )}
+          <nav className="flex items-center gap-4 text-xs text-muted-foreground" aria-label="account">
+            <Link href="/sign-in" className="hover:text-foreground" prefetch={false}>sign in</Link>
+            <SignUpButton mode="modal" fallbackRedirectUrl="/" forceRedirectUrl="/">
+              <button className="hover:text-foreground" type="button">sign up</button>
+            </SignUpButton>
+          </nav>
         </div>
       </header>
 
