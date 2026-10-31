@@ -17,7 +17,7 @@ function withSampleTikTok(links: LandingLink[]) {
 function displayTarget(target: string) {
   try {
     const url = new URL(target);
-    return url.host + url.pathname.replace(/\/$/, '');
+    return url.hostname.replace(/^www\./, '');
   }
   catch { return target.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
 }

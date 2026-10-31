@@ -86,7 +86,7 @@ function InstallCommand({ command }: { command: string }) {
   const lines = useHighlightedCode(command, 'bash');
 
   return (
-    <CodeBlock className="mt-3 rounded-sm border border-border text-xs" size="sm" style={{ background: 'var(--code-highlight-bg)' }}>
+    <CodeBlock className="mt-3 rounded-sm border border-border !bg-transparent text-xs" size="sm" style={{ background: 'transparent' }}>
       <CodeBlockActions>
         <button type="button" className="rounded-sm border border-border px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:border-foreground hover:text-foreground" onClick={() => void navigator.clipboard.writeText(command)} aria-label="copy install command">copy</button>
       </CodeBlockActions>
