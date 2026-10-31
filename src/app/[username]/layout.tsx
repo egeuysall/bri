@@ -32,9 +32,7 @@ export async function generateMetadata({
     if (profile) {
       return {
         title: `${profile.displayName ? `${profile.displayName} ` : ''}@${profile.username}`,
-        description: profile.email
-          ? `Published notes and links for @${profile.username} (${profile.email}).`
-          : `Published notes and links for @${profile.username}.`,
+        description: `Published notes and links for @${profile.username}.`,
       };
     }
   }

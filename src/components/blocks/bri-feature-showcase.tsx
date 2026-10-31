@@ -34,15 +34,7 @@ export async function BriFeatureShowcase() {
   const [notes, links] = await Promise.all([getPublicNotes(), getPublicLinks()]);
 
   return (
-    <section className="mt-10 space-y-6" aria-labelledby="bri-showcase-title">
-      <header>
-        <h2 id="bri-showcase-title" className="animate-enter text-sm font-semibold leading-5 text-neutral-100" style={{ '--delay': '120ms' } as CSSProperties}>
-          write it once. keep it useful.
-        </h2>
-        <p className="animate-enter mt-3 max-w-[42rem] text-[13px] leading-5 text-neutral-400" style={{ '--delay': '160ms' } as CSSProperties}>
-          draft in markdown, publish when it’s ready, then return to an earlier version whenever you need it.
-        </p>
-      </header>
+    <section className="mt-8" aria-label="public notes and links">
       <div className="animate-enter" style={{ '--delay': '200ms' } as CSSProperties}>
         <BriDemoNotes initialNotes={notes} initialLinks={links} />
       </div>

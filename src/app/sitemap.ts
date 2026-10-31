@@ -9,9 +9,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const response = await fetch(`${base}/api/public/notes/egeuysall`, { next: { revalidate: 300 } });
     if (response.ok) {
-      const payload = await response.json() as { data?: Array<{ username?: unknown; slug?: unknown; createdAt?: unknown }> };
+      const payload = await response.json() as { data?: Array<{ username?: unknown; slug?: unknown; updatedAt?: unknown }> };
       publicNotes = (payload.data ?? []).flatMap((note) => typeof note.username === 'string' && typeof note.slug === 'string'
-        ? [{ username: note.username, slug: note.slug, ...(typeof note.createdAt === 'number' ? { updatedAt: note.createdAt } : {}) }]
+        ? [{ username: note.username, slug: note.slug, ...(typeof note.updatedAt === 'number' ? { updatedAt: note.updatedAt } : {}) }]
         : []);
     }
   } catch { /* keep the homepage and docs available when the public notes API is unavailable */ }

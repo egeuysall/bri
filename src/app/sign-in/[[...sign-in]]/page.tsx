@@ -1,6 +1,9 @@
 import { SignIn } from '@clerk/nextjs';
 import { AuthShell } from '@/components/auth/auth-shell';
 import { ApiKeySignInForm } from './api-key-sign-in-form';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = { title: 'sign in', robots: { index: false, follow: false } };
 
 export default function SignInPage() {
   return (

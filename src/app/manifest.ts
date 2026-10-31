@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'bri',
     short_name: 'bri',
-    description: 'Share your Markdown files quickly and easily.',
+    description: 'Write and publish Markdown notes and quick links, with private drafts, version history, and a CLI.',
     start_url: '/',
     display: 'standalone',
     background_color: '#050505',

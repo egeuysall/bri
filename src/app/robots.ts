@@ -20,8 +20,6 @@ export default function robots(): MetadataRoute.Robots {
           '/tmp/',
           '/logs/',
           '/api/',
-          '/sign-in/',
-          '/sign-up/',
           '/*.json$',
           '/*.sql$',
           '/*.yml$',
@@ -44,8 +42,6 @@ export default function robots(): MetadataRoute.Robots {
           '/tmp/',
           '/logs/',
           '/api/',
-          '/sign-in/',
-          '/sign-up/',
         ],
       },
       {

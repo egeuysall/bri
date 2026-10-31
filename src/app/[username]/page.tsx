@@ -26,8 +26,11 @@ import {
 export const revalidate = 0;
 const PUBLIC_LIST_PAGE_SIZE = 5;
 
-export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
-  const { username } = await params;
+export async function generateMetadata({ params, searchParams }: {
+  params: Promise<{ username: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const [{ username }, query] = await Promise.all([params, searchParams]);
   if (!isPublicUsernamePath(username)) return { title: 'profile not found', robots: { index: false, follow: false } };
   const handle = normalizePathHandle(username);
   if (!handle) return { title: 'profile not found', robots: { index: false, follow: false } };
@@ -43,7 +46,13 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
 
   const title = `${profile?.displayName || `@${handle}`} — public notes and links`;
   const description = `public notes and quick links from ${profile?.displayName || `@${handle}`}.`;
-  const canonical = `${getSiteUrl()}/${encodeURIComponent(handle)}`;
+  const canonicalQuery = new URLSearchParams();
+  const notePage = parsePage(singleQueryParam(query.notePage));
+  const linkPage = parsePage(singleQueryParam(query.linkPage));
+  if (notePage > 1) canonicalQuery.set('notePage', String(notePage));
+  if (linkPage > 1) canonicalQuery.set('linkPage', String(linkPage));
+  const queryString = canonicalQuery.toString();
+  const canonical = `${getSiteUrl()}/${encodeURIComponent(handle)}${queryString ? `?${queryString}` : ''}`;
   return {
     title,
     description,
@@ -146,10 +155,24 @@ export default async function DashboardPage({
     const query = params.toString();
     return query ? `/${normalizedPathHandle}?${query}` : `/${normalizedPathHandle}`;
   };
+  const profileUrl = `${getSiteUrl()}/${encodeURIComponent(normalizedPathHandle)}`;
+  const profileJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    mainEntity: {
+      '@type': 'Person',
+      name: profile?.displayName || `@${normalizedPathHandle}`,
+      alternateName: normalizedPathHandle,
+      url: profileUrl,
+      description: `Public notes and quick links from ${profile?.displayName || `@${normalizedPathHandle}`}.`,
+    },
+  };
 
   return (
-    <section className="w-full animate-enter px-4 py-6 md:px-8 md:py-8">
-      <div className="mx-auto w-full max-w-155 space-y-8">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileJsonLd).replace(/</g, '\\u003c') }} />
+      <section className="w-full animate-enter px-4 py-6 md:px-8 md:py-8">
+        <div className="mx-auto w-full max-w-155 space-y-8">
         <header className="flex flex-col items-start gap-3">
           <PublicProfileAvatar name={normalizedPathHandle} />
           <div className="space-y-2">
@@ -261,7 +284,8 @@ export default async function DashboardPage({
             </div>
           ) : null}
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }

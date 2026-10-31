@@ -9,7 +9,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ use
   try {
     const handle = normalizePathHandle(username);
     const notes = await listPublicNotesByUsername({ username: handle });
-    return NextResponse.json({ data: notes.map(({ username: noteUsername, slug, title, createdAt }) => ({ username: noteUsername, slug, title, createdAt })) }, {
+    return NextResponse.json({ data: notes.map(({ username: noteUsername, slug, title, createdAt, updatedAt }) => ({ username: noteUsername, slug, title, createdAt, updatedAt })) }, {
       headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=300' },
     });
   } catch {
