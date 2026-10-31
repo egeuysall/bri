@@ -6,6 +6,21 @@ import { useAuth } from '@clerk/nextjs';
 
 type NotePreview = { username: string; slug: string; title: string; href?: string; content?: string; temporary?: boolean };
 type LandingLink = { title: string; href: string; target?: string };
+const sampleTikTok: LandingLink = { title: 'tt', href: 'https://www.tiktok.com/@egeuysall', target: 'https://www.tiktok.com/@egeuysall' };
+
+function withSampleTikTok(links: LandingLink[]) {
+  return links.some((link) => link.title.toLowerCase() === 'tt')
+    ? links.slice(0, 3)
+    : [...links.slice(0, 2), sampleTikTok];
+}
+
+function displayTarget(target: string) {
+  try {
+    const url = new URL(target);
+    return url.host + url.pathname.replace(/\/$/, '');
+  }
+  catch { return target.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+}
 
 function displayLink(link: LandingLink): LandingLink {
   try {
@@ -18,8 +33,8 @@ function displayLink(link: LandingLink): LandingLink {
 
 export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: NotePreview[]; initialLinks: LandingLink[] }) {
   const { getToken } = useAuth();
-  const [notes, setNotes] = useState(initialNotes.slice(0, 3));
-  const [links, setLinks] = useState(initialLinks.slice(0, 3).map(displayLink));
+  const [notes, setNotes] = useState(initialNotes.slice(0, 4));
+  const [links, setLinks] = useState(withSampleTikTok(initialLinks.map(displayLink)));
 
   useEffect(() => {
     let active = true;
@@ -33,8 +48,8 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
         .then(async (response) => response.ok ? await response.json() as { notes?: NotePreview[]; links?: LandingLink[] } : null)
         .then((payload) => {
           if (!active || !payload) return;
-          if (payload.notes) setNotes(payload.notes.slice(0, 3));
-          if (payload.links) setLinks(payload.links.slice(0, 3).map(displayLink));
+          if (payload.notes) setNotes(payload.notes.slice(0, 4));
+          if (payload.links) setLinks(withSampleTikTok(payload.links.map(displayLink)));
         })
         .catch(() => undefined);
     };
@@ -67,7 +82,7 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
                     {note.title}
                   </a>
                 )}
-                <span className="text-[10px] text-muted-foreground">{note.temporary ? 'session' : 'public'}</span>
+                <span className="text-[11px] text-muted-foreground">{note.temporary ? 'session' : 'public'}</span>
               </div>
             </li>
           ))}
@@ -83,12 +98,10 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
         <ul className="space-y-1 text-sm leading-5">
           {links.map((item, index) => (
             <li key={`${item.href}-${index}`} className="animate-enter" style={{ '--delay': `${300 + notes.length * 55 + index * 55}ms` } as CSSProperties}>
-              <a href={item.href} aria-label={`${item.title}: ${item.target ?? item.href}`} className="group grid grid-cols-[2rem_minmax(0,1fr)] items-baseline gap-2 py-1 text-foreground">
+              <a href={item.href} aria-label={`${item.title}: ${item.target ?? item.href}`} className="group grid grid-cols-[2rem_minmax(0,1fr)_auto] items-baseline gap-2 py-1 text-foreground">
                 <span className="text-[11px] text-muted-foreground">{String(index + 1).padStart(2, '0')}</span>
-                <span className="min-w-0">
-                  <span className="block truncate group-hover:underline">{item.title}</span>
-                  {item.target && <span className="mt-0.5 block truncate text-xs text-muted-foreground">{item.target}</span>}
-                </span>
+                <span className="min-w-0 truncate group-hover:underline">{item.title}</span>
+                {item.target && <span className="max-w-48 truncate text-right text-[11px] text-muted-foreground">{displayTarget(item.target)}</span>}
               </a>
             </li>
           ))}
