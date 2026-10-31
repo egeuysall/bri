@@ -1,0 +1,30 @@
+@reference "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Match the monochrome product UI; leave syntax-highlighted code untouched. */
+:root {
+  --blue: #737373;
+  --green: #737373;
+  --yellow: #737373;
+  --orange: #737373;
+  --red: #737373;
+  --purple: #737373;
+}
+
+body,
+body * {
+  text-transform: lowercase !important;
+}
+
+pre,
+pre *,
+code,
+code * {
+  text-transform: none !important;
+}
+
+img,
+video,
+svg {
+  filter: grayscale(1);
+}

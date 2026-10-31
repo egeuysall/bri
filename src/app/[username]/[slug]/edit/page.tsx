@@ -1,4 +1,5 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
+import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { NoteSlugEditor } from '@/components/dashboard/note-slug-editor';
@@ -7,6 +8,11 @@ import { getAdminNoteByUsernameAndSlug, getNoteByUsernameAndSlug } from '@/lib/n
 import { getBridgeApiKeySessionFromRequest } from '@/lib/request-security';
 import { resolveUserHandleFromUser } from '@/lib/user-handle';
 import { isPublicResourcePath, isPublicUsernamePath } from '@/lib/user-handle';
+
+export const metadata: Metadata = {
+  title: 'edit note | bri',
+  robots: { index: false, follow: false },
+};
 
 export default async function EditNotePage({
   params,

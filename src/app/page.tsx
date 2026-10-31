@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
 import { CliSection } from '@/components/blocks/cli-copy';
+import { BriFeatureShowcase } from '@/components/blocks/bri-feature-showcase';
 import { getBridgeApiKeySessionFromRequest } from '@/lib/request-security';
 import { resolveUserHandle, resolveUserHandleFromUser } from '@/lib/user-handle';
 
@@ -36,17 +37,18 @@ const Landing = async () => {
   return (
     <>
       <section className="animate-enter" style={{ '--delay': '40ms' } as CSSProperties}>
-        <p className="text-[13px] leading-relaxed text-neutral-200">
-          Open-source publishing platform for notes and links.
-        </p>
+        <h1 className="text-[13px] font-medium leading-relaxed text-neutral-200">
+          open-source publishing for notes and links.
+        </h1>
         <p className="mt-2 text-xs text-neutral-400">
-          Authenticated dashboard, API-first CLI, private or public notes, built for fast sharing.
+          dashboard, api-first cli, private or public notes, built for fast sharing.
         </p>
       </section>
 
+      <BriFeatureShowcase />
       <section
         className="mt-10 animate-enter pb-8"
-        style={{ '--delay': '120ms' } as CSSProperties}
+        style={{ '--delay': '360ms' } as CSSProperties}
       >
         <CliSection />
       </section>

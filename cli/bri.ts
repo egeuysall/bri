@@ -2,7 +2,7 @@
 
 import process from 'node:process';
 import Pastel from 'pastel';
-import { renderTopHelp, VERSION, normalizeArgv } from './core/shared';
+import { isColorEnabled, renderTopHelp, VERSION, normalizeArgv } from './core/shared';
 
 export async function main(argv = process.argv.slice(2), commandMeta: ImportMeta = import.meta): Promise<void> {
   if (argv[0] === 'mcp') {
@@ -43,7 +43,7 @@ export async function main(argv = process.argv.slice(2), commandMeta: ImportMeta
   );
 
   if (argv.length === 0 || ((wantsTopHelp || topLevelOnlyFlags) && !hasCommand)) {
-    renderTopHelp(process.stdout.isTTY && !argv.includes('--no-color'));
+    renderTopHelp(isColorEnabled && !argv.includes('--no-color'));
     return;
   }
 

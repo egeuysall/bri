@@ -1,4 +1,5 @@
 import { RunCommand } from '../../core/pastel';
+import { isColorEnabled } from '../../core/shared';
 import { renderPanel } from '../../core/ui';
 
 export const description = 'Notes CRUD operations';
@@ -11,7 +12,7 @@ export default function Notes() {
       action={async () =>
         renderPanel({
           title: 'bri notes',
-          enableColor: process.stdout.isTTY,
+          enableColor: isColorEnabled,
           rows: [
             {
               label: 'commands',

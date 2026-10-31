@@ -501,7 +501,7 @@ export function BriTiptapEditor({
             <Input aria-label="IBX username" placeholder="IBX username" value={ibxUsername} onChange={(event) => { setIBXUsername(event.target.value); window.localStorage.setItem('ibx-username', event.target.value); setIBXFiles([]); setIBXCursor(null); setIBXError(null); }} maxLength={64} className="border-neutral-800" />
             <Button type="submit" variant="outline" disabled={isLoadingIBXFiles}>{isLoadingIBXFiles ? 'loading' : 'load'}</Button>
           </form>
-          {ibxError && <p role="alert" className="text-xs text-red-400">{ibxError}</p>}
+          {ibxError && <p role="alert" className="text-xs text-neutral-300">{ibxError}</p>}
           <div className="flex flex-col divide-y divide-neutral-800">
             {ibxFiles.map((file) => <button key={file.id} type="button" className="flex min-w-0 items-center justify-between gap-4 py-3 text-left hover:bg-neutral-900" onClick={() => insertIBXFile(file, null)}>
               <span className="min-w-0"><span className="block truncate text-sm">{file.fileName}</span><span className="block truncate text-xs text-neutral-500">{file.folderPath.join('/') || 'drive'} · {file.contentType}</span></span>

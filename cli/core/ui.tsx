@@ -1,5 +1,6 @@
 import type React from 'react';
 import { Box, Text, renderToString } from 'ink';
+import { cliHelpRows, type CommandRow } from './help';
 import {
   Alert,
   Badge as InkBadge,
@@ -11,12 +12,6 @@ import {
 } from '@inkjs/ui';
 
 const defaultSiteUrl = (process.env.BRI_SITE_URL ?? 'https://bri.fyi').replace(/\/+$/, '');
-
-type CommandRow = {
-  command: string;
-  description: string;
-  group: 'publish' | 'library' | 'account' | 'system';
-};
 
 type StatusRow = {
   label: string;
@@ -150,12 +145,15 @@ function stripPadding(value: string): string {
   return value.trimEnd();
 }
 
-function print(element: React.ReactNode, columns?: number): void {
+function printToString(element: React.ReactNode, columns?: number): string {
   const terminalColumns = process.stdout.columns ?? 100;
-  const output = renderToString(<ThemeProvider theme={briTheme}>{element}</ThemeProvider>, {
+  return renderToString(<ThemeProvider theme={briTheme}>{element}</ThemeProvider>, {
     columns: columns ?? Math.min(100, terminalColumns),
   });
-  console.log(output);
+}
+
+function print(element: React.ReactNode, columns?: number): void {
+  console.log(printToString(element, columns));
 }
 
 function printError(element: React.ReactNode): void {
@@ -242,44 +240,8 @@ function CommandList({ rows, enableColor }: { rows: CommandRow[]; enableColor: b
   );
 }
 
-export function renderCliHelp(enableColor: boolean, version: string): void {
-  const rows: CommandRow[] = [
-    {
-      command: 'bri publish --path <file>',
-      description: 'Publish markdown note',
-      group: 'publish',
-    },
-    { command: 'bri publish --stdin', description: 'Publish piped markdown', group: 'publish' },
-    { command: 'bri slug --path <file>', description: 'Preview generated slug', group: 'publish' },
-    { command: 'bri notes list', description: 'List your notes', group: 'library' },
-    { command: 'bri notes read <user> <slug>', description: 'Read note content', group: 'library' },
-    { command: 'bri notes history <id>', description: 'List note versions', group: 'library' },
-    {
-      command: 'bri notes version <id> <version>',
-      description: 'Read a note version',
-      group: 'library',
-    },
-    {
-      command: 'bri notes restore-version <id> <version>',
-      description: 'Restore a note version',
-      group: 'library',
-    },
-    {
-      command: 'bri notes ask <user> <slug> --question <q>',
-      description: 'Ask AI about a note',
-      group: 'library',
-    },
-    { command: 'bri links list', description: 'List quick links', group: 'library' },
-    { command: 'bri links create --key <key>', description: 'Create quick link', group: 'library' },
-    { command: 'bri notifications list', description: 'Show invites and alerts', group: 'account' },
-    { command: 'bri login --api-key <key>', description: 'Save API key locally', group: 'account' },
-    { command: 'bri config list', description: 'Show local defaults', group: 'account' },
-    { command: 'bri doctor', description: 'Check runtime and endpoint', group: 'system' },
-    { command: 'bri mcp', description: 'Start stdio MCP server', group: 'system' },
-    { command: 'bri self-update --check-only', description: 'Check CLI release', group: 'system' },
-  ];
-
-  print(
+export function renderCliHelpToString(enableColor: boolean, version: string): string {
+  return printToString(
     <Box flexDirection="column">
       <Box
         borderStyle="round"
@@ -303,7 +265,7 @@ export function renderCliHelp(enableColor: boolean, version: string): void {
           </Box>
         </Box>
       </Box>
-      <CommandList rows={rows} enableColor={enableColor} />
+      <CommandList rows={cliHelpRows} enableColor={enableColor} />
       <Box
         marginTop={1}
         borderStyle="single"
@@ -325,6 +287,10 @@ export function renderCliHelp(enableColor: boolean, version: string): void {
       </Box>
     </Box>
   );
+}
+
+export function renderCliHelp(enableColor: boolean, version: string): void {
+  console.log(renderCliHelpToString(enableColor, version));
 }
 
 export function renderPanel(input: {

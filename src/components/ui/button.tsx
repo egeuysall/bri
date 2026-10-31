@@ -6,7 +6,7 @@ const baseClass =
 
 const variantClassMap = {
   default: 'border-neutral-700 text-neutral-200 hover:border-neutral-500 hover:text-neutral-100',
-  destructive: 'border-red-700 text-red-300 hover:border-red-500',
+  destructive: 'border-neutral-600 text-neutral-300 hover:border-neutral-400',
   outline: 'border-neutral-800 text-neutral-300 hover:border-neutral-600 hover:text-neutral-100',
   ghost: 'border-transparent text-neutral-300 hover:text-neutral-100',
 } as const;

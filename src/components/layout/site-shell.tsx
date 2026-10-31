@@ -29,7 +29,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-155 flex-col px-6 py-8 sm:px-8 sm:py-10">
+    <div data-landing-shell className="mx-auto flex min-h-screen w-full max-w-155 flex-col px-6 py-8 sm:px-8 sm:py-10">
       <header className="pb-8">
         <div className="flex items-end justify-between gap-6">
           <Link
@@ -43,12 +43,12 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center">
               <SignInButton mode="redirect">
                 <Button type="button" variant="ghost" className="h-8 text-xs">
-                  Sign in
+                  sign in
                 </Button>
               </SignInButton>
               <SignUpButton mode="redirect">
                 <Button type="button" variant="ghost" className="h-8 border text-xs">
-                  Sign up
+                  sign up
                 </Button>
               </SignUpButton>
             </div>
@@ -62,14 +62,22 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
       <footer className="pt-8 text-xs text-neutral-400">
         <div className="flex items-center justify-between gap-4">
-          <a
-            href="https://github.com/egeuysall/bri"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-neutral-400 hover:text-neutral-100 focus-visible:text-neutral-100"
-          >
-            GitHub
-          </a>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://github.com/egeuysall/bri"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-neutral-400 hover:text-neutral-100 focus-visible:text-neutral-100"
+            >
+              github
+            </a>
+            <a
+              href="/docs"
+              className="text-neutral-400 hover:text-neutral-100 focus-visible:text-neutral-100"
+            >
+              docs
+            </a>
+          </div>
           <p>&copy; {new Date().getFullYear()}</p>
         </div>
       </footer>

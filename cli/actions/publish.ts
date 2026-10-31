@@ -13,6 +13,7 @@ import {
   getBooleanSetting,
   getNumberSetting,
   getStringSetting,
+  isColorEnabled,
   openInBrowser,
   parseOptionalPositiveInt,
   parseTitleFromMarkdown,
@@ -121,7 +122,7 @@ export async function runPublish(options: PublishOptions, command: CommandLike):
     process.env.BRI_COLOR,
     config.color,
     flagValues.useColor,
-    process.stdout.isTTY
+    isColorEnabled
   );
 
   const printer = createPrinter(color, Boolean(options.quiet) || Boolean(options.json));

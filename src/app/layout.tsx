@@ -26,7 +26,7 @@ import { getProduct } from '@/lib/site-details';
  */
 
 // TODO: Fill these
-export const name = 'bri: Share your Markdown files quickly and easily.';
+export const name = 'bri';
 
 /**
  * The main image URL for the site or application.
@@ -38,7 +38,7 @@ export const image = '/logo.png';
  * A brief description of the site or application.
  * @type {string}
  */
-export const description = 'Share your Markdown files quickly and easily.';
+export const description = 'write and publish markdown notes and links. keep drafts private, share when ready, and manage everything with the cli, api, or dashboard.';
 
 /**
  * The template string for dynamic page titles or metadata.
@@ -62,25 +62,13 @@ const authorName = 'Ege Uysal';
  * An array of keywords relevant to the site for SEO purposes.
  * @type {string[]}
  */
-const keywords: string[] = ['markdown', 'share', 'link', 'bri', 'egeuysal'];
-
-/**
- * A description of the main image for accessibility and SEO.
- * @type {string}
- */
-const imageDescription = 'bri Logo';
+const keywords: string[] = ['bri', 'markdown notes', 'publish markdown', 'private notes', 'share notes', 'markdown publishing', 'quick links', 'markdown cli', 'notes api'];
 
 /**
  * The Twitter handle of the author (e.g., '@username').
  * @type {string}
  */
 const authorTwitter = 'egecreates';
-
-/**
- * The LinkedIn profile URL of the author.
- * @type {string}
- */
-const authorLinkedin = 'egeuysall';
 
 /**
  * The path or URL to the ICO favicon.
@@ -103,37 +91,42 @@ const appleTouchIcon = '/logo.png';
 export async function generateMetadata(): Promise<Metadata> {
   // Fetch data needed for metadata
   const product = await getProduct();
+  const lowercaseName = product.name.toLowerCase();
+  const lowercaseDescription = product.description.toLowerCase();
+  const pageTitle = 'bri — markdown notes, links, and cli';
   return {
     title: {
-      default: product.name,
+      default: pageTitle,
       template: `%s | ${template}`,
     },
-    description: product.description,
+    description: lowercaseDescription,
     metadataBase: new URL(siteUrl),
     authors: [{ name: authorName }],
+    creator: authorName,
+    publisher: lowercaseName,
     keywords: keywords,
+    category: 'productivity',
+    referrer: 'strict-origin-when-cross-origin',
     openGraph: {
-      title: product.name,
-      description: product.description,
+      title: pageTitle,
+      description: lowercaseDescription,
       url: siteUrl,
-      images: [
-        {
-          url: product.image,
-          width: 1200,
-          height: 630,
-          alt: imageDescription,
-        },
-      ],
+      images: [{
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'bri — markdown notes, links, and cli',
+      }],
       type: 'website',
       locale: 'en_US',
-      siteName: product.name,
+      siteName: lowercaseName,
     },
     twitter: {
       card: 'summary_large_image',
-      site: product.name,
-      title: product.name,
-      description: product.description,
-      images: [product.image],
+      site: `@${authorTwitter}`,
+      title: pageTitle,
+      description: lowercaseDescription,
+      images: ['/opengraph-image'],
       creator: authorTwitter,
     },
     icons: {
@@ -167,65 +160,29 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const product = await getProduct();
   const enableVercelTelemetry = process.env.NEXT_PUBLIC_ENABLE_VERCEL_TELEMETRY === '1';
 
-  // Define date for product schema
-  const priceValidUntilDate = new Date();
-  priceValidUntilDate.setFullYear(priceValidUntilDate.getFullYear() + 1);
-  const priceValidUntilString = priceValidUntilDate.toISOString().split('T')[0];
-
-  // Format current date for schema (ISO format)
-  const currentDate = new Date().toISOString();
-
   const jsonLd = {
     '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: product.name,
-    image: new URL(product.image, siteUrl).toString(),
-    description: product.description,
-    url: siteUrl,
-    dateModified: currentDate,
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD',
-      availability: 'https://schema.org/InStock',
-      url: siteUrl,
-      priceValidUntil: priceValidUntilString,
-      shippingDetails: {
-        '@type': 'OfferShippingDetails',
-        shippingRate: {
-          '@type': 'MonetaryAmount',
-          value: '0',
-          currency: 'USD',
-        },
-        deliveryTime: {
-          '@type': 'ShippingDeliveryTime',
-          handlingTime: {
-            '@type': 'QuantitativeValue',
-            minValue: '0',
-            maxValue: '0',
-            unitCode: 'HUR',
-          },
-        },
-        shippingDestination: {
-          '@type': 'DefinedRegion',
-          addressCountry: 'US',
-        },
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        name: 'bri',
+        url: siteUrl,
+        description: product.description,
+        publisher: { '@type': 'Person', name: authorName, url: 'https://egeuysal.com' },
       },
-      hasMerchantReturnPolicy: {
-        '@type': 'MerchantReturnPolicy',
-        applicableCountry: 'US',
-        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-        merchantReturnDays: 30,
-        returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/FreeReturn',
+      {
+        '@type': 'SoftwareApplication',
+        name: 'bri',
+        applicationCategory: 'ProductivityApplication',
+        operatingSystem: 'Web, macOS, Linux, Windows',
+        description: product.description,
+        url: siteUrl,
+        image: new URL('/opengraph-image', siteUrl).toString(),
+        isAccessibleForFree: true,
+        featureList: ['markdown notes', 'version history', 'public links', 'command line interface', 'api access'],
+        author: { '@type': 'Person', name: authorName, url: 'https://egeuysal.com' },
       },
-    },
-    aggregateRating: {
-      '@type': 'AggregateRating',
-      ratingValue: '4.8',
-      reviewCount: '127',
-    },
-    sameAs: [authorLinkedin, authorTwitter],
+    ],
   };
 
   return (
@@ -237,7 +194,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       </head>
       <body className="min-h-full bg-bg font-mono text-fg antialiased">

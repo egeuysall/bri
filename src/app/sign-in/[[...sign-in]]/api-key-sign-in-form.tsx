@@ -57,7 +57,7 @@ export function ApiKeySignInForm() {
           required
         />
       </div>
-      {error ? <p className="text-xs text-red-400">{error}</p> : null}
+      {error ? <p className="text-xs text-neutral-300">{error}</p> : null}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Signing in...' : 'Sign in with API key'}
       </Button>

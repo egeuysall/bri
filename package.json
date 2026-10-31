@@ -7,7 +7,7 @@
     "bri": "./cli/bri.ts"
   },
   "scripts": {
-    "build": "next build",
+    "build": "bun run cli:demo-build && next build",
     "dev": "next dev --turbopack",
     "lint": "eslint src --ext ts,tsx",
     "lint:fix": "eslint src --ext ts,tsx --fix",
@@ -16,6 +16,7 @@
     "start": "next start",
     "test:e2e": "playwright test",
     "cli": "NODE_ENV=development bun run ./cli/bri.ts",
+    "cli:demo-build": "bun run ./scripts/build-cli-demo.ts",
     "cli:version:sync": "node scripts/sync-cli-version.mjs",
     "docs:dev": "bun run --cwd bri-docs dev",
     "docs:build": "bun run --cwd bri-docs build",

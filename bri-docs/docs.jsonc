@@ -1,7 +1,7 @@
 {
   "$schema": "https://holocron.so/docs.json",
-  "name": "Bri",
-  "description": "Publish, read, and automate Markdown notes with Bri.",
+  "name": "bri",
+  "description": "publish, read, and automate markdown notes with bri.",
   "favicon": "/favicon.ico",
   "colors": {
     "primary": "#d4d4d4"
@@ -18,7 +18,7 @@
     ],
     "primary": {
       "type": "button",
-      "label": "Open Bri",
+      "label": "open bri",
       "href": "https://bri.fyi"
     }
   },
@@ -71,13 +71,13 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Bri",
+          "anchor": "bri",
           "href": "https://bri.fyi",
           "icon": "lucide:home",
           "placement": "tabs"
         },
         {
-          "anchor": "GitHub",
+          "anchor": "github",
           "href": "https://github.com/egeuysall/bri",
           "icon": "lucide:github",
           "placement": "tabs"

@@ -83,6 +83,7 @@ lib-cov/
 # CLI release artifacts
 dist/cli-release/
 public/bin/
+cli/.demo-runtime/
 
 # Env files
 .env

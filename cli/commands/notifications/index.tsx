@@ -1,4 +1,5 @@
 import { RunCommand } from '../../core/pastel';
+import { isColorEnabled } from '../../core/shared';
 import { renderPanel } from '../../core/ui';
 
 export const description = 'Notifications inbox';
@@ -11,7 +12,7 @@ export default function Notifications() {
       action={async () =>
         renderPanel({
           title: 'bri notifications',
-          enableColor: process.stdout.isTTY,
+          enableColor: isColorEnabled,
           rows: [
             { label: 'commands', value: 'list, open, dismiss', tone: 'info' },
             { label: 'help', value: 'bri notifications --help', tone: 'muted' },

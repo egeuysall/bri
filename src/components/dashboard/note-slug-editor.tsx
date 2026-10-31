@@ -236,7 +236,7 @@ export function NoteSlugEditor({ note, isAdmin = false }: NoteSlugEditorProps) {
               <option value="30">30d</option>
               <option value="never">never</option>
             </select>
-            {error ? <p className="self-center text-xs text-red-400">{error}</p> : null}
+            {error ? <p className="self-center text-xs text-neutral-300">{error}</p> : null}
           </div>
 
           <BriTiptapEditor

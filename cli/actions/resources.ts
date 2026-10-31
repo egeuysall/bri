@@ -1,4 +1,5 @@
 import { loadConfig } from '../config';
+import { readPublicNote } from '../public-note';
 import { fetchWithApiKey } from '../core/http';
 import {
   DEFAULT_API_ENDPOINT,
@@ -20,6 +21,7 @@ import {
   type NotificationsActionOptions,
   type NotificationsListOptions,
   getStringSetting,
+  isColorEnabled,
   openInBrowser,
   optionProvidedByCli,
   parseOptionalPositiveInt,
@@ -55,12 +57,12 @@ export async function runNotesList(options: NotesListOptions, command: CommandLi
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
 
-  const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
+  const color = optionProvidedByCli(command, 'color') ? options.color : isColorEnabled;
   if (!Array.isArray(data) || data.length === 0) {
     renderTable({
       title: `bri notes (${state})`,
@@ -107,33 +109,18 @@ export async function runNotesRead(
   const siteRaw = optionProvidedByCli(command, 'endpoint')
     ? (options.endpoint ?? DEFAULT_SITE_URL)
     : (process.env.BRI_SITE_URL ?? config.siteUrl ?? DEFAULT_SITE_URL);
-  const base = validateUrl(siteRaw, 'site-url');
-  const endpoint = new URL(
-    `/api/public/notes/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`,
-    base
-  );
   const apiKey = (config.apiKey || process.env.BRI_API_KEY || '').trim();
-
-  const response = await fetch(endpoint, {
-    headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
-  });
-
-  const raw = await response.text();
-  const parsed = raw ? (JSON.parse(raw) as { data?: unknown; error?: string }) : {};
-  if (!response.ok) throw new Error(parsed.error || `request failed (${response.status})`);
+  const data = await readPublicNote({ username, slug, siteUrl: siteRaw, apiKey });
 
   if (options.json) {
-    printJson(
-      parsed.data ?? {},
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
-    );
+    printJson(data, optionProvidedByCli(command, 'color') ? options.color : isColorEnabled);
     return;
   }
 
-  const data = parsed.data as { title?: string; content?: string };
-  console.log(data.title || `${username}/${slug}`);
+  const note = data as { title?: string; content?: string };
+  console.log(note.title || `${username}/${slug}`);
   console.log('');
-  console.log(data.content || '');
+  console.log(note.content || '');
 }
 
 function getApiKey(configApiKey?: string): string {
@@ -176,7 +163,7 @@ export async function runNotesHistory(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
@@ -184,7 +171,7 @@ export async function runNotesHistory(
   renderTable({
     title: 'bri note versions',
     rows: Array.isArray(data) ? data : [],
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     empty: 'no versions',
     columns: [
       { header: 'id', width: 18, render: (row) => (typeof row.id === 'string' ? row.id : '') },
@@ -219,7 +206,7 @@ export async function runNotesVersion(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
@@ -308,7 +295,7 @@ export async function runNotesAsk(
     if (options.json) {
       printJson(
         { data: { answer } },
-        optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+        optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
       );
     } else {
       process.stdout.write('\n');
@@ -364,13 +351,13 @@ export async function runNotesUpdate(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
   renderPanel({
     title: 'bri note',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [{ label: 'status', value: 'updated', tone: 'ok' }],
   });
 }
@@ -395,13 +382,13 @@ export async function runNotesDelete(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
   renderPanel({
     title: 'bri note',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [
       { label: 'status', value: options.permanent ? 'deleted forever' : 'deleted', tone: 'ok' },
     ],
@@ -429,13 +416,13 @@ export async function runNotesRestoreVersion(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
   renderPanel({
     title: 'bri note',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [{ label: 'status', value: 'version restored', tone: 'ok' }],
   });
 }
@@ -460,12 +447,12 @@ export async function runLinksList(options: LinksListOptions, command: CommandLi
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
 
-  const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
+  const color = optionProvidedByCli(command, 'color') ? options.color : isColorEnabled;
   if (!Array.isArray(data) || data.length === 0) {
     renderTable({
       title: 'bri links',
@@ -545,13 +532,13 @@ export async function runLinksCreate(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
   renderPanel({
     title: 'bri link',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [
       { label: 'status', value: 'created', tone: 'ok' },
       { label: 'key', value: key, tone: 'info' },
@@ -598,13 +585,13 @@ export async function runLinksUpdate(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
   renderPanel({
     title: 'bri link',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [
       { label: 'status', value: 'updated', tone: 'ok' },
       { label: 'id', value: id, tone: 'muted' },
@@ -637,14 +624,14 @@ export async function runLinksDelete(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
 
   renderPanel({
     title: 'bri link',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [
       { label: 'status', value: 'deleted', tone: 'ok' },
       { label: 'id', value: id, tone: 'muted' },
@@ -690,13 +677,13 @@ export async function runInvite(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
   renderPanel({
     title: `bri ${kind} invite`,
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [
       { label: 'status', value: 'invited', tone: 'ok' },
       { label: 'username', value: `@${inviteeUsername}`, tone: 'info' },
@@ -738,7 +725,7 @@ export async function runNotificationsList(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
@@ -749,7 +736,7 @@ export async function runNotificationsList(
       title: 'bri notifications',
       rows: [],
       columns: [],
-      enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+      enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
       empty: 'no notifications',
     });
     return;
@@ -758,7 +745,7 @@ export async function runNotificationsList(
   renderTable({
     title: 'bri notifications',
     rows,
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     empty: 'no notifications',
     columns: [
       { header: 'id', width: 16, render: (row) => (typeof row.id === 'string' ? row.id : '') },
@@ -819,7 +806,7 @@ export async function runNotificationsOpen(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
@@ -827,7 +814,7 @@ export async function runNotificationsOpen(
   if (!href) {
     renderPanel({
       title: 'bri notification',
-      enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+      enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
       rows: [{ label: 'status', value: 'target unavailable', tone: 'warn' }],
     });
     return;
@@ -836,7 +823,7 @@ export async function runNotificationsOpen(
   const targetUrl = new URL(href, siteUrl).toString();
   renderPanel({
     title: 'bri notification',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [
       { label: 'status', value: 'opened', tone: 'ok' },
       { label: 'url', value: targetUrl, tone: 'info' },
@@ -878,14 +865,14 @@ export async function runNotificationsDismiss(
   if (options.json) {
     printJson(
       { data },
-      optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY
+      optionProvidedByCli(command, 'color') ? options.color : isColorEnabled
     );
     return;
   }
 
   renderPanel({
     title: 'bri notification',
-    enableColor: optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY,
+    enableColor: optionProvidedByCli(command, 'color') ? options.color : isColorEnabled,
     rows: [{ label: 'status', value: 'dismissed', tone: 'ok' }],
   });
 }

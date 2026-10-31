@@ -22,6 +22,10 @@ const nextConfig = (phase: string): NextConfig => {
 
     serverExternalPackages: ['sharp'],
 
+    outputFileTracingIncludes: {
+      '/api/landing-cli': ['./cli/.demo-runtime/**/*'],
+    },
+
     async rewrites() {
       return [
         { source: '/docs', destination: `${docsUrl}/docs` },

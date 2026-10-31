@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
@@ -8,6 +9,7 @@ import { MarkdownContent } from '@/components/markdown';
 import { ExportPdfButton } from '@/components/notes/export-pdf-button';
 import { isAdminUser } from '@/lib/admin';
 import { geist } from '@/lib/fonts';
+import { getSiteUrl } from '@/lib/site-url';
 import {
   getAdminNoteByUsernameAndSlug,
   getNoteByUsernameAndSlug,
@@ -44,6 +46,46 @@ function stripLeadingHeading(content: string, title: string): string {
     return content;
   }
   return lines.slice(1).join('\n').trimStart();
+}
+
+function getNoteDescription(content: string) {
+  return content
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/[>*_`~|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 160);
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ username: string; slug: string }> }): Promise<Metadata> {
+  const { username, slug } = await params;
+  if (!isPublicUsernamePath(username) || !isPublicResourcePath(slug)) {
+    return { title: 'page not found', robots: { index: false, follow: false } };
+  }
+  const note = await getNoteByUsernameAndSlug({ username, slug, token: null, apiKey: null }).catch(() => null);
+  if (!note || note.visibility !== 'public') {
+    return { title: 'page not found', robots: { index: false, follow: false } };
+  }
+  const canonical = `${getSiteUrl()}/${encodeURIComponent(username)}/${encodeURIComponent(slug)}`;
+  const description = getNoteDescription(note.content) || `a public markdown note by ${username}.`;
+  return {
+    title: `${note.title} | bri`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      type: 'article',
+      url: canonical,
+      title: note.title,
+      description,
+      siteName: 'bri',
+      publishedTime: new Date(note.createdAt).toISOString(),
+      modifiedTime: new Date(note.updatedAt).toISOString(),
+    },
+    twitter: { card: 'summary_large_image', title: note.title, description, images: [`${canonical}/opengraph-image`] },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
+  };
 }
 
 function formatDate(value: number): string {
@@ -102,9 +144,21 @@ export default async function NotePage({
   });
 
   const contentWithoutHeading = stripLeadingHeading(note.content, note.title);
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: note.title,
+    description: getNoteDescription(contentWithoutHeading),
+    datePublished: new Date(note.createdAt).toISOString(),
+    dateModified: new Date(note.updatedAt).toISOString(),
+    author: { '@type': 'Person', name: note.username, url: `${getSiteUrl()}/${encodeURIComponent(note.username)}` },
+    mainEntityOfPage: `${getSiteUrl()}/${encodeURIComponent(note.username)}/${encodeURIComponent(note.slug)}`,
+    publisher: { '@type': 'Organization', name: 'bri', url: getSiteUrl() },
+  };
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c') }} />
       <section
         className={`${geist.variable} w-full animate-enter px-4 py-5 md:px-8 md:py-8`}
         style={{ '--delay': '40ms' } as CSSProperties}

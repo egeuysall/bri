@@ -30,6 +30,8 @@ export {
   VERSION,
 };
 
+export const isColorEnabled = process.stdout.isTTY || (process.env.FORCE_COLOR !== undefined && process.env.FORCE_COLOR !== '0');
+
 export const ansi = {
   reset: '\x1b[0m',
   bold: '\x1b[1m',
@@ -251,7 +253,7 @@ export function highlightJson(json: string, enableColor: boolean): string {
   );
 }
 
-export function printJson(value: unknown, enableColor = process.stdout.isTTY): void {
+export function printJson(value: unknown, enableColor = isColorEnabled): void {
   console.log(highlightJson(formatJson(value), enableColor));
 }
 

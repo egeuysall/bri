@@ -19,6 +19,7 @@ import {
   VERSION,
   createPrinter,
   hasBinary,
+  isColorEnabled,
   optionProvidedByCli,
   parseOptionalBoolean,
   parseOptionalPositiveInt,
@@ -69,7 +70,7 @@ export async function runLogin(options: LoginOptions): Promise<void> {
   });
   renderPanel({
     title: 'bri auth',
-    enableColor: process.stdout.isTTY,
+    enableColor: isColorEnabled,
     rows: [
       { label: 'status', value: 'login saved', tone: 'ok' },
       ...(username ? [{ label: 'username', value: username, tone: 'info' as const }] : []),
@@ -81,7 +82,7 @@ export async function runLogout(): Promise<void> {
   await unsetConfigKey('apiKey');
   renderPanel({
     title: 'bri auth',
-    enableColor: process.stdout.isTTY,
+    enableColor: isColorEnabled,
     rows: [{ label: 'status', value: 'logged out', tone: 'ok' }],
   });
 }
@@ -91,7 +92,7 @@ export async function runSlug(options: SlugOptions, command: CommandLike): Promi
     ? parsePositiveInt(options.maxBytes, 'max-bytes')
     : (parseOptionalPositiveInt(process.env.BRI_MAX_BYTES) ?? DEFAULT_MAX_BYTES);
 
-  const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
+  const color = optionProvidedByCli(command, 'color') ? options.color : isColorEnabled;
 
   let content = '';
   let sourcePath = options.path;
@@ -124,7 +125,7 @@ export async function runSlug(options: SlugOptions, command: CommandLike): Promi
 }
 
 export async function runDoctor(options: DoctorOptions, command: CommandLike): Promise<void> {
-  const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
+  const color = optionProvidedByCli(command, 'color') ? options.color : isColorEnabled;
 
   const endpointRaw =
     (optionProvidedByCli(command, 'endpoint') ? options.endpoint : undefined) ??
@@ -228,7 +229,7 @@ export async function runDoctor(options: DoctorOptions, command: CommandLike): P
 }
 
 export async function runSelfUpdate(options: SelfUpdateOptions, command: CommandLike): Promise<void> {
-  const color = optionProvidedByCli(command, 'color') ? options.color : process.stdout.isTTY;
+  const color = optionProvidedByCli(command, 'color') ? options.color : isColorEnabled;
   const printer = createPrinter(color, Boolean(options.quiet) || Boolean(options.json));
 
   const result = await performSelfUpdate({
@@ -279,7 +280,7 @@ export async function runConfigList(options: ConfigOptions): Promise<void> {
   if (keys.length === 0) {
     renderPanel({
       title: 'bri config',
-      enableColor: process.stdout.isTTY,
+      enableColor: isColorEnabled,
       rows: [{ label: 'status', value: 'config is empty', tone: 'muted' }],
     });
     return;
@@ -288,7 +289,7 @@ export async function runConfigList(options: ConfigOptions): Promise<void> {
   renderTable({
     title: 'bri config',
     rows: keys.map((key) => ({ key, value: String(config[key]) })),
-    enableColor: process.stdout.isTTY,
+    enableColor: isColorEnabled,
     empty: 'config is empty',
     columns: [
       { header: 'key', width: 16, render: (row) => row.key },
@@ -338,7 +339,7 @@ export async function runConfigSet(key: string, value: string): Promise<void> {
 
   renderPanel({
     title: 'bri config',
-    enableColor: process.stdout.isTTY,
+    enableColor: isColorEnabled,
     rows: [
       { label: 'status', value: 'saved', tone: 'ok' },
       { label: 'key', value: typedKey, tone: 'info' },
@@ -354,7 +355,7 @@ export async function runConfigUnset(key: string): Promise<void> {
   await unsetConfigKey(key as ConfigKey);
   renderPanel({
     title: 'bri config',
-    enableColor: process.stdout.isTTY,
+    enableColor: isColorEnabled,
     rows: [
       { label: 'status', value: 'removed', tone: 'ok' },
       { label: 'key', value: key, tone: 'info' },
@@ -366,7 +367,7 @@ export async function runConfigReset(): Promise<void> {
   await saveConfig({});
   renderPanel({
     title: 'bri config',
-    enableColor: process.stdout.isTTY,
+    enableColor: isColorEnabled,
     rows: [{ label: 'status', value: 'config reset', tone: 'ok' }],
   });
 }

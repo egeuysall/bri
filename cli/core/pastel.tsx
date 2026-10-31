@@ -4,6 +4,7 @@ import { useApp } from 'ink';
 import { Spinner, StatusMessage } from '@inkjs/ui';
 import {
   createPrinter,
+  isColorEnabled,
   maybeCheckUpdates,
   type CommandLike,
   type OptionValueSource,
@@ -77,7 +78,7 @@ export function RunCommand({
       try {
         const command = createArgvCommand();
         if (!skipUpdateCheck) {
-          const color = process.stdout.isTTY;
+          const color = isColorEnabled;
           await maybeCheckUpdates(updateCheck, createPrinter(color, quiet || json));
         }
 
@@ -88,7 +89,7 @@ export function RunCommand({
         const message = error instanceof Error ? error.message : String(error);
         renderPanel({
           title: 'bri error',
-          enableColor: process.stderr.isTTY,
+          enableColor: isColorEnabled,
           rows: [{ label: 'error', value: message, tone: 'warn' }],
           stderr: true,
         });

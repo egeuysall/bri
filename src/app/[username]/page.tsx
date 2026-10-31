@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
@@ -13,6 +14,7 @@ import {
   listQuickLinksByUsername,
 } from '@/lib/notes';
 import { listPublicIbxFiles } from '@/lib/public-ibx-files';
+import { getSiteUrl } from '@/lib/site-url';
 import { getBridgeApiKeySessionFromRequest } from '@/lib/request-security';
 import {
   isPublicUsernamePath,
@@ -23,6 +25,34 @@ import {
 
 export const revalidate = 0;
 const PUBLIC_LIST_PAGE_SIZE = 5;
+
+export async function generateMetadata({ params }: { params: Promise<{ username: string }> }): Promise<Metadata> {
+  const { username } = await params;
+  if (!isPublicUsernamePath(username)) return { title: 'profile not found', robots: { index: false, follow: false } };
+  const handle = normalizePathHandle(username);
+  if (!handle) return { title: 'profile not found', robots: { index: false, follow: false } };
+
+  const [profile, notes, links] = await Promise.all([
+    getPublicUserProfileByUsername({ username: handle }).catch(() => null),
+    listPublicNotesByUsername({ username: handle }).catch(() => []),
+    listQuickLinksByUsername({ username: handle }).catch(() => []),
+  ]);
+  if (!profile && notes.length === 0 && links.length === 0) {
+    return { title: 'profile not found', robots: { index: false, follow: false } };
+  }
+
+  const title = `${profile?.displayName || `@${handle}`} — public notes and links`;
+  const description = `public notes and quick links from ${profile?.displayName || `@${handle}`}.`;
+  const canonical = `${getSiteUrl()}/${encodeURIComponent(handle)}`;
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { type: 'profile', url: canonical, title, description, siteName: 'bri' },
+    twitter: { card: 'summary_large_image', title, description, images: ['/opengraph-image'] },
+    robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
+  };
+}
 
 function singleQueryParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) return value[0];
