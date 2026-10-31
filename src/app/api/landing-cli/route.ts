@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createClerkClient } from '@clerk/backend';
+import { auth } from '@clerk/nextjs/server';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '../../../../convex/_generated/api';
 import { hashBridgeApiKey } from '@/lib/request-security';
@@ -18,7 +19,8 @@ const SESSION_MAX_AGE = 60 * 60 * 8;
 const SESSION_PATTERN = /^[A-Za-z0-9_-]{32}$/;
 let running = 0;
 const busySessions = new Set<string>();
-const demoAccountPromises = new Map<string, Promise<{ apiKey: string; username: string }>>();
+type DemoAccount = { apiKey?: string; username: string; authUrl?: string };
+const demoAccountPromises = new Map<string, Promise<DemoAccount>>();
 const demoNotesPromises = new Map<string, Promise<void>>();
 const demoLinksPromises = new Map<string, Promise<void>>();
 
@@ -93,7 +95,7 @@ function publicDemoBlockReason(args: string[]) {
   return null;
 }
 
-async function provisionDemoAccount(sessionId: string): Promise<{ apiKey: string; username: string }> {
+async function provisionDemoAccount(sessionId: string, authSessionId: string | null, authUserId: string | null, siteUrl: string): Promise<DemoAccount> {
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) throw new Error('Bri demo authentication is unavailable.');
 
@@ -143,35 +145,45 @@ async function provisionDemoAccount(sessionId: string): Promise<{ apiKey: string
     }
   }
 
-  const session = await clerk.sessions.createSession({ userId: user.id });
-  try {
-    const token = await clerk.sessions.getToken(session.id, 'convex', 300);
-    const convexToken = token.jwt;
-    await syncMyUserProfile({ token: convexToken, username, displayName: 'bri demo', email: null });
-
-    const prefix = `bri_${randomBytes(6).toString('base64url')}`;
-    const apiKey = `${prefix}.${randomBytes(24).toString('base64url')}`;
-    await createApiKeyHashed({
-      token: convexToken,
-      username,
-      prefix,
-      keyHash: createHash('sha256').update(apiKey).digest('hex'),
-      permissions: 'read_write',
-      label: 'public landing demo',
+  if (authUserId !== user.id || !authSessionId) {
+    const task = await clerk.agentTasks.create({
+      onBehalfOf: { userId: user.id },
+      permissions: '*',
+      agentName: 'bri-public-terminal',
+      taskDescription: 'Start an isolated bri public cli demo session',
+      redirectUrl: siteUrl,
+      sessionMaxDurationInSeconds: 60 * 60,
     });
-    user = await clerk.users.updateUser(user.id, {
-      privateMetadata: { ...user.privateMetadata, briLandingCliApiKey: apiKey },
-    });
-    return { apiKey, username };
-  } finally {
-    await clerk.sessions.revokeSession(session.id).catch(() => undefined);
+    return { username, authUrl: task.url };
   }
+
+  const token = await clerk.sessions.getToken(authSessionId, 'convex', 300);
+  const convexToken = token.jwt;
+  await syncMyUserProfile({ token: convexToken, username, displayName: 'bri demo', email: null });
+
+  const prefix = `bri_${randomBytes(6).toString('base64url')}`;
+  const apiKey = `${prefix}.${randomBytes(24).toString('base64url')}`;
+  await createApiKeyHashed({
+    token: convexToken,
+    username,
+    prefix,
+    keyHash: createHash('sha256').update(apiKey).digest('hex'),
+    permissions: 'read_write',
+    label: 'public landing demo',
+  });
+  await clerk.users.updateUser(user.id, {
+    privateMetadata: { ...user.privateMetadata, briLandingCliApiKey: apiKey },
+  });
+  return { apiKey, username };
 }
 
-function getDemoAccount(sessionId: string) {
+function getDemoAccount(sessionId: string, authSessionId: string | null, authUserId: string | null, siteUrl: string) {
   let pending = demoAccountPromises.get(sessionId);
   if (!pending) {
-    pending = provisionDemoAccount(sessionId).catch((error) => {
+    pending = provisionDemoAccount(sessionId, authSessionId, authUserId, siteUrl).then((account) => {
+      if (!account.apiKey) demoAccountPromises.delete(sessionId);
+      return account;
+    }).catch((error) => {
       demoAccountPromises.delete(sessionId);
       throw error;
     });
@@ -245,7 +257,12 @@ export async function GET(request: Request) {
   const sessionId = request.headers.get('x-bri-demo-session') ?? '';
   if (!SESSION_PATTERN.test(sessionId)) return Response.json({ notes: [] }, { headers: { 'Cache-Control': 'no-store' } });
   try {
-    const { apiKey } = await getDemoAccount(sessionId);
+    const authState = await auth();
+    if (!authState.sessionId || !authState.userId) return Response.json({ notes: [], links: [] }, { headers: { 'Cache-Control': 'no-store' } });
+    const siteUrl = process.env.NODE_ENV === 'development' ? new URL(request.url).origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bri.fyi').replace(/\/+$/, '');
+    const account = await getDemoAccount(sessionId, authState.sessionId, authState.userId, siteUrl);
+    if (!account.apiKey) return Response.json({ notes: [], links: [] }, { headers: { 'Cache-Control': 'no-store' } });
+    const { apiKey } = account;
     const allNotes = await ensureDemoNotes(sessionId, apiKey);
     const demoLinks = await ensureDemoLinks(sessionId, apiKey);
     const unique = [...new Map(allNotes.map((note) => [`${note.title.trim().toLowerCase()}\n${note.content.trim().toLowerCase()}`, note])).values()];
@@ -363,7 +380,10 @@ export async function POST(request: Request) {
 
     let demoApiKey: string;
     try {
-      ({ apiKey: demoApiKey } = await getDemoAccount(sessionId));
+      const authState = await auth();
+      const account = await getDemoAccount(sessionId, authState.sessionId, authState.userId, siteUrl);
+      if (account.authUrl) return sendResult(request, sessionId, { output: 'opening your isolated demo session…', authUrl: account.authUrl });
+      demoApiKey = account.apiKey!;
     } catch (error) {
       console.error('[landing-cli] demo workspace initialization failed:', error);
       return sendResult(request, sessionId, { output: 'the bri demo workspace could not be initialized. try again shortly.' });
@@ -404,6 +424,6 @@ export async function POST(request: Request) {
   }
 }
 
-function sendResult(_request: Request, _sessionId: string, payload: { output: string }) {
+function sendResult(_request: Request, _sessionId: string, payload: { output: string; authUrl?: string }) {
   return Response.json(payload, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -11,18 +11,13 @@ const Landing = async () => {
   const { userId, sessionClaims } = await auth();
 
   if (userId) {
-    const handleFromClaims = resolveUserHandle(
-      sessionClaims as Record<string, unknown> | null | undefined
-    );
-    let handle = handleFromClaims;
-
-    if (!handle) {
-      const user = await currentUser();
-      handle = resolveUserHandleFromUser(user);
-    }
-
-    if (handle) {
-      redirect(`/${handle}`);
+    const user = await currentUser();
+    if (user?.publicMetadata.briLandingDemo !== true) {
+      const handleFromClaims = resolveUserHandle(
+        sessionClaims as Record<string, unknown> | null | undefined
+      );
+      const handle = handleFromClaims ?? resolveUserHandleFromUser(user);
+      if (handle) redirect(`/${handle}`);
     }
   }
 

@@ -9,6 +9,7 @@ import { CliAnsiOutput } from '@/components/blocks/cli-ansi-output';
 type Entry = { command: string; output: string };
 type ShellBuiltin = 'clear' | 'history' | 'help' | 'exit';
 const terminalStorageKey = 'bri:landing-cli:v1';
+const pendingCommandKey = 'bri:landing-cli-pending:v1';
 const terminalWidthKey = 'bri:landing-cli-width:v1';
 const minPanelWidth = 320;
 
@@ -126,8 +127,32 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
 
   useEffect(() => {
     try {
-      sessionStorage.removeItem(terminalStorageKey);
-      sessionIdRef.current = crypto.randomUUID().replaceAll('-', '');
+      const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+      if (navigation?.type === 'reload') {
+        sessionStorage.removeItem(terminalStorageKey);
+        sessionStorage.removeItem(pendingCommandKey);
+      }
+      const saved = navigation?.type === 'reload' ? null : sessionStorage.getItem(terminalStorageKey);
+      if (saved) {
+        const state = JSON.parse(saved) as { sessionId?: string; command?: string; entries?: Entry[]; history?: string[]; open?: boolean };
+        if (state.sessionId && /^[A-Za-z0-9_-]{32}$/.test(state.sessionId)) sessionIdRef.current = state.sessionId;
+        if (typeof state.command === 'string') setCommand(state.command);
+        if (Array.isArray(state.entries)) setEntries(state.entries.slice(-10));
+        if (Array.isArray(state.history)) setHistory(state.history.slice(-100));
+        if (typeof state.open === 'boolean') setOpen(state.open);
+      }
+      const pending = navigation?.type === 'reload' ? null : sessionStorage.getItem(pendingCommandKey);
+      if (pending) {
+        const request = JSON.parse(pending) as { sessionId?: string; command?: string };
+        if (request.sessionId && /^[A-Za-z0-9_-]{32}$/.test(request.sessionId) && typeof request.command === 'string') {
+          sessionIdRef.current = request.sessionId;
+          setCommand(request.command);
+          setOpen(true);
+          sessionStorage.removeItem(pendingCommandKey);
+          window.setTimeout(() => { void run(request.command); }, 0);
+        }
+      }
+      sessionIdRef.current ??= crypto.randomUUID().replaceAll('-', '');
       const width = Number(localStorage.getItem(terminalWidthKey));
       hasSavedWidthRef.current = Number.isFinite(width) && width > 0;
       const initialWidth = window.innerWidth <= 640
@@ -147,7 +172,7 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
   useEffect(() => {
     if (!restored) return;
     try {
-      sessionStorage.removeItem(terminalStorageKey);
+      sessionStorage.setItem(terminalStorageKey, JSON.stringify({ sessionId: sessionIdRef.current, command, entries, history, open }));
     } catch { /* terminal continues without browser storage */ }
   }, [command, entries, history, open, restored]);
 
@@ -278,6 +303,14 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
         body: JSON.stringify({ args: commandArgs, ...(stdin !== undefined ? { stdin } : {}) }),
       });
       const result = await response.json();
+      if (typeof result.authUrl === 'string') {
+        try {
+          sessionStorage.setItem(pendingCommandKey, JSON.stringify({ sessionId, command: normalized }));
+          sessionStorage.setItem(terminalStorageKey, JSON.stringify({ sessionId, command: normalized, entries, history, open: true }));
+        } catch { /* the user can still sign in and retry manually */ }
+        window.location.assign(result.authUrl);
+        return;
+      }
       setEntries((current) => [...current.slice(-5), { command: normalized, output: result.output ?? result.error ?? 'no output.' }]);
       if (commandArgs[0]?.toLowerCase() === 'bri') {
         window.dispatchEvent(new CustomEvent('bri:landing-workspace-updated', { detail: { sessionId } }));
@@ -324,6 +357,7 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
         <span className="text-xs text-muted-foreground">$</span>
         <input
           ref={inputRef}
+          autoFocus
           aria-label="try a bri cli command"
           autoComplete="off"
           className="min-w-0 flex-1 !border-0 bg-transparent font-mono text-[13px] text-foreground !outline-none !shadow-none placeholder:text-muted-foreground focus-visible:!border-0 focus-visible:!outline-none focus-visible:!shadow-none"
