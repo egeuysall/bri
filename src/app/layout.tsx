@@ -93,7 +93,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const product = await getProduct();
   const lowercaseName = product.name.toLowerCase();
   const lowercaseDescription = product.description.toLowerCase();
-  const pageTitle = 'bri — markdown notes, links, and cli';
+  const pageTitle = 'bri: markdown notes, links, and cli';
   return {
     title: {
       default: pageTitle,
@@ -115,7 +115,7 @@ export async function generateMetadata(): Promise<Metadata> {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'bri — markdown notes, links, and cli',
+        alt: 'bri: markdown notes, links, and cli',
       }],
       type: 'website',
       locale: 'en_US',

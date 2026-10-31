@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'bri — markdown notes, links, and cli';
+export const alt = 'bri: markdown notes, links, and cli';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
