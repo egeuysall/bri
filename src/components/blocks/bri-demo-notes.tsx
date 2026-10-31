@@ -74,10 +74,10 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
         <ul className="divide-y divide-border text-[13px] leading-5">
           {links.map((item, index) => (
             <li key={`${item.href}-${index}`} className="animate-enter" style={{ '--delay': `${300 + notes.length * 55 + index * 55}ms` } as CSSProperties}>
-              <a href={item.href} className="grid grid-cols-[2rem_minmax(0,1fr)] items-baseline gap-2 py-2.5 text-foreground hover:underline">
+              <a href={item.href} className="group grid grid-cols-[2rem_minmax(0,1fr)] items-baseline gap-2 py-2.5 text-foreground">
                 <span className="text-[11px] text-muted-foreground">{String(index + 1).padStart(2, '0')}</span>
                 <span className="min-w-0">
-                  <span className="block truncate">{item.title}</span>
+                  <span className="block truncate group-hover:underline">{item.title}</span>
                   {item.target && <span className="mt-1 block truncate text-[11px] text-muted-foreground">{item.target}</span>}
                 </span>
               </a>

@@ -194,6 +194,10 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
   }, [command, entries, history, open, restored]);
 
   useEffect(() => {
+    inputRef.current?.focus({ preventScroll: true });
+  }, []);
+
+  useEffect(() => {
     document.body.classList.toggle('bri-cli-workspace-open', open);
     document.body.style.transition = transitionsReady ? 'margin-right 360ms cubic-bezier(.2, .75, .25, 1)' : 'none';
     const syncPageWidth = () => {
@@ -248,9 +252,9 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
 
   useEffect(() => {
     if (open) {
-      workspaceInputRef.current?.focus();
+      workspaceInputRef.current?.focus({ preventScroll: true });
     } else if (restoreFocusRef.current) {
-      inputRef.current?.focus();
+      inputRef.current?.focus({ preventScroll: true });
       restoreFocusRef.current = false;
     }
   }, [open]);
@@ -338,7 +342,7 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
       setEntries((current) => [...current.slice(-5), { command: normalized, output: 'could not reach the cli runner.' }]);
     } finally {
       setBusy(false);
-      workspaceInputRef.current?.focus();
+      workspaceInputRef.current?.focus({ preventScroll: true });
     }
   }
 
@@ -376,7 +380,6 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
         <span className="text-xs text-muted-foreground">$</span>
         <input
           ref={inputRef}
-          autoFocus
           aria-label="try a bri cli command"
           autoComplete="off"
           className="min-w-0 flex-1 !border-0 bg-transparent font-mono text-[13px] text-foreground !outline-none !shadow-none placeholder:text-muted-foreground focus-visible:!border-0 focus-visible:!outline-none focus-visible:!shadow-none"
