@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { createPortal } from 'react-dom';
 import { CodeBlock, CodeBlockActions, CodeBlockContent, CodeBlockLine } from '@/components/ui/code-block';
 import { useHighlightedCode } from '@/hooks/use-highlighted-code';
@@ -106,6 +107,7 @@ function CliOutput({ output }: { output: string }) {
 }
 
 export function BriCliTerminal({ installCommand }: { installCommand: string }) {
+  const { getToken, isLoaded, isSignedIn } = useAuth();
   const [command, setCommand] = useState('');
   const [entries, setEntries] = useState<Entry[]>([]);
   const [history, setHistory] = useState<string[]>([]);
@@ -149,7 +151,7 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
           setCommand(request.command);
           setOpen(true);
           sessionStorage.removeItem(pendingCommandKey);
-          window.setTimeout(() => { void run(request.command); }, 0);
+          pendingCommandRef.current = request.command;
         }
       }
       sessionIdRef.current ??= crypto.randomUUID().replaceAll('-', '');
@@ -168,6 +170,14 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
     setRestored(true);
     setMounted(true);
   }, []);
+
+  const pendingCommandRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !pendingCommandRef.current) return;
+    const pending = pendingCommandRef.current;
+    pendingCommandRef.current = null;
+    void run(pending);
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
     if (!restored) return;
@@ -274,6 +284,7 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
     const [pipelineLeft, pipelineRight] = splitPipeline(normalized);
     const leftArgs = pipelineRight ? tokenizeCommandLine(pipelineLeft ?? '') : null;
     const commandArgs = pipelineRight ? tokenizeCommandLine(pipelineRight) : tokenizeCommandLine(normalized);
+    const isBriCommand = commandArgs?.[0]?.toLowerCase() === 'bri';
     const nextHistory = [...historyRef.current, normalized].slice(-100);
     historyRef.current = nextHistory;
     historyCursorRef.current = -1;
@@ -297,10 +308,11 @@ export function BriCliTerminal({ installCommand }: { installCommand: string }) {
     setCommand('');
     const sessionId = sessionIdRef.current ?? (sessionIdRef.current = crypto.randomUUID().replaceAll('-', ''));
     try {
+      const clerkToken = isBriCommand ? await getToken({ template: 'convex' }).catch(() => null) : null;
       const response = await fetch('/api/landing-cli', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-bri-demo-session': sessionId },
-        body: JSON.stringify({ args: commandArgs, ...(stdin !== undefined ? { stdin } : {}) }),
+        body: JSON.stringify({ args: commandArgs, ...(stdin !== undefined ? { stdin } : {}), ...(clerkToken ? { clerkToken } : {}) }),
       });
       const result = await response.json();
       if (typeof result.authUrl === 'string') {

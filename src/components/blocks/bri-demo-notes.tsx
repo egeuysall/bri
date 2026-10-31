@@ -1,11 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 
 type NotePreview = { username: string; slug: string; title: string; href?: string; content?: string; temporary?: boolean };
 type LandingLink = { title: string; href: string; target?: string };
 
 export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: NotePreview[]; initialLinks: LandingLink[] }) {
+  const { getToken } = useAuth();
   const [notes, setNotes] = useState(initialNotes.slice(0, 10));
   const [links, setLinks] = useState(initialLinks.slice(0, 10));
 
@@ -14,7 +16,10 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
     const refresh = (event: Event) => {
       const sessionId = (event as CustomEvent<{ sessionId?: string }>).detail?.sessionId;
       if (!sessionId) return;
-      void fetch('/api/landing-cli', { cache: 'no-store', headers: { 'x-bri-demo-session': sessionId } })
+      void getToken({ template: 'convex' }).then((token) => fetch('/api/landing-cli', {
+        cache: 'no-store',
+        headers: { 'x-bri-demo-session': sessionId, ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      }))
         .then(async (response) => response.ok ? await response.json() as { notes?: NotePreview[]; links?: LandingLink[] } : null)
         .then((payload) => {
           if (!active || !payload) return;
@@ -28,7 +33,7 @@ export function BriDemoNotes({ initialNotes, initialLinks }: { initialNotes: Not
       active = false;
       window.removeEventListener('bri:landing-workspace-updated', refresh);
     };
-  }, []);
+  }, [getToken]);
 
   return (
     <div className="bri-landing-notes flex flex-col gap-8">

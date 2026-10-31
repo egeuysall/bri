@@ -3,8 +3,7 @@ import { mkdir, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash, randomBytes } from 'node:crypto';
 import { isAbsolute, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createClerkClient } from '@clerk/backend';
-import { auth } from '@clerk/nextjs/server';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 import { fetchQuery } from 'convex/nextjs';
 import { api } from '../../../../convex/_generated/api';
 import { hashBridgeApiKey } from '@/lib/request-security';
@@ -95,7 +94,7 @@ function publicDemoBlockReason(args: string[]) {
   return null;
 }
 
-async function provisionDemoAccount(sessionId: string, authSessionId: string | null, authUserId: string | null, siteUrl: string): Promise<DemoAccount> {
+async function provisionDemoAccount(sessionId: string, authUserId: string | null, convexToken: string | null, siteUrl: string): Promise<DemoAccount> {
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) throw new Error('Bri demo authentication is unavailable.');
 
@@ -145,7 +144,7 @@ async function provisionDemoAccount(sessionId: string, authSessionId: string | n
     }
   }
 
-  if (authUserId !== user.id || !authSessionId) {
+  if (authUserId !== user.id || !convexToken) {
     const task = await clerk.agentTasks.create({
       onBehalfOf: { userId: user.id },
       permissions: '*',
@@ -157,11 +156,6 @@ async function provisionDemoAccount(sessionId: string, authSessionId: string | n
     return { username, authUrl: task.url };
   }
 
-  // Agent Task sessions are valid Clerk auth contexts, but they are not
-  // persisted as regular Sessions that can be fetched through the Backend API.
-  // Mint the Convex template from the verified request context instead.
-  const convexToken = await auth().then((state) => state.getToken());
-  if (!convexToken) throw new Error('Could not create a Convex token for the demo session.');
   await syncMyUserProfile({ token: convexToken, username, displayName: 'bri demo', email: null });
 
   const prefix = `bri_${randomBytes(6).toString('base64url')}`;
@@ -180,10 +174,10 @@ async function provisionDemoAccount(sessionId: string, authSessionId: string | n
   return { apiKey, username };
 }
 
-function getDemoAccount(sessionId: string, authSessionId: string | null, authUserId: string | null, siteUrl: string) {
+function getDemoAccount(sessionId: string, authUserId: string | null, convexToken: string | null, siteUrl: string) {
   let pending = demoAccountPromises.get(sessionId);
   if (!pending) {
-    pending = provisionDemoAccount(sessionId, authSessionId, authUserId, siteUrl).then((account) => {
+    pending = provisionDemoAccount(sessionId, authUserId, convexToken, siteUrl).then((account) => {
       if (!account.apiKey) demoAccountPromises.delete(sessionId);
       return account;
     }).catch((error) => {
@@ -260,10 +254,11 @@ export async function GET(request: Request) {
   const sessionId = request.headers.get('x-bri-demo-session') ?? '';
   if (!SESSION_PATTERN.test(sessionId)) return Response.json({ notes: [] }, { headers: { 'Cache-Control': 'no-store' } });
   try {
-    const authState = await auth();
-    if (!authState.sessionId || !authState.userId) return Response.json({ notes: [], links: [] }, { headers: { 'Cache-Control': 'no-store' } });
     const siteUrl = process.env.NODE_ENV === 'development' ? new URL(request.url).origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://bri.fyi').replace(/\/+$/, '');
-    const account = await getDemoAccount(sessionId, authState.sessionId, authState.userId, siteUrl);
+    const token = request.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? '';
+    const claims = token ? await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY, audience: 'convex', authorizedParties: [siteUrl] }).catch(() => null) : null;
+    if (typeof claims?.sub !== 'string') return Response.json({ notes: [], links: [] }, { headers: { 'Cache-Control': 'no-store' } });
+    const account = await getDemoAccount(sessionId, claims.sub, token, siteUrl);
     if (!account.apiKey) return Response.json({ notes: [], links: [] }, { headers: { 'Cache-Control': 'no-store' } });
     const { apiKey } = account;
     const allNotes = await ensureDemoNotes(sessionId, apiKey);
@@ -342,6 +337,10 @@ export async function POST(request: Request) {
 
   const args = rawArgs as string[];
   const stdin = (body as { stdin?: unknown }).stdin;
+  const rawConvexToken = (body as { clerkToken?: unknown }).clerkToken;
+  if (rawConvexToken !== undefined && (typeof rawConvexToken !== 'string' || rawConvexToken.length > 8_000)) {
+    return Response.json({ error: 'Invalid demo session token.' }, { status: 400 });
+  }
   if (stdin !== undefined && (typeof stdin !== 'string' || stdin.length > 16_000 || stdin.includes('\0'))) {
     return Response.json({ error: 'The piped input must be plain text under 16 kb.' }, { status: 400 });
   }
@@ -383,8 +382,10 @@ export async function POST(request: Request) {
 
     let demoApiKey: string;
     try {
-      const authState = await auth();
-      const account = await getDemoAccount(sessionId, authState.sessionId, authState.userId, siteUrl);
+      const convexToken = typeof rawConvexToken === 'string'
+        ? await verifyToken(rawConvexToken, { secretKey: process.env.CLERK_SECRET_KEY, audience: 'convex', authorizedParties: [siteUrl] }).catch(() => null)
+        : null;
+      const account = await getDemoAccount(sessionId, typeof convexToken?.sub === 'string' ? convexToken.sub : null, convexToken ? rawConvexToken as string : null, siteUrl);
       if (account.authUrl) return sendResult(request, sessionId, { output: 'opening your isolated demo session…', authUrl: account.authUrl });
       demoApiKey = account.apiKey!;
     } catch (error) {

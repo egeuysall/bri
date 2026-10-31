@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
 import { UserDashboard } from '@/components/dashboard/user-dashboard';
@@ -79,6 +79,7 @@ export default async function DashboardPage({
 
   const normalizedPathHandle = normalizePathHandle(username);
   if (!normalizedPathHandle) notFound();
+  if (normalizedPathHandle.startsWith('bri_demo_') && !forcePublicProfile) redirect('/?bri_demo=1');
 
   const { sessionClaims, userId, getToken } = await auth();
   let userHandle = resolveUserHandle(sessionClaims as Record<string, unknown> | null | undefined);
