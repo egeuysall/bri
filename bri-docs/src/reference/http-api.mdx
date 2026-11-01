@@ -158,12 +158,12 @@ curl -sS \
 
 ## AI questions and MCP
 
-The **ask endpoint** streams a plain-text answer grounded in one readable note:
+The **ask endpoint** streams a plain-text answer using the open note as its main context. It can search the author's public notes and the signed-in viewer's own notes, and use bounded conversation history for follow-up questions. When notes do not fully answer a question, it can offer a clearly labeled general answer:
 
 ```bash
 curl -N -sS -X POST \
   -H "Content-Type: application/json" \
-  -d '{"question":"What are the launch risks?"}' \
+  -d '{"question":"How does this connect to my earlier notes?","history":[{"role":"user","content":"Summarize the main idea."}]}' \
   https://bri.fyi/api/notes/<username>/<slug>/ask
 ```
 

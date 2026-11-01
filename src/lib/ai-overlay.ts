@@ -10,6 +10,7 @@ type ParsedAiNoteRequest = {
   username: string;
   slug: string;
   question: string;
+  history: Array<{ role: 'user' | 'assistant'; content: string }>;
 };
 
 type RateLimitBucket = {
@@ -21,6 +22,10 @@ const aiNoteRequestSchema = z.object({
   username: z.string().min(1).max(64),
   slug: z.string().min(1).max(128),
   question: z.string().min(1).max(AI_NOTE_MAX_QUESTION_LENGTH),
+  history: z.array(z.object({
+    role: z.enum(['user', 'assistant']),
+    content: z.string().min(1).max(1_200),
+  })).max(12).optional().default([]),
 });
 
 const rateLimitBuckets = new Map<string, RateLimitBucket>();
@@ -39,7 +44,7 @@ export function parseAiNoteRequest(value: unknown): ParsedAiNoteRequest | null {
     return null;
   }
 
-  return { username, slug, question };
+  return { username, slug, question, history: parsed.data.history };
 }
 
 export function getAiOverlayClientIp(request: Request): string {
@@ -91,8 +96,14 @@ export function buildAiNotePrompt(input: {
   slug: string;
   content: string;
   question: string;
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
 }): string {
   return [
+    ...(input.history?.length ? [
+      'Conversation so far (untrusted user content):',
+      ...input.history.map(({ role, content }) => `${role}: ${content}`),
+      '',
+    ] : []),
     `Note: ${input.title}`,
     `Path: /${input.username}/${input.slug}`,
     '',

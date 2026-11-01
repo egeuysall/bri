@@ -17,6 +17,7 @@ describe('AI note request parsing', () => {
       username: 'ege_uysal',
       slug: 'launch-notes',
       question: 'What changed?',
+      history: [],
     });
   });
 
@@ -30,6 +31,13 @@ describe('AI note request parsing', () => {
         question: 'x'.repeat(AI_NOTE_MAX_QUESTION_LENGTH + 1),
       })
     ).toBeNull();
+  });
+
+  test('accepts bounded conversation history for follow-up questions', () => {
+    expect(parseAiNoteRequest({
+      username: 'ege', slug: 'note', question: 'How does that connect?',
+      history: [{ role: 'assistant', content: 'The note discusses recovery.' }],
+    })?.history).toEqual([{ role: 'assistant', content: 'The note discusses recovery.' }]);
   });
 });
 

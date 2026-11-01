@@ -160,12 +160,11 @@ export default async function NotePage({
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c') }} />
       <section
-        className={`${geist.variable} w-full animate-enter px-4 py-5 md:px-8 md:py-8`}
-        style={{ '--delay': '40ms' } as CSSProperties}
+        className={`${geist.variable} w-full px-4 py-5 md:px-8 md:py-8`}
         data-note-export-root
       >
         <article className="mx-auto w-full max-w-155">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className={`${note.visibility === 'public' ? 'animate-enter' : ''} flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between`} style={note.visibility === 'public' ? { '--delay': '40ms' } as CSSProperties : undefined}>
             <h1
               className="min-w-0 break-words text-base font-semibold text-neutral-100"
               data-note-export-title
@@ -192,21 +191,21 @@ export default async function NotePage({
               ) : null}
             </div>
           </div>
-          <p className="mt-2 text-xs text-neutral-400" data-note-export-meta>
+          <p className={`${note.visibility === 'public' ? 'animate-enter' : ''} mt-2 text-xs text-neutral-400`} style={note.visibility === 'public' ? { '--delay': '100ms' } as CSSProperties : undefined} data-note-export-meta>
             <Link href={`/${note.username}`} className="transition-colors hover:text-neutral-100">
               @{note.username}
             </Link>{' '}
             &middot; {formatDate(note.createdAt)}
           </p>
 
-          <div className="px-0 py-6 md:py-7" data-note-export-content>
+          <div className={`${note.visibility === 'public' ? 'public-note-content' : ''} px-0 py-6 md:py-7`} data-note-export-content>
             <div className="prose prose-neutral prose-invert max-w-none prose-p:text-neutral-300 prose-headings:text-neutral-100 prose-h1:text-[1rem]! prose-h1:leading-6! prose-h1:font-semibold! prose-h2:text-[0.95rem]! prose-h2:leading-6! prose-h2:font-medium! prose-h3:text-[0.88rem]! prose-h3:leading-6! prose-h3:font-medium! prose-h4:text-[0.82rem]! prose-h4:leading-5! prose-h4:font-medium! prose-strong:text-neutral-100 prose-a:text-neutral-100 prose-a:decoration-neutral-700 prose-hr:border-neutral-800 prose-pre:border prose-pre:border-neutral-800">
               <MarkdownContent postId={note.id} content={contentWithoutHeading} />
             </div>
           </div>
         </article>
       </section>
-      <NoteAiOverlay username={note.username} slug={note.slug} title={note.title} />
+      <NoteAiOverlay username={note.username} slug={note.slug} title={note.title} animate={note.visibility === 'public'} />
     </>
   );
 }

@@ -44,7 +44,7 @@ Restoring a **prior version** changes external state and requires write permissi
 
 ## Ask about a note
 
-The AI command streams a concise answer grounded in one note:
+The AI command streams an answer using the selected note as its main context. It can search other notes available to the caller and distinguish general knowledge from note content:
 
 ```bash
 bri notes ask <username> <slug> --question 'What is the launch date?'
