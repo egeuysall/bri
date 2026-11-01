@@ -83,8 +83,6 @@ export const getPublicByUsername = query({
 
     return {
       username: profile.username,
-      displayName: profile.displayName,
-      email: profile.email,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     };

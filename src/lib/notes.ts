@@ -69,10 +69,13 @@ export type PinnedRecord = {
 
 export type UserProfilePublicRecord = {
   username: string;
-  displayName: string | null;
-  email: string | null;
   createdAt: number;
   updatedAt: number;
+};
+
+export type UserProfileRecord = UserProfilePublicRecord & {
+  displayName: string | null;
+  email: string | null;
 };
 
 export type NotificationRecord = {
@@ -768,7 +771,7 @@ export async function getPublicUserProfileByUsername(input: {
 
 export async function getMyUserProfile(input: {
   token: string;
-}): Promise<UserProfilePublicRecord | null> {
+}): Promise<UserProfileRecord | null> {
   const data = await fetchQuery(api.userProfiles.getMine, {}, { token: input.token });
   return data ?? null;
 }

@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import type { CSSProperties } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-export function PublicFileViewer({ fileName, contentType, href, className }: { fileName: string; contentType: string; href: string; className: string }) {
+export function PublicFileViewer({ fileName, contentType, href, className, style }: { fileName: string; contentType: string; href: string; className: string; style?: CSSProperties }) {
   const [open, setOpen] = useState(false);
   return <>
-    <div className={`flex w-full items-center justify-between gap-2 ${className}`}>
+    <div className={`flex w-full items-center justify-between gap-2 ${className}`} style={style}>
       <button type="button" aria-label={`View ${fileName}`} onClick={() => setOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400">
         <span aria-hidden="true" className="w-4 shrink-0 text-center font-mono">-</span><span className="truncate">{fileName}</span>
       </button>

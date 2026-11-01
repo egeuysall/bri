@@ -31,7 +31,7 @@ export async function generateMetadata({
     const profile = await getPublicUserProfileByUsername({ username: normalized });
     if (profile) {
       return {
-        title: `${profile.displayName ? `${profile.displayName} ` : ''}@${profile.username}`,
+        title: `@${profile.username}`,
         description: `Published notes and links for @${profile.username}.`,
       };
     }

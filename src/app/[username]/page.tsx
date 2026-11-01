@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import type { CSSProperties } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { headers } from 'next/headers';
@@ -44,8 +45,8 @@ export async function generateMetadata({ params, searchParams }: {
     return { title: 'profile not found', robots: { index: false, follow: false } };
   }
 
-  const title = `${profile?.displayName || `@${handle}`}: public notes and links`;
-  const description = `public notes and quick links from ${profile?.displayName || `@${handle}`}.`;
+  const title = `@${handle}: public notes and links`;
+  const description = `public notes and quick links from @${handle}.`;
   const canonicalQuery = new URLSearchParams();
   const notePage = parsePage(singleQueryParam(query.notePage));
   const linkPage = parsePage(singleQueryParam(query.linkPage));
@@ -147,6 +148,8 @@ export default async function DashboardPage({
     (linkPage - 1) * PUBLIC_LIST_PAGE_SIZE,
     linkPage * PUBLIC_LIST_PAGE_SIZE
   );
+  const filesDelay = 240 + visibleNotes.length * 55;
+  const linksDelay = filesDelay + (publicFiles.length ? Math.min(publicFiles.length, 10) * 45 + 120 : 0);
   const pageHref = (nextNotePage: number, nextLinkPage: number) => {
     const params = new URLSearchParams();
     if (forcePublicProfile) params.set('public', '1');
@@ -161,27 +164,24 @@ export default async function DashboardPage({
     '@type': 'ProfilePage',
     mainEntity: {
       '@type': 'Person',
-      name: profile?.displayName || `@${normalizedPathHandle}`,
+      name: `@${normalizedPathHandle}`,
       alternateName: normalizedPathHandle,
       url: profileUrl,
-      description: `Public notes and quick links from ${profile?.displayName || `@${normalizedPathHandle}`}.`,
+      description: `Public notes and quick links from @${normalizedPathHandle}.`,
     },
   };
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileJsonLd).replace(/</g, '\\u003c') }} />
-      <section className="w-full animate-enter px-4 py-6 md:px-8 md:py-8">
+      <section className="w-full px-4 py-6 md:px-8 md:py-8">
         <div className="mx-auto w-full max-w-155 space-y-8">
-        <header className="flex flex-col items-start gap-3">
+        <header className="animate-enter flex flex-col items-start gap-3" style={{ '--delay': '40ms' } as CSSProperties}>
           <PublicProfileAvatar name={normalizedPathHandle} />
           <div className="space-y-2">
             <h1 className="text-base font-semibold text-neutral-100">
-              {profile?.displayName ? `${profile.displayName} ` : ''}@{normalizedPathHandle}
+              @{normalizedPathHandle}
             </h1>
-            <p className="text-xs text-neutral-500">
-              {profile?.email ? profile.email : 'email unavailable'}
-            </p>
             <p className="text-xs text-neutral-500">
               {notes.length} published notes &middot; {links.length} links
             </p>
@@ -189,15 +189,16 @@ export default async function DashboardPage({
         </header>
 
         <div className="space-y-3">
-          <h2 className="text-xs text-neutral-500">Published notes</h2>
+          <h2 className="animate-enter text-xs text-neutral-500" style={{ '--delay': '140ms' } as CSSProperties}>Published notes</h2>
           {notes.length === 0 ? (
-            <p className="text-xs text-neutral-500">No published notes.</p>
+            <p className="animate-enter text-xs text-neutral-500" style={{ '--delay': '200ms' } as CSSProperties}>No published notes.</p>
           ) : (
-            visibleNotes.map((note) => (
+            visibleNotes.map((note, index) => (
               <Link
                 key={note.id}
                 href={`/${note.username}/${note.slug}`}
-                className="block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
+                className="animate-enter block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-900/85"
+                style={{ '--delay': `${200 + index * 55}ms` } as CSSProperties}
               >
                 <p className="text-sm text-neutral-100">{note.title}</p>
                 <p className="mt-1 text-[11px] text-neutral-500">
@@ -207,7 +208,7 @@ export default async function DashboardPage({
             ))
           )}
           {notePages > 1 ? (
-            <div className="flex items-center gap-3 text-xs text-neutral-400">
+            <div className="animate-enter flex items-center gap-3 text-xs text-neutral-400" style={{ '--delay': `${200 + visibleNotes.length * 55}ms` } as CSSProperties}>
               {notePage > 1 ? (
                 <Link
                   href={pageHref(notePage - 1, linkPage)}
@@ -235,29 +236,29 @@ export default async function DashboardPage({
           ) : null}
         </div>
 
-        {publicFiles.length > 0 && <PublicIbxFiles files={publicFiles} />}
+        {publicFiles.length > 0 && <PublicIbxFiles files={publicFiles} startDelay={filesDelay} />}
 
         <div className="space-y-3">
-          <h2 className="text-xs text-neutral-500">Published links</h2>
+          <h2 className="animate-enter text-xs text-neutral-500" style={{ '--delay': `${linksDelay}ms` } as CSSProperties}>Published links</h2>
           {links.length === 0 ? (
-            <p className="text-xs text-neutral-500">No links yet.</p>
+            <p className="animate-enter text-xs text-neutral-500" style={{ '--delay': `${linksDelay + 55}ms` } as CSSProperties}>No links yet.</p>
           ) : (
-            visibleLinks.map((link) => (
+            visibleLinks.map((link, index) => (
               <a
                 key={link.id}
                 href={`/${link.username}/${link.key}`}
-                className="block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-900/85"
+                className="animate-enter block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-900/85"
+                style={{ '--delay': `${linksDelay + 55 + index * 55}ms` } as CSSProperties}
               >
                 <p className="truncate text-sm text-neutral-100">
                   {formatQuickLinkTitle(link.label, link.key)}
                 </p>
                 <p className="mt-1 truncate text-[11px] text-neutral-500">{link.targetUrl}</p>
-                <p className="mt-1 text-[11px] text-neutral-500">{link.clicks} views</p>
               </a>
             ))
           )}
           {linkPages > 1 ? (
-            <div className="flex items-center gap-3 text-xs text-neutral-400">
+            <div className="animate-enter flex items-center gap-3 text-xs text-neutral-400" style={{ '--delay': `${linksDelay + 55 + visibleLinks.length * 55}ms` } as CSSProperties}>
               {linkPage > 1 ? (
                 <Link
                   href={pageHref(notePage, linkPage - 1)}
