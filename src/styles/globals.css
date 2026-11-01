@@ -410,6 +410,10 @@ a {
   transition: color 160ms ease;
 }
 
+.public-profile-card {
+  transition: color 160ms ease, background-color 200ms ease;
+}
+
 .animate-enter {
   opacity: 1;
   transform: none;

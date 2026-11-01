@@ -197,7 +197,7 @@ export default async function DashboardPage({
               <Link
                 key={note.id}
                 href={`/${note.username}/${note.slug}`}
-                className="animate-enter block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-900/85"
+                className="public-profile-card animate-enter block rounded-sm border border-neutral-800 px-3 py-3 hover:bg-neutral-900/85"
                 style={{ '--delay': `${200 + index * 55}ms` } as CSSProperties}
               >
                 <p className="text-sm text-neutral-100">{note.title}</p>
@@ -247,7 +247,7 @@ export default async function DashboardPage({
               <a
                 key={link.id}
                 href={`/${link.username}/${link.key}`}
-                className="animate-enter block rounded-sm border border-neutral-800 px-3 py-3 transition-colors hover:bg-neutral-900/85"
+                className="public-profile-card animate-enter block rounded-sm border border-neutral-800 px-3 py-3 hover:bg-neutral-900/85"
                 style={{ '--delay': `${linksDelay + 55 + index * 55}ms` } as CSSProperties}
               >
                 <p className="truncate text-sm text-neutral-100">
