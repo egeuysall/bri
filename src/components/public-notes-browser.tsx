@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import type { NoteRecord } from '@/lib/notes';
 
@@ -11,6 +11,7 @@ export function PublicNotesBrowser({ notes, folders }: { notes: NoteRecord[]; fo
   const [terminalFolderId, setTerminalFolderId] = useState<string | null>(null);
   const [command, setCommand] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const outputRef = useRef<HTMLDivElement>(null);
   const byId = useMemo(() => new Map(folders.map(folder => [folder.id, folder])), [folders]);
   const children = (parent: string | null) => folders.filter(folder => (folder.parentFolderId ?? null) === parent).sort((a, b) => a.name.localeCompare(b.name));
   const noteChildren = (parent: string | null) => notes.filter(note => (note.folderId && byId.has(note.folderId) ? note.folderId : null) === parent).sort((a, b) => a.title.localeCompare(b.title));
@@ -20,10 +21,13 @@ export function PublicNotesBrowser({ notes, folders }: { notes: NoteRecord[]; fo
   for (let id = terminalFolderId; id && byId.has(id); id = byId.get(id)?.parentFolderId ?? null) terminalPath.unshift(byId.get(id)!.name);
   const rows = [...children(folderId).map(folder => ({ kind: 'folder' as const, folder })), ...noteChildren(folderId).map(note => ({ kind: 'note' as const, note }))];
   const navigate = (id: string | null) => setFolderId(id);
-  const tree = (parent: string | null, depth = 0): string[] => [
-    ...children(parent).flatMap(folder => [`${'  '.repeat(depth)}├── ${folder.name}/`, ...tree(folder.id, depth + 1)]),
-    ...noteChildren(parent).map(note => `${'  '.repeat(depth)}├── ${note.title}`),
-  ];
+  const tree = (parent: string | null, prefix = ''): string[] => {
+    const entries = [...children(parent).map(folder => ({ folder, name: `${folder.name}/` })), ...noteChildren(parent).map(note => ({ folder: null, name: note.title }))];
+    return entries.flatMap((entry, index) => {
+      const last = index === entries.length - 1;
+      return [`${prefix}${last ? '└──' : '├──'} ${entry.name}`, ...(entry.folder ? tree(entry.folder.id, `${prefix}${last ? '    ' : '│   '}`) : [])];
+    });
+  };
   const resolveFolder = (value: string) => {
     let id = value.startsWith('/') || /^notes(?=\/|$)/.test(value) ? null : terminalFolderId;
     for (const segment of value.replace(/^\/?notes(?=\/|$)\/?/, '').split('/').filter(Boolean)) {
@@ -50,7 +54,7 @@ export function PublicNotesBrowser({ notes, folders }: { notes: NoteRecord[]; fo
       output = target === undefined ? [`Folder not found: ${arg}`] : [];
       if (target !== undefined) setTerminalFolderId(target);
     } else if (verb === 'ls') output = [...children(terminalFolderId).map(folder => `${folder.name}/`), ...noteChildren(terminalFolderId).map(note => note.title)];
-    else if (verb === 'tree') output = ['notes/', ...tree(terminalFolderId)];
+    else if (verb === 'tree') output = [`${terminalPath.at(-1) ?? 'notes'}/`, ...tree(terminalFolderId)];
     else if (verb === 'open') {
       const slash = arg.lastIndexOf('/');
       const target = slash >= 0 ? resolveFolder(arg.slice(0, slash)) : terminalFolderId;
@@ -59,7 +63,12 @@ export function PublicNotesBrowser({ notes, folders }: { notes: NoteRecord[]; fo
       if (note) window.open(`/${encodeURIComponent(note.username)}/${encodeURIComponent(note.slug)}`, '_blank', 'noopener,noreferrer');
       output = note ? [] : [`Note not found: ${arg}`];
     } else output = [`Unknown command: ${verb}`];
-    setHistory(current => [...(current.length ? current : ['$ tree', 'notes/', ...tree(null)]), `$ ${input}`, ...(output.length ? output : [''])]);
+    if (verb === 'tree') {
+      setHistory([`$ ${input}`, ...output]);
+      requestAnimationFrame(() => outputRef.current?.scrollTo({ top: 0 }));
+    } else {
+      setHistory(current => [...(current.length ? current : ['$ tree', 'notes/', ...tree(null)]), `$ ${input}`, ...(output.length ? output : [''])]);
+    }
     setCommand('');
   };
 
@@ -68,10 +77,10 @@ export function PublicNotesBrowser({ notes, folders }: { notes: NoteRecord[]; fo
       <h2 className="text-xs text-neutral-500">Terminal</h2>
       <div className="overflow-hidden rounded-sm border border-neutral-800 text-xs">
         <div className="flex justify-between border-b border-neutral-800 px-3 py-2 text-neutral-500"><span>bri terminal</span><span>public · read-only</span></div>
-        <div className="max-h-72 overflow-y-auto px-3 py-3" aria-live="polite">
+        <div ref={outputRef} className="max-h-72 overflow-y-auto px-3 py-3" aria-live="polite">
           <pre className="whitespace-pre-wrap break-words font-mono text-neutral-300">{history.length ? history.join('\n') : ['$ tree', 'notes/', ...tree(null)].join('\n')}</pre>
         </div>
-        <form onSubmit={run} className="flex gap-2 border-t border-neutral-800 px-3 py-2"><span>$</span><input aria-label="Terminal command" className="min-w-0 flex-1 bg-transparent outline-none" value={command} onChange={event => setCommand(event.target.value)} placeholder="help, ls, tree, cd, open" /></form>
+        <form onSubmit={run} className="flex gap-2 border-t border-neutral-800 px-3 py-2"><span>$</span><input aria-label="Terminal command" autoComplete="off" className="min-w-0 flex-1 !border-0 bg-transparent !outline-none !shadow-none focus:!border-0 focus:!outline-none focus:!shadow-none focus-visible:!border-0 focus-visible:!outline-none focus-visible:!shadow-none" value={command} onChange={event => setCommand(event.target.value)} placeholder="help, ls, tree, cd, open" /></form>
       </div>
     </section>
     <section className="space-y-3">
