@@ -164,6 +164,10 @@ export async function listPublicNotesByUsername(input: {
   });
 }
 
+export async function listPublicNoteFoldersByUsername(username: string): Promise<{ id: string; name: string; parentFolderId: string | null }[]> {
+  return await fetchQuery(api.notes.listPublicNoteFolders, { username });
+}
+
 export async function listNotesWithApiKey(input: {
   apiKey: string;
   state: NoteState;

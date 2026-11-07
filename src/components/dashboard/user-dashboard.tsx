@@ -615,6 +615,7 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
     }
     return path;
   }, [currentFolderId, folders]);
+  const folderOptions = useMemo(() => [{ id: '', label: 'root' }, ...folders.map(folder => ({ id: folder.id, label: folder.name }))], [folders]);
 
   const filteredSortedLinks = useMemo(() => {
     let rows = [...quickLinks];
@@ -1551,10 +1552,12 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
                               </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
-                              <select aria-label={`Move ${note.title} to folder`} value={note.folderId ?? ''} onClick={event => event.stopPropagation()} onChange={event => { event.stopPropagation(); void changeFolder({ action: 'move', noteId: note.id, folderId: event.target.value || null }).catch(error => toast.error(error.message)); }} className="h-8 max-w-36 rounded-sm border border-neutral-800 bg-neutral-950 px-2 text-xs">
-                                <option value="">root</option>
-                                {folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
-                              </select>
+                              <div onClick={event => event.stopPropagation()} className="w-36">
+                                <Combobox items={folderOptions} value={folderOptions.find(option => option.id === (note.folderId ?? ''))} itemToStringValue={option => option.label} onValueChange={option => { if (option) void changeFolder({ action: 'move', noteId: note.id, folderId: option.id || null }).catch(error => toast.error(error.message)); }}>
+                                  <ComboboxInput aria-label={`Move ${note.title} to folder`} className="h-8" />
+                                  <ComboboxContent><ComboboxEmpty>No folders found.</ComboboxEmpty><ComboboxList><ComboboxGroup>{folderOptions.map(option => <ComboboxItem key={option.id} value={option}>{option.label}</ComboboxItem>)}</ComboboxGroup></ComboboxList></ComboboxContent>
+                                </Combobox>
+                              </div>
                               <Button
                                 type="button"
                                 variant="default"

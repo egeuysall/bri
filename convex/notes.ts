@@ -571,6 +571,32 @@ export const listPublicByUsername = query({
   },
 });
 
+export const listPublicNoteFolders = query({
+  args: { username: v.string() },
+  handler: async (ctx, { username }) => {
+    const handle = sanitizeUsername(username);
+    if (!handle) return [];
+    const notes = (await ctx.db.query('notes').withIndex('by_username_and_slug', q => q.eq('username', handle)).order('desc').take(500))
+      .filter(note => note.state === 'active' && note.visibility === 'public' && !isPastExpiration(note, Date.now())).slice(0, 100);
+    const owner = notes[0]?.ownerTokenIdentifier;
+    if (!owner) return [];
+    const folders = await ctx.db.query('noteFolders').withIndex('by_owner', q => q.eq('ownerTokenIdentifier', owner)).take(200);
+    const byId = new Map(folders.map(folder => [folder._id, folder]));
+    const visible = new Set<Id<'noteFolders'>>();
+    for (const note of notes) {
+      if (note.ownerTokenIdentifier !== owner) continue;
+      let id = note.folderId;
+      while (id && !visible.has(id)) {
+        const folder = byId.get(id);
+        if (!folder) break;
+        visible.add(id);
+        id = folder.parentFolderId ?? undefined;
+      }
+    }
+    return folders.filter(folder => visible.has(folder._id)).map(folder => ({ id: folder._id, name: folder.name, parentFolderId: folder.parentFolderId }));
+  },
+});
+
 export const listByApiKey = query({
   args: {
     apiKey: v.string(),

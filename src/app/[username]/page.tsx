@@ -7,11 +7,13 @@ import { headers } from 'next/headers';
 import { UserDashboard } from '@/components/dashboard/user-dashboard';
 import { PublicProfileAvatar } from '@/components/public-profile-avatar';
 import { PublicIbxFiles } from '@/components/public-ibx-files';
+import { PublicNotesBrowser } from '@/components/public-notes-browser';
 import { formatQuickLinkTitle } from '@/lib/quick-link-display';
 import {
   getMyUserProfile,
   getPublicUserProfileByUsername,
   listPublicNotesByUsername,
+  listPublicNoteFoldersByUsername,
   listQuickLinksByUsername,
 } from '@/lib/notes';
 import { listPublicIbxFiles } from '@/lib/public-ibx-files';
@@ -48,9 +50,7 @@ export async function generateMetadata({ params, searchParams }: {
   const title = `@${handle}: public notes and links`;
   const description = `public notes and quick links from @${handle}.`;
   const canonicalQuery = new URLSearchParams();
-  const notePage = parsePage(singleQueryParam(query.notePage));
   const linkPage = parsePage(singleQueryParam(query.linkPage));
-  if (notePage > 1) canonicalQuery.set('notePage', String(notePage));
   if (linkPage > 1) canonicalQuery.set('linkPage', String(linkPage));
   const queryString = canonicalQuery.toString();
   const canonical = `${getSiteUrl()}/${encodeURIComponent(handle)}${queryString ? `?${queryString}` : ''}`;
@@ -123,9 +123,10 @@ export default async function DashboardPage({
     return <UserDashboard apiKeySession={Boolean(apiKeySession)} />;
   }
 
-  const [profile, notes, links, publicFiles] = await Promise.all([
+  const [profile, notes, folders, links, publicFiles] = await Promise.all([
     getPublicUserProfileByUsername({ username: normalizedPathHandle }),
     listPublicNotesByUsername({ username: normalizedPathHandle }),
+    listPublicNoteFoldersByUsername(normalizedPathHandle),
     listQuickLinksByUsername({ username: normalizedPathHandle }),
     listPublicIbxFiles(normalizedPathHandle),
   ]);
@@ -134,26 +135,18 @@ export default async function DashboardPage({
     notFound();
   }
 
-  const sortedNotes = [...notes].sort((a, b) => b.createdAt - a.createdAt);
   const sortedLinks = [...links].sort((a, b) => b.updatedAt - a.updatedAt);
-  const notePages = Math.max(1, Math.ceil(sortedNotes.length / PUBLIC_LIST_PAGE_SIZE));
   const linkPages = Math.max(1, Math.ceil(sortedLinks.length / PUBLIC_LIST_PAGE_SIZE));
-  const notePage = Math.min(parsePage(singleQueryParam(resolvedSearchParams.notePage)), notePages);
   const linkPage = Math.min(parsePage(singleQueryParam(resolvedSearchParams.linkPage)), linkPages);
-  const visibleNotes = sortedNotes.slice(
-    (notePage - 1) * PUBLIC_LIST_PAGE_SIZE,
-    notePage * PUBLIC_LIST_PAGE_SIZE
-  );
   const visibleLinks = sortedLinks.slice(
     (linkPage - 1) * PUBLIC_LIST_PAGE_SIZE,
     linkPage * PUBLIC_LIST_PAGE_SIZE
   );
-  const filesDelay = 240 + visibleNotes.length * 55;
+  const filesDelay = 300;
   const linksDelay = filesDelay + (publicFiles.length ? Math.min(publicFiles.length, 10) * 45 + 120 : 0);
-  const pageHref = (nextNotePage: number, nextLinkPage: number) => {
+  const pageHref = (nextLinkPage: number) => {
     const params = new URLSearchParams();
     if (forcePublicProfile) params.set('public', '1');
-    if (nextNotePage > 1) params.set('notePage', String(nextNotePage));
     if (nextLinkPage > 1) params.set('linkPage', String(nextLinkPage));
     const query = params.toString();
     return query ? `/${normalizedPathHandle}?${query}` : `/${normalizedPathHandle}`;
@@ -188,53 +181,7 @@ export default async function DashboardPage({
           </div>
         </header>
 
-        <div className="space-y-3">
-          <h2 className="animate-enter text-xs text-neutral-500" style={{ '--delay': '140ms' } as CSSProperties}>Published notes</h2>
-          {notes.length === 0 ? (
-            <p className="animate-enter text-xs text-neutral-500" style={{ '--delay': '200ms' } as CSSProperties}>No published notes.</p>
-          ) : (
-            visibleNotes.map((note, index) => (
-              <Link
-                key={note.id}
-                href={`/${note.username}/${note.slug}`}
-                className="public-profile-card animate-enter block rounded-sm border border-neutral-800 px-3 py-3 hover:bg-neutral-900/85"
-                style={{ '--delay': `${200 + index * 55}ms` } as CSSProperties}
-              >
-                <p className="text-sm text-neutral-100">{note.title}</p>
-                <p className="mt-1 text-[11px] text-neutral-500">
-                  {new Date(note.createdAt).toLocaleDateString()}
-                </p>
-              </Link>
-            ))
-          )}
-          {notePages > 1 ? (
-            <div className="animate-enter flex items-center gap-3 text-xs text-neutral-400" style={{ '--delay': `${200 + visibleNotes.length * 55}ms` } as CSSProperties}>
-              {notePage > 1 ? (
-                <Link
-                  href={pageHref(notePage - 1, linkPage)}
-                  className="text-neutral-300 transition-colors hover:text-neutral-100"
-                >
-                  Previous
-                </Link>
-              ) : (
-                <span className="text-neutral-600">Previous</span>
-              )}
-              <span>
-                {notePage} / {notePages}
-              </span>
-              {notePage < notePages ? (
-                <Link
-                  href={pageHref(notePage + 1, linkPage)}
-                  className="text-neutral-300 transition-colors hover:text-neutral-100"
-                >
-                  Next
-                </Link>
-              ) : (
-                <span className="text-neutral-600">Next</span>
-              )}
-            </div>
-          ) : null}
-        </div>
+        <PublicNotesBrowser notes={notes} folders={folders} />
 
         {publicFiles.length > 0 && <PublicIbxFiles files={publicFiles} startDelay={filesDelay} />}
 
@@ -261,7 +208,7 @@ export default async function DashboardPage({
             <div className="animate-enter flex items-center gap-3 text-xs text-neutral-400" style={{ '--delay': `${linksDelay + 55 + visibleLinks.length * 55}ms` } as CSSProperties}>
               {linkPage > 1 ? (
                 <Link
-                  href={pageHref(notePage, linkPage - 1)}
+                  href={pageHref(linkPage - 1)}
                   className="text-neutral-300 transition-colors hover:text-neutral-100"
                 >
                   Previous
@@ -274,7 +221,7 @@ export default async function DashboardPage({
               </span>
               {linkPage < linkPages ? (
                 <Link
-                  href={pageHref(notePage, linkPage + 1)}
+                  href={pageHref(linkPage + 1)}
                   className="text-neutral-300 transition-colors hover:text-neutral-100"
                 >
                   Next
