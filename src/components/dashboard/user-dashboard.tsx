@@ -1554,8 +1554,8 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
                             <div className="flex flex-wrap items-center gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
                               <div onClick={event => event.stopPropagation()} className="w-36">
                                 <Combobox items={folderOptions} value={folderOptions.find(option => option.id === (note.folderId ?? ''))} itemToStringValue={option => option.label} onValueChange={option => { if (option) void changeFolder({ action: 'move', noteId: note.id, folderId: option.id || null }).catch(error => toast.error(error.message)); }}>
-                                  <ComboboxInput aria-label={`Move ${note.title} to folder`} className="h-8" />
-                                  <ComboboxContent><ComboboxEmpty>No folders found.</ComboboxEmpty><ComboboxList><ComboboxGroup>{folderOptions.map(option => <ComboboxItem key={option.id} value={option}>{option.label}</ComboboxItem>)}</ComboboxGroup></ComboboxList></ComboboxContent>
+                                  <ComboboxInput aria-label={`Move ${note.title} to folder`} className="h-8 !bg-black [&_input]:!text-xs" />
+                                  <ComboboxContent className="!bg-black !text-neutral-100"><ComboboxEmpty>No folders found.</ComboboxEmpty><ComboboxList><ComboboxGroup>{folderOptions.map(option => <ComboboxItem key={option.id} value={option} className="text-xs">{option.label}</ComboboxItem>)}</ComboboxGroup></ComboboxList></ComboboxContent>
                                 </Combobox>
                               </div>
                               <Button
