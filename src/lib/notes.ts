@@ -1,11 +1,13 @@
 import { fetchMutation, fetchQuery } from 'convex/nextjs';
 import { api } from '../../convex/_generated/api';
+import type { Id } from '../../convex/_generated/dataModel';
 
 export type NoteVisibility = 'public' | 'private';
 export type NoteState = 'active' | 'deleted';
 
 export type NoteRecord = {
   id: string;
+  folderId: string | null;
   username: string;
   slug: string;
   title: string;
@@ -201,6 +203,7 @@ export async function createNoteWithAuth(input: {
   content: string;
   visibility: NoteVisibility;
   expiresInDays: number | null;
+  folderId?: string;
 }) {
   return await fetchMutation(
     api.notes.create,
@@ -210,6 +213,7 @@ export async function createNoteWithAuth(input: {
       content: input.content,
       visibility: input.visibility,
       expiresInDays: input.expiresInDays,
+      folderId: input.folderId as Id<'noteFolders'> | undefined,
     },
     { token: input.token }
   );
@@ -221,6 +225,7 @@ export async function createNoteWithApiKey(input: {
   content: string;
   visibility: NoteVisibility;
   expiresInDays: number | null;
+  folderId?: string;
 }) {
   return await fetchMutation(api.notes.createWithApiKey, {
     apiKey: input.apiKey,
@@ -228,6 +233,7 @@ export async function createNoteWithApiKey(input: {
     content: input.content,
     visibility: input.visibility,
     expiresInDays: input.expiresInDays,
+    folderId: input.folderId as Id<'noteFolders'> | undefined,
   });
 }
 

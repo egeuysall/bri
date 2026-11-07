@@ -218,6 +218,7 @@ function mapNote(note: Doc<"notes">) {
     username: note.username,
     slug: note.slug,
     title: note.title,
+    folderId: note.folderId ?? null,
     content: note.content,
     visibility: note.visibility,
     state: note.state,
@@ -363,6 +364,76 @@ async function markDeletedIfExpired(ctx: MutationCtx, note: Doc<"notes">, now: n
   await markDeleted(ctx, note, now);
   return true;
 }
+
+async function folderOwner(ctx: ConvexCtx, apiKey: string | null, permission: NeededPermission) {
+  if (apiKey) {
+    const key = await resolveApiKey(ctx, apiKey);
+    if (!key) throw new Error("Invalid API key");
+    if (!hasPermission(key.permissions, permission)) throw new Error("API key lacks permission");
+    return key.ownerTokenIdentifier;
+  }
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new Error("Not authenticated");
+  return identity.tokenIdentifier;
+}
+
+export const listNoteFolders = query({
+  args: { apiKey: v.union(v.string(), v.null()) },
+  handler: async (ctx, { apiKey }) => {
+    const owner = await folderOwner(ctx, apiKey, "read");
+    return (await ctx.db.query("noteFolders").withIndex("by_owner", q => q.eq("ownerTokenIdentifier", owner)).take(201))
+      .map(folder => ({ id: folder._id, name: folder.name, parentFolderId: folder.parentFolderId }));
+  },
+});
+
+export const changeNoteFolder = mutation({
+  args: {
+    apiKey: v.union(v.string(), v.null()),
+    action: v.union(v.literal("create"), v.literal("rename"), v.literal("delete"), v.literal("move")),
+    folderId: v.optional(v.union(v.id("noteFolders"), v.null())),
+    parentFolderId: v.optional(v.union(v.id("noteFolders"), v.null())),
+    noteId: v.optional(v.id("notes")),
+    name: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const owner = await folderOwner(ctx, args.apiKey, "write");
+    const folders = await ctx.db.query("noteFolders").withIndex("by_owner", q => q.eq("ownerTokenIdentifier", owner)).take(201);
+    if (folders.length > 200) throw new Error("Too many folders");
+    const target = args.folderId ? folders.find(folder => folder._id === args.folderId) : null;
+    if (args.folderId && !target) throw new Error("Folder not found");
+    if (args.action === "move") {
+      const note = args.noteId && await ctx.db.get(args.noteId);
+      if (!note || note.ownerTokenIdentifier !== owner || note.state !== "active") throw new Error("Note not found");
+      await ctx.db.patch(note._id, { folderId: args.folderId ?? undefined });
+      return { id: note._id };
+    }
+    if (args.action === "create" || args.action === "rename") {
+      const name = args.name?.trim().replace(/\s+/g, " ");
+      if (!name || name.length > 64 || /[/\\]/.test(name)) throw new Error("Invalid folder name");
+      if (args.action === "rename" && !target) throw new Error("Folder not found");
+      const parentId = args.action === "create" ? args.parentFolderId ?? null : target!.parentFolderId;
+      if (parentId && !folders.some(folder => folder._id === parentId)) throw new Error("Parent folder not found");
+      if (folders.some(folder => folder.parentFolderId === parentId && folder.name.toLowerCase() === name.toLowerCase() && folder._id !== target?._id)) throw new Error("Folder already exists");
+      if (args.action === "create") {
+        if (folders.length >= 200) throw new Error("Too many folders");
+        return { id: await ctx.db.insert("noteFolders", { ownerTokenIdentifier: owner, name, parentFolderId: parentId, createdAt: Date.now() }) };
+      }
+      await ctx.db.patch(target!._id, { name });
+      return { id: target!._id };
+    }
+    if (!target) throw new Error("Folder not found");
+    const ids = new Set<Id<"noteFolders">>([target._id]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const folder of folders) if (folder.parentFolderId && ids.has(folder.parentFolderId) && !ids.has(folder._id)) { ids.add(folder._id); changed = true; }
+    }
+    const notes = await ctx.db.query("notes").withIndex("by_ownerTokenIdentifier_and_state_and_createdAt", q => q.eq("ownerTokenIdentifier", owner)).collect();
+    for (const note of notes) if (note.folderId && ids.has(note.folderId)) await ctx.db.patch(note._id, { folderId: undefined });
+    for (const folder of folders) if (ids.has(folder._id)) await ctx.db.delete(folder._id);
+    return { id: target._id };
+  },
+});
 
 export const listMine = query({
   args: {
@@ -627,6 +698,7 @@ export const getByUsernameAndSlug = query({
 export const create = mutation({
   args: {
     username: v.string(),
+    folderId: v.optional(v.id("noteFolders")),
     title: v.string(),
     content: v.string(),
     visibility: v.union(v.literal("public"), v.literal("private")),
@@ -637,6 +709,10 @@ export const create = mutation({
     if (!identity) throw new Error("Not authenticated");
 
     const ownerTokenIdentifier = identity.tokenIdentifier;
+    if (args.folderId) {
+      const folder = await ctx.db.get(args.folderId);
+      if (!folder || folder.ownerTokenIdentifier !== ownerTokenIdentifier) throw new Error("Folder not found");
+    }
     const { username, title, content } = validateNoteInput(args);
     await upsertUserProfile(
       ctx,
@@ -655,6 +731,7 @@ export const create = mutation({
 
     const noteId = await ctx.db.insert("notes", {
       ownerTokenIdentifier,
+      folderId: args.folderId,
       username,
       title,
       slug: uniqueSlug,
@@ -794,6 +871,7 @@ export const inviteUserWithApiKey = mutation({
 export const createWithApiKey = mutation({
   args: {
     apiKey: v.string(),
+    folderId: v.optional(v.id("noteFolders")),
     title: v.string(),
     content: v.string(),
     visibility: v.union(v.literal("public"), v.literal("private")),
@@ -804,6 +882,10 @@ export const createWithApiKey = mutation({
     if (!keyRecord) throw new Error("Invalid API key");
     if (!hasPermission(keyRecord.permissions, "write")) {
       throw new Error("API key lacks write permission");
+    }
+    if (args.folderId) {
+      const folder = await ctx.db.get(args.folderId);
+      if (!folder || folder.ownerTokenIdentifier !== keyRecord.ownerTokenIdentifier) throw new Error("Folder not found");
     }
 
     const title = sanitizeTitle(args.title);
@@ -823,6 +905,7 @@ export const createWithApiKey = mutation({
 
     const noteId = await ctx.db.insert("notes", {
       ownerTokenIdentifier: keyRecord.ownerTokenIdentifier,
+      folderId: args.folderId,
       username: keyRecord.username,
       title,
       slug: uniqueSlug,

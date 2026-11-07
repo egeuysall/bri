@@ -54,6 +54,7 @@ import { normalizeMarkdownTables } from '@/lib/tiptap-markdown';
 
 type NoteRecord = {
   id: string;
+  folderId: string | null;
   username: string;
   slug: string;
   title: string;
@@ -65,6 +66,8 @@ type NoteRecord = {
   deletedAt: number | null;
   purgeAt: number | null;
 };
+
+type NoteFolder = { id: string; name: string; parentFolderId: string | null };
 
 type ApiKeyRecord = {
   id: string;
@@ -359,6 +362,12 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
 
   const [panel, setPanel] = useState<DashboardPanel>(initialPanel);
   const [notes, setNotes] = useState<NoteRecord[]>([]);
+  const [folders, setFolders] = useState<NoteFolder[]>([]);
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(() => searchParams.get('folder'));
+  const [newFolderName, setNewFolderName] = useState('');
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [renamingFolderName, setRenamingFolderName] = useState('');
+  const [deletingFolder, setDeletingFolder] = useState<NoteFolder | null>(null);
   const [deletedNotes, setDeletedNotes] = useState<NoteRecord[]>([]);
   const [notesPage, setNotesPage] = useState<number>(1);
   const [linksPage, setLinksPage] = useState<number>(1);
@@ -573,7 +582,7 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
 
   const filteredSortedNotes = useMemo(() => {
     const now = Date.now();
-    let rows = [...notes];
+    let rows = notes.filter(note => (note.folderId ?? null) === currentFolderId);
     if (notesFilter === 'public') rows = rows.filter((note) => note.visibility === 'public');
     if (notesFilter === 'private') rows = rows.filter((note) => note.visibility === 'private');
     if (notesFilter === 'expiringSoon') {
@@ -594,7 +603,18 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
       return b.createdAt - a.createdAt;
     });
     return rows;
-  }, [EXPIRING_SOON_MS, notes, notesFilter, notesSort, viewsBySlug]);
+  }, [EXPIRING_SOON_MS, currentFolderId, notes, notesFilter, notesSort, viewsBySlug]);
+  const folderPath = useMemo(() => {
+    const path: NoteFolder[] = [];
+    let id = currentFolderId;
+    while (id) {
+      const folder = folders.find(item => item.id === id);
+      if (!folder || path.some(item => item.id === id)) break;
+      path.unshift(folder);
+      id = folder.parentFolderId;
+    }
+    return path;
+  }, [currentFolderId, folders]);
 
   const filteredSortedLinks = useMemo(() => {
     let rows = [...quickLinks];
@@ -682,9 +702,12 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
   async function refreshData() {
     setLoading(true);
     try {
-      const [active, deleted] = await Promise.all([fetchNotes('active'), fetchNotes('deleted')]);
+      const [active, deleted, folderResponse] = await Promise.all([fetchNotes('active'), fetchNotes('deleted'), fetch('/api/note-folders')]);
+      if (!folderResponse.ok) throw new Error('Failed to load note folders');
+      const folderJson = await folderResponse.json() as { data?: NoteFolder[] };
       setNotes(active);
       setDeletedNotes(deleted);
+      setFolders(folderJson.data ?? []);
       setNotesPage(1);
       setDeletedPage(1);
     } catch (err) {
@@ -692,6 +715,20 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
     } finally {
       setLoading(false);
     }
+  }
+
+  async function changeFolder(body: Record<string, unknown>) {
+    const response = await fetch('/api/note-folders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const json = await response.json() as { error?: string };
+    if (!response.ok) throw new Error(json.error || 'Could not update folder');
+    await refreshData();
+  }
+
+  function navigateFolder(id: string | null) {
+    setCurrentFolderId(id);
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set('folder', id); else params.delete('folder');
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   async function refreshApiKeys(options?: { clearGenerated?: boolean }) {
@@ -939,6 +976,7 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
         title,
         content: normalizeMarkdownTables(content),
         visibility,
+        folderId: currentFolderId,
         expiresInDays:
           expirationOptions.find((option) => option.value === expirationValue)?.days ?? 30,
       }),
@@ -1289,6 +1327,22 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
             ) : null}
             {!isInitializing && panel === 'notes' ? (
               <div className="w-full space-y-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <Button variant="ghost" size="sm" onClick={() => navigateFolder(null)}>notes</Button>
+                  {folderPath.map(folder => <span key={folder.id} className="flex items-center gap-2"><span>/</span><Button variant="ghost" size="sm" onClick={() => navigateFolder(folder.id)}>{folder.name}</Button></span>)}
+                  <form className="ml-auto flex items-center gap-2" onSubmit={event => { event.preventDefault(); if (!newFolderName.trim()) return; void changeFolder({ action: 'create', name: newFolderName, parentFolderId: currentFolderId }).then(() => setNewFolderName('')).catch(error => toast.error(error.message)); }}>
+                    <input aria-label="New folder name" placeholder="new folder" maxLength={64} value={newFolderName} onChange={event => setNewFolderName(event.target.value)} className="h-8 w-32 rounded-sm border border-neutral-800 bg-transparent px-2" />
+                    <Button type="submit" size="sm" variant="outline" disabled={!newFolderName.trim()}>create</Button>
+                  </form>
+                </div>
+                {folders.some(folder => folder.parentFolderId === currentFolderId) && <div className="divide-y divide-neutral-800 border-y border-neutral-800">
+                  {folders.filter(folder => folder.parentFolderId === currentFolderId).map(folder => <div key={folder.id} className="flex items-center gap-2 py-2 text-sm">
+                    {renamingFolderId === folder.id ? <form className="flex flex-1 gap-2" onSubmit={event => { event.preventDefault(); void changeFolder({ action: 'rename', folderId: folder.id, name: renamingFolderName }).then(() => setRenamingFolderId(null)).catch(error => toast.error(error.message)); }}><input aria-label="Rename folder" autoFocus maxLength={64} value={renamingFolderName} onChange={event => setRenamingFolderName(event.target.value)} className="min-w-0 flex-1 bg-transparent" /><Button size="sm" type="submit">save</Button></form> : <button className="flex-1 text-left hover:underline" onClick={() => navigateFolder(folder.id)}>/ {folder.name}</button>}
+                    <Button size="sm" variant="ghost" onClick={() => { setRenamingFolderId(folder.id); setRenamingFolderName(folder.name); }}>rename</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDeletingFolder(folder)}>delete</Button>
+                  </div>)}
+                </div>}
+                <Dialog open={!!deletingFolder} onOpenChange={open => { if (!open) setDeletingFolder(null); }}><DialogContent><DialogHeader><DialogTitle>Delete folder?</DialogTitle><DialogDescription>Notes in this folder and its subfolders will move to the root. The folders will be removed.</DialogDescription></DialogHeader><DialogFooter><Button variant="ghost" onClick={() => setDeletingFolder(null)}>cancel</Button><Button variant="destructive" onClick={() => { if (deletingFolder) void changeFolder({ action: 'delete', folderId: deletingFolder.id }).then(() => setDeletingFolder(null)).catch(error => toast.error(error.message)); }}>delete</Button></DialogFooter></DialogContent></Dialog>
                 <div className="max-w-[calc(100%-5rem)] space-y-2 xl:max-w-[calc(100%-7rem)]">
                   <h1 className="text-sm text-neutral-200">Your notes</h1>
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -1497,6 +1551,10 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
                               </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2 md:absolute md:right-2.5 md:top-2.5 md:z-20 md:pointer-events-none md:opacity-0 md:transition-opacity md:duration-150 md:group-hover:pointer-events-auto md:group-hover:opacity-100 md:group-focus-within:pointer-events-auto md:group-focus-within:opacity-100">
+                              <select aria-label={`Move ${note.title} to folder`} value={note.folderId ?? ''} onClick={event => event.stopPropagation()} onChange={event => { event.stopPropagation(); void changeFolder({ action: 'move', noteId: note.id, folderId: event.target.value || null }).catch(error => toast.error(error.message)); }} className="h-8 max-w-36 rounded-sm border border-neutral-800 bg-neutral-950 px-2 text-xs">
+                                <option value="">root</option>
+                                {folders.map(folder => <option key={folder.id} value={folder.id}>{folder.name}</option>)}
+                              </select>
                               <Button
                                 type="button"
                                 variant="default"

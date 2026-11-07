@@ -96,6 +96,7 @@ export async function POST(request: Request) {
     content?: unknown;
     visibility?: unknown;
     expiresInDays?: unknown;
+    folderId?: unknown;
   };
 
   try {
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
 
   const visibility = normalizeVisibility(payload.visibility);
   const expiresInDays = normalizeExpiresInDays(payload.expiresInDays);
+  const folderId = typeof payload.folderId === 'string' ? payload.folderId : undefined;
 
   const { userId, getToken } = await auth();
   if (userId) {
@@ -141,6 +143,7 @@ export async function POST(request: Request) {
         content,
         visibility,
         expiresInDays,
+        folderId,
       });
       return NextResponse.json({ data: result }, { status: 201 });
     } catch (error) {
@@ -171,6 +174,7 @@ export async function POST(request: Request) {
       content,
       visibility,
       expiresInDays,
+      folderId,
     });
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (error) {

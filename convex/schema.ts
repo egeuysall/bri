@@ -18,6 +18,7 @@ export default defineSchema({
     .index("by_username", ["username"]),
   notes: defineTable({
     ownerTokenIdentifier: v.string(),
+    folderId: v.optional(v.id("noteFolders")),
     username: v.string(),
     title: v.string(),
     slug: v.string(),
@@ -38,6 +39,12 @@ export default defineSchema({
       "createdAt",
     ])
     .index("by_state_and_purgeAt", ["state", "purgeAt"]),
+  noteFolders: defineTable({
+    ownerTokenIdentifier: v.string(),
+    name: v.string(),
+    parentFolderId: v.union(v.id("noteFolders"), v.null()),
+    createdAt: v.number(),
+  }).index("by_owner", ["ownerTokenIdentifier"]),
   files: defineTable({
     storageId: v.id("_storage"),
     ownerTokenIdentifier: v.string(),
