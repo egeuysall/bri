@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
 import ReactMarkdown from 'react-markdown';
@@ -393,6 +393,8 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
   const [linksFilter, setLinksFilter] = useState<'all' | 'mostViewed'>('all');
   const [deletedFilter, setDeletedFilter] = useState<'all' | 'expiringSoon' | 'mostViewed'>('all');
   const [notesSort, setNotesSort] = useState<SortMode>('newest');
+  const [notesQuery, setNotesQuery] = useState<string>('');
+  const notesSearchRef = useRef<HTMLInputElement>(null);
   const [linksSort, setLinksSort] = useState<SortMode>('newest');
   const [deletedSort, setDeletedSort] = useState<SortMode>('newest');
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -582,7 +584,13 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
 
   const filteredSortedNotes = useMemo(() => {
     const now = Date.now();
-    let rows = notes.filter(note => (note.folderId ?? null) === currentFolderId);
+    const terms = notesQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    let rows = terms.length
+      ? notes.filter(note => {
+          const haystack = `${note.title}\n${note.slug}\n${note.content}`.toLowerCase();
+          return terms.every(term => haystack.includes(term));
+        })
+      : notes.filter(note => (note.folderId ?? null) === currentFolderId);
     if (notesFilter === 'public') rows = rows.filter((note) => note.visibility === 'public');
     if (notesFilter === 'private') rows = rows.filter((note) => note.visibility === 'private');
     if (notesFilter === 'expiringSoon') {
@@ -603,7 +611,7 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
       return b.createdAt - a.createdAt;
     });
     return rows;
-  }, [EXPIRING_SOON_MS, currentFolderId, notes, notesFilter, notesSort, viewsBySlug]);
+  }, [EXPIRING_SOON_MS, currentFolderId, notes, notesFilter, notesQuery, notesSort, viewsBySlug]);
   const folderPath = useMemo(() => {
     const path: NoteFolder[] = [];
     let id = currentFolderId;
@@ -911,7 +919,22 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
 
   useEffect(() => {
     setNotesPage(1);
-  }, [notesFilter, notesSort]);
+  }, [notesFilter, notesQuery, notesSort]);
+
+  useEffect(() => {
+    if (panel !== 'notes') return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'f') {
+        const input = notesSearchRef.current;
+        if (!input) return;
+        event.preventDefault();
+        input.focus();
+        input.select();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [panel, isInitializing]);
 
   useEffect(() => {
     setLinksPage(1);
@@ -1346,6 +1369,23 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
                 <Dialog open={!!deletingFolder} onOpenChange={open => { if (!open) setDeletingFolder(null); }}><DialogContent><DialogHeader><DialogTitle>Delete folder?</DialogTitle><DialogDescription>Notes in this folder and its subfolders will move to the root. The folders will be removed.</DialogDescription></DialogHeader><DialogFooter><Button variant="ghost" onClick={() => setDeletingFolder(null)}>cancel</Button><Button variant="destructive" onClick={() => { if (deletingFolder) void changeFolder({ action: 'delete', folderId: deletingFolder.id }).then(() => setDeletingFolder(null)).catch(error => toast.error(error.message)); }}>delete</Button></DialogFooter></DialogContent></Dialog>
                 <div className="max-w-[calc(100%-5rem)] space-y-2 xl:max-w-[calc(100%-7rem)]">
                   <h1 className="text-sm text-neutral-200">Your notes</h1>
+                  <input
+                    ref={notesSearchRef}
+                    type="search"
+                    aria-label="Search notes"
+                    placeholder="search all notes (title, content)"
+                    value={notesQuery}
+                    onChange={event => setNotesQuery(event.target.value)}
+                    onKeyDown={event => {
+                      if (event.key === 'Escape') setNotesQuery('');
+                    }}
+                    className="h-8 w-full rounded-sm border border-neutral-800 bg-transparent px-2 text-xs"
+                  />
+                  {notesQuery ? (
+                    <p className="text-[11px] text-neutral-500">
+                      {filteredSortedNotes.length} found in all folders
+                    </p>
+                  ) : null}
                   <div className="flex flex-wrap items-center gap-1.5">
                     {(
                       [
@@ -1396,7 +1436,7 @@ export function UserDashboard({ apiKeySession = false }: { apiKeySession?: boole
                   </div>
                 </div>
                 {filteredSortedNotes.length === 0 ? (
-                  <p className="text-xs text-neutral-500">No notes match this filter.</p>
+                  <p className="text-xs text-neutral-500">{notesQuery ? 'No notes match your search.' : 'No notes match this filter.'}</p>
                 ) : null}
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_32rem] 2xl:grid-cols-[minmax(0,1fr)_36rem] xl:items-start">
                   <div className="grid grid-cols-1 items-stretch gap-1.5 lg:grid-cols-2">
